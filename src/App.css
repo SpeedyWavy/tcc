@@ -1,0 +1,141 @@
+/* Header */
+.ui-header{
+  height: 17dvh;
+  width: 100%;
+  background: #911818;
+}
+
+.logo{
+  background: #3700ff;
+  width: 26.8%;
+  height: 12dvh;
+  float: left;
+  margin-top: 5%;
+  margin-left: 5%;
+
+  img{
+    height: 100%;
+  }
+
+}
+
+.usuario{
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+
+  img{
+    width: 15%;
+    float: right;
+    margin-right: 8%;
+    margin-top: 5%;
+    border-radius: 9999px;
+  }
+
+  h1{
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0;
+    font-size: 20px;
+    white-space: nowrap;
+    transform: translateY(1dvh);
+    color: #fff;
+  }
+
+}
+
+.ui-header-extra{
+  background: rgb(216, 231, 0);
+  width: 100%;
+  height: 2.5dvh;
+  float: right;
+  margin-top: 5.6%;
+}
+
+/* Botões */
+.ui-button1{
+  width: 60%;
+  height: 10dvh;
+  background: #006eff;
+  margin-left: 20%;
+  margin-top: 18dvh;
+  border-radius: 150px;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  opacity: 0;
+  animation: fallIn 700ms ease-out 120ms forwards;
+
+  a{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #fff;
+    font-size: 20px;
+  }
+
+}
+
+.ui-button2{
+  width: 60%;
+  height: 10dvh;
+  background: #006eff;
+  margin-left: 20%;
+  margin-top: 5dvh;
+  border-radius: 150px;
+  opacity: 0;
+  animation: fallIn 700ms ease-out 220ms forwards;
+
+  button{
+    text-align: center;
+    width: 100%;
+    height: 10dvh;
+    border-radius: 150px;
+    background: none;
+    border: none;
+    font-size: 20px;
+  }
+
+  a{
+    text-decoration: none;
+    color: #fff;
+  }
+
+}
+
+.ui-button3{
+  width: 60%;
+  height: 10dvh;
+  background: #006eff;
+  margin-left: 20%;
+  margin-top: 5dvh;
+  border-radius: 150px;
+  opacity: 0;
+  animation: fallIn 700ms ease-out 340ms forwards;
+
+  button{
+    text-align: center;
+    width: 100%;
+    height: 10dvh;
+    border-radius: 150px;
+    background: none;
+    border: none;
+    font-size: 20px;
+  }
+
+  a{
+    text-decoration: none;
+    color: #fff;
+  }
+}
+
+@keyframes fallIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

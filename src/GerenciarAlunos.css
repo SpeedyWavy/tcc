@@ -1,0 +1,173 @@
+/* Header */
+.ui-header{
+  height: 17dvh;
+  width: 100%;
+  background: #911818;
+}
+
+.logo{
+  background: #3700ff;
+  width: 26.8%;
+  height: 12dvh;
+  float: left;
+  margin-top: 5%;
+  margin-left: 5%;
+
+  img{
+    height: 100%;
+  }
+
+}
+
+.usuario{
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+
+  img{
+    width: 15%;
+    float: right;
+    margin-right: 8%;
+    margin-top: 5%;
+    border-radius: 9999px;
+  }
+
+  h1{
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0;
+    font-size: 20px;
+    white-space: nowrap;
+    transform: translateY(1dvh);
+    color: #fff;
+  }
+
+}
+
+.ui-header-extra{
+  background: rgb(216, 231, 0);
+  width: 100%;
+  height: 2.5dvh;
+  float: right;
+  margin-top: 5.6%;
+}
+.voltar{
+    float: left;
+    margin-left: 7%;
+    margin-top: 5%;
+
+    a{
+        text-decoration: none;
+        font-size: large;
+        color: #000000;
+        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    }
+}
+
+/* Lista de Alunos/Cadastros */
+.filtro{
+    margin-left: 48%;
+    margin-top: 10%;
+    height: 10dvh;
+    width: 22dvh;
+
+    input{
+        height: 5dvh;
+        border-radius: 15px;
+        border: none;
+        box-shadow: 5px 3px 0px #000000a9;
+    }
+    p{
+        height: 10dvh;
+    }
+}
+
+.filtro .icone-filtro{
+    float: right;
+    margin-top: 7%;
+}
+
+.aluno-item{
+    width: 100%;
+    margin-top: 2%;
+}
+
+.aluno{
+    height: 7.5dvh;
+    width: 100%;
+    background: #747272;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 180ms ease, transform 180ms ease;
+}
+
+.aluno:hover{
+    transform: translateY(-2px);
+}
+
+.aluno.aberto{
+    background: #656565;
+}
+
+.aluno .setinha{
+    margin-left: 8%;
+    font-size: 26px;
+}
+
+.aluno h1{
+    margin-left: 5%;
+}
+
+.aluno .pontinhos{
+    font-size: 30px;
+    margin-left: auto;
+    margin-right: 8%;
+}
+
+.aluno-detalhes{
+    width: 100%;
+    background: #e9e9e9;
+    color: #1d1d1d;
+    border-radius: 8px;
+    margin-top: 1.2dvh;
+    padding: 12px 16px;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    animation: expandInfo 220ms ease-out forwards;
+}
+
+.aluno-detalhes p{
+    margin: 4px 0;
+}
+
+.aluno1{ animation: fallIn 700ms ease-out 220ms forwards; }
+.aluno2{ animation: fallIn 700ms ease-out 340ms forwards; }
+.aluno3{ animation: fallIn 700ms ease-out 460ms forwards; }
+.aluno4{ animation: fallIn 700ms ease-out 580ms forwards; }
+.aluno5{ animation: fallIn 700ms ease-out 700ms forwards; }
+
+/* Keyframes */
+@keyframes fallIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expandInfo {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
