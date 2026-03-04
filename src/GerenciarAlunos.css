@@ -56,6 +56,9 @@
     margin-top: 5%;
 
     a{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
         text-decoration: none;
         font-size: large;
         color: #000000;
@@ -64,43 +67,65 @@
 }
 
 /* Lista de Alunos/Cadastros */
+.cadastros{
+    width: 100%;
+    padding: 4dvh 5%;
+    display: grid;
+    gap: 2dvh;
+    box-sizing: border-box;
+}
+
 .filtro{
-    margin-left: 48%;
-    margin-top: 10%;
-    height: 10dvh;
-    width: 22dvh;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: min(100%, 320px);
+    margin: 0;
+    height: auto;
 
     input{
+        width: 100%;
         height: 5dvh;
         border-radius: 15px;
         border: none;
         box-shadow: 5px 3px 0px #000000a9;
-    }
-    p{
-        height: 10dvh;
+        padding: 0 14px;
     }
 }
 
 .filtro .icone-filtro{
-    float: right;
-    margin-top: 7%;
+    flex-shrink: 0;
+}
+
+.alunos-grid{
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
 }
 
 .aluno-item{
     width: 100%;
-    margin-top: 2%;
+    margin-top: 0;
+    display: grid;
+    gap: 0.7rem;
+    align-content: start;
 }
 
 .aluno{
-    height: 7.5dvh;
+    min-height: 7.5dvh;
     width: 100%;
     background: #747272;
     font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
     display: flex;
     align-items: center;
+    gap: 0.75rem;
     cursor: pointer;
     border-radius: 8px;
     transition: background 180ms ease, transform 180ms ease;
+    padding: 0.9rem 1rem;
+    box-sizing: border-box;
 }
 
 .aluno:hover{
@@ -112,18 +137,19 @@
 }
 
 .aluno .setinha{
-    margin-left: 8%;
+    margin-left: 0;
     font-size: 26px;
 }
 
 .aluno h1{
-    margin-left: 5%;
+    margin: 0;
+    font-size: 1.2rem;
 }
 
 .aluno .pontinhos{
     font-size: 30px;
     margin-left: auto;
-    margin-right: 8%;
+    margin-right: 0;
 }
 
 .aluno-detalhes{
@@ -131,10 +157,17 @@
     background: #e9e9e9;
     color: #1d1d1d;
     border-radius: 8px;
-    margin-top: 1.2dvh;
+    margin-top: 0;
     padding: 12px 16px;
     font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
     animation: expandInfo 220ms ease-out forwards;
+}
+
+@media (max-width: 700px){
+  .filtro{
+    justify-self: stretch;
+    width: 100%;
+  }
 }
 
 .aluno-detalhes p{
