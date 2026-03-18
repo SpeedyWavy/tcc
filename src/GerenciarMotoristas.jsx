@@ -2,11 +2,29 @@ import { useState } from 'react'
 import './GerenciarMotoristas.css'
 import logords from './assets/logo-rds.png'
 import user from './assets/place-user.png'
+import motorista2 from './assets/motorista2.png'
 import { CornerDownLeft, ArrowDownNarrowWide, CirclePlus } from 'lucide-react'
 
 
 function GerenciarMotoristas() {
   const [motoristaAberto, setMotoristaAberto] = useState(null)
+  const [formularioAberto, setFormularioAberto] = useState(false)
+  const [passoCadastro, setPassoCadastro] = useState(1)
+  const [novoMotorista, setNovoMotorista] = useState({
+    nome: '',
+    cpf: '',
+    rg: '',
+    categoriaCnh: '',
+    identificacaoTransporte: '',
+    contato: '',
+    horarios: '',
+    unidade: 'Garcia',
+  })
+  const [acessoMotorista, setAcessoMotorista] = useState({
+    email: '',
+    senha: '',
+    confirmarSenha: '',
+  })
 
   const motoristas = [
     {
@@ -70,6 +88,37 @@ function GerenciarMotoristas() {
     setMotoristaAberto((atual) => (atual === id ? null : id))
   }
 
+  const abrirAdicionar = () => {
+    setFormularioAberto(true)
+    setPassoCadastro(1)
+  }
+
+  const fecharAdicionar = () => {
+    setFormularioAberto(false)
+    setPassoCadastro(1)
+  }
+
+  const atualizarCampo = (campo) => (e) => {
+    setNovoMotorista((atual) => ({ ...atual, [campo]: e.target.value }))
+  }
+
+  const enviarNovoMotorista = (e) => {
+    e.preventDefault()
+    fecharAdicionar()
+  }
+
+  const irParaAcesso = () => {
+    setPassoCadastro(2)
+  }
+
+  const voltarParaDados = () => {
+    setPassoCadastro(1)
+  }
+
+  const atualizarAcesso = (campo) => (e) => {
+    setAcessoMotorista((atual) => ({ ...atual, [campo]: e.target.value }))
+  }
+
   return (
     <>
       <div className="ui-header">
@@ -83,12 +132,167 @@ function GerenciarMotoristas() {
       </div>
       <div className="voltar"><a href="/app"><CornerDownLeft /> Voltar</a></div>
       <div className="adicionar">
-        <button type="button" className="adicionar-botao">
+        <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
           <CirclePlus />
           Adicionar
         </button>
       </div>
-      
+
+      {/* Formulario pop-up ao apertar para adicionar */}
+      {formularioAberto && (
+        <div className="boadd-overlay" onClick={fecharAdicionar}>
+          <div
+            className="boadd-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {passoCadastro === 1 && (
+              <div className="boadd-top">
+                <div className="boadd-avatar">
+                  <img src={motorista2} alt="" />
+                </div>
+              </div>
+            )}
+
+            <form className="boadd-form" onSubmit={enviarNovoMotorista}>
+              {passoCadastro === 1 ? (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Digite o nome do motorista"
+                    value={novoMotorista.nome}
+                    onChange={atualizarCampo('nome')}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Insira o CPF"
+                    value={novoMotorista.cpf}
+                    onChange={atualizarCampo('cpf')}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Insira o RG"
+                    value={novoMotorista.rg}
+                    onChange={atualizarCampo('rg')}
+                  />
+                  <select
+                    value={novoMotorista.categoriaCnh}
+                    onChange={atualizarCampo('categoriaCnh')}
+                  >
+                    <option value="">Categoria da CNH</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Veículo / identificação do transporte"
+                    value={novoMotorista.identificacaoTransporte}
+                    onChange={atualizarCampo('identificacaoTransporte')}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Contato"
+                    value={novoMotorista.contato}
+                    onChange={atualizarCampo('contato')}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Horários"
+                    value={novoMotorista.horarios}
+                    onChange={atualizarCampo('horarios')}
+                  />
+
+                  <div className="boadd-unidade">
+                    <p>Unidade:</p>
+                    <label>
+                      <input
+                        type="radio"
+                        name="unidade"
+                        value="Garcia"
+                        checked={novoMotorista.unidade === 'Garcia'}
+                        onChange={atualizarCampo('unidade')}
+                      />
+                      Garcia
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="unidade"
+                        value="Vila Mimosa"
+                        checked={novoMotorista.unidade === 'Vila Mimosa'}
+                        onChange={atualizarCampo('unidade')}
+                      />
+                      Mimosa
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="unidade"
+                        value="Swiss Park"
+                        checked={novoMotorista.unidade === 'Swiss Park'}
+                        onChange={atualizarCampo('unidade')}
+                      />
+                      Swiss Park
+                    </label>
+                  </div>
+
+                  <button type="button" className="boadd-confirmar" onClick={irParaAcesso}>
+                    Continuar
+                  </button>
+                  <button type="button" className="boadd-cancelar" onClick={fecharAdicionar}>
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+
+                // Apos apertar em continuar
+                <>
+                  <h2 className="boadd-titulo">Acesso do Motorista</h2>
+                  <label className="boadd-label">
+                    Informe o e-mail do motorista:
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={acessoMotorista.email}
+                      onChange={atualizarAcesso('email')}
+                    />
+                  </label>
+                  <label className="boadd-label">
+                    Crie uma senha:
+                    <input
+                      type="password"
+                      placeholder="Senha"
+                      value={acessoMotorista.senha}
+                      onChange={atualizarAcesso('senha')}
+                    />
+                  </label>
+                  <label className="boadd-label">
+                    Confirme a senha:
+                    <input
+                      type="password"
+                      placeholder="Senha"
+                      value={acessoMotorista.confirmarSenha}
+                      onChange={atualizarAcesso('confirmarSenha')}
+                    />
+                  </label>
+
+                  <button type="submit" className="boadd-confirmar">
+                    Criar Cadastro
+                  </button>
+                  <button type="button" className="boadd-voltar" onClick={voltarParaDados}>
+                    Voltar
+                  </button>
+                  <button type="button" className="boadd-cancelar" onClick={fecharAdicionar}>
+                    Cancelar
+                  </button>
+                </>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
 
 
       {/* Lista dos Motoristas */}
@@ -122,7 +326,7 @@ function GerenciarMotoristas() {
               {motoristaAberto === motorista.id && (
                 <div className="motorista-detalhes">
                   <div className="motorista-card-top">
-                    <div className="motorista-foto" aria-hidden="true" />
+                    <div className="motorista-foto" />
                     <div className="motorista-info">
                       <p><strong>CPF:</strong> {motorista.cpf}</p>
                       <p><strong>RG:</strong> {motorista.rg}</p>

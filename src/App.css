@@ -119,6 +119,12 @@
   }
 }
 
+.ui-round-link{
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 /* Botão de Veiculos */
 .ui-round3{
     width: 100px;

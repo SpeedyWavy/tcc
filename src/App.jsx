@@ -27,15 +27,19 @@ function App() {
       {/* Botões Menores Redondos */}
       <div className="ui-round">
 
-        <div className="ui-round1">
-          <img src={student} alt={student} />
-          <p>Alunos</p>
-        </div>
+        <a href="/gerenciar-alunos" className="ui-round-link">
+          <div className="ui-round1">
+            <img src={student} alt={student} />
+            <p>Alunos</p>
+          </div>
+        </a>
 
-        <div className="ui-round2">
-          <img src={moto} alt={moto} />
-          <p>Motoristas</p>
-        </div>
+        <a href="/gerenciar-motoristas" className="ui-round-link">
+          <div className="ui-round2">
+            <img src={moto} alt={moto} />
+            <p>Motoristas</p>
+          </div>
+        </a>
 
         <div className="ui-round3">
           <img src={veiculo} alt={veiculo} />

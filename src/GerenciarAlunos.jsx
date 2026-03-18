@@ -2,11 +2,22 @@ import { useState } from 'react'
 import './GerenciarAlunos.css'
 import logords from './assets/logo-rds.png'
 import user from './assets/place-user.png'
+import student2 from './assets/student2.png'
 import { CornerDownLeft, CirclePlus } from 'lucide-react'
 import { ArrowDownNarrowWide } from 'lucide-react'
 
 function GerenciarAlunos() {
   const [alunoAberto, setAlunoAberto] = useState(null)
+  const [formularioAberto, setFormularioAberto] = useState(false)
+  const [novoAluno, setNovoAluno] = useState({
+    nome: '',
+    rm: '',
+    responsavel: '',
+    contatoResponsavel: '',
+    endereco: '',
+    transporte: '',
+    unidade: 'Garcia',
+  })
 
   const alunos = [
     {
@@ -65,6 +76,23 @@ function GerenciarAlunos() {
     setAlunoAberto((atual) => (atual === id ? null : id))
   }
 
+  const abrirAdicionar = () => {
+    setFormularioAberto(true)
+  }
+
+  const fecharAdicionar = () => {
+    setFormularioAberto(false)
+  }
+
+  const atualizarCampo = (campo) => (e) => {
+    setNovoAluno((atual) => ({ ...atual, [campo]: e.target.value }))
+  }
+
+  const enviarNovoAluno = (e) => {
+    e.preventDefault()
+    fecharAdicionar()
+  }
+
   return (
     <>
       <div className="ui-header">
@@ -80,11 +108,113 @@ function GerenciarAlunos() {
       <div className="voltar"><a href="/app"> <CornerDownLeft />   Voltar</a></div>
 
       <div className="adicionar">
-        <button type="button" className="adicionar-botao">
+        <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
           <CirclePlus />
           Adicionar
         </button>
       </div>
+
+      {/* pop-up do formulario ao apertar Adicionar */}
+      {formularioAberto && (
+        <div className="boadd-overlay" onClick={fecharAdicionar}>
+          <div
+            className="boadd-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="boadd-top">
+              <div className="boadd-avatar">
+                <img src={student2} alt="" />
+              </div>
+            </div>
+
+            <form className="boadd-form" onSubmit={enviarNovoAluno}>
+              <input
+                type="text"
+                placeholder="Digite o nome do aluno"
+                value={novoAluno.nome}
+                onChange={atualizarCampo('nome')}
+              />
+              <input
+                type="text"
+                placeholder="Insira o RM do aluno"
+                value={novoAluno.rm}
+                onChange={atualizarCampo('rm')}
+              />
+              <input
+                type="text"
+                placeholder="Nome do responsável"
+                value={novoAluno.responsavel}
+                onChange={atualizarCampo('responsavel')}
+              />
+              <input
+                type="text"
+                placeholder="Contato do responsável"
+                value={novoAluno.contatoResponsavel}
+                onChange={atualizarCampo('contatoResponsavel')}
+              />
+              <input
+                type="text"
+                placeholder="Endereço do aluno"
+                value={novoAluno.endereco}
+                onChange={atualizarCampo('endereco')}
+              />
+
+              <select
+                value={novoAluno.transporte}
+                onChange={atualizarCampo('transporte')}
+              >
+                <option value="">Identificação do transporte</option>
+                <option value="Linha 01 - Van 3">Linha 01 - Van 3</option>
+                <option value="Linha 02 - Ônibus 2">Linha 02 - Ônibus 2</option>
+                <option value="Linha 03 - Van 1">Linha 03 - Van 1</option>
+                <option value="Linha 04 - Ônibus 5">Linha 04 - Ônibus 5</option>
+                <option value="Linha 05 - Van 2">Linha 05 - Van 2</option>
+              </select>
+
+              <div className="boadd-unidade">
+                <p>Unidade:</p>
+                <label>
+                  <input
+                    type="radio"
+                    name="unidade"
+                    value="Garcia"
+                    checked={novoAluno.unidade === 'Garcia'}
+                    onChange={atualizarCampo('unidade')}
+                  />
+                  Garcia
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="unidade"
+                    value="Vila Mimosa"
+                    checked={novoAluno.unidade === 'Vila Mimosa'}
+                    onChange={atualizarCampo('unidade')}
+                  />
+                  Mimosa
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="unidade"
+                    value="Swiss Park"
+                    checked={novoAluno.unidade === 'Swiss Park'}
+                    onChange={atualizarCampo('unidade')}
+                  />
+                  Swiss Park
+                </label>
+              </div>
+
+              <button type="submit" className="boadd-confirmar">
+                Confirmar alterações
+              </button>
+              <button type="button" className="boadd-cancelar" onClick={fecharAdicionar}>
+                Cancelar
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Lista dos Alunos/Cadastros */}
       <div className="cadastros">
@@ -113,7 +243,7 @@ function GerenciarAlunos() {
               {alunoAberto === aluno.id && (
                 <div className="aluno-detalhes">
                   <div className="aluno-card-top">
-                    <div className="aluno-foto" aria-hidden="true" />
+                  <div className="aluno-foto" />
                     <div className="aluno-info">
                       <p><strong>RM:</strong> {aluno.rm}</p>
                       <p><strong>Unidade:</strong> {aluno.unidade}</p>
@@ -126,7 +256,7 @@ function GerenciarAlunos() {
                     <p><strong>Endereco:</strong> {aluno.endereco}</p>
                   </div>
                   <div className="aluno-mapa">
-                    <div className="mapa-placeholder" aria-hidden="true" />
+                    <div className="mapa-placeholder" />
                   </div>
                 </div>
               )}
@@ -139,5 +269,3 @@ function GerenciarAlunos() {
 }
 
 export default GerenciarAlunos
-
-
