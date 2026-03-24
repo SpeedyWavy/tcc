@@ -1,0 +1,320 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* Botões Menores redondos */
+.ui-round{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(100px, 1fr));
+  gap: 24px;
+  justify-items: center;
+  align-items: center;
+  width: 90%;
+  max-width: 420px;
+  margin: 4dvh auto 0;
+  animation: fallIn 500ms ease-out 120ms forwards;
+  font-family: "Roboto", sans-serif;
+  
+  /* Botão de ALunos */
+  .ui-round1{
+    width: 100px;
+    height: 100px;
+    top: 284px;
+    left: 221px;
+    opacity: 1;
+    background: #001355;
+    color: #FFD400;
+    font-size: 17px;
+    /* font-family: Arial, Helvetica, sans-serif; */
+    font-weight: 900;
+    border-radius: 9999px;
+    box-shadow: 0px 5px 20px 1px #0B0C1161;
+
+
+
+    img{
+      height: 45px;
+      width: 45px;
+      margin-left: 25%;
+      margin-top: 15%;
+    }
+    p{
+      text-align: center;
+      margin-top: 0;
+    }
+  }
+
+  /* Botão de Motoristas */
+  .ui-round2{
+    width: 100px;
+    height: 100px;
+    top: 284px;
+    left: 221px;
+    opacity: 1;
+    background: #001355;
+    color: #FFD400;
+    font-size: 14px;
+    /* font-family: Arial, Helvetica, sans-serif; */
+    font-weight: 900;
+    border-radius: 9999px;
+    box-shadow: 0px 5px 20px 1px #0B0C1161;
+
+
+    img{
+      height: 45px;
+      width: 45px;
+      margin-left: 25%;
+      margin-top: 15%;
+    }
+    p{
+      text-align: center;
+    }
+  }
+}
+
+.ui-round-link{
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+/* Botão de Veiculos */
+.ui-round3{
+    width: 100px;
+    height: 100px;
+    top: 284px;
+    left: 221px;
+    opacity: 1;
+    background: #001355;
+    color: #FFD400;
+    font-size: 17px;
+    /* font-family: Arial, Helvetica, sans-serif; */
+    font-weight: 900;
+    border-radius: 9999px;
+    box-shadow: 0px 5px 20px 1px #0B0C1161;
+
+
+    img{
+      height: 45px;
+      width: 45px;
+      margin-left: 25%;
+      margin-top: 15%;
+    }
+    p{
+      text-align: center;
+    }
+  }
+
+.ui-rounds{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(1px, 1fr));
+  gap: 24px;
+  justify-items: center;
+  align-items: center;
+  width: 50%;
+  max-width: 420px;
+  margin: 2dvh auto 0;
+  animation: fallIn 500ms ease-out 120ms forwards;
+  font-family: "Roboto", sans-serif;
+  
+  }
+
+  /* Botão de Revisão */
+.ui-round4{
+    width: 100px;
+    height: 100px;
+    top: 284px;
+    left: 221px;
+    opacity: 1;
+    background: #001355;
+    color: #FFD400;
+    font-size: 17px;
+    /* font-family: Arial, Helvetica, sans-serif; */
+    font-weight: 900;
+    border-radius: 9999px;
+    box-shadow: 0px 5px 20px 1px #0B0C1161;
+
+
+    img{
+      height: 45px;
+      width: 45px;
+      margin-left: 25%;
+      margin-top: 15%;
+    }
+    p{
+      text-align: center;
+    }
+  }
+
+  /* Botão de Rotas */
+.ui-round5{
+    width: 100px;
+    height: 100px;
+    top: 284px;
+    left: 221px;
+    opacity: 1;
+    background: #001355;
+    color: #FFD400;
+    font-size: 17px;
+    /* font-family: Arial, Helvetica, sans-serif; */
+    font-weight: 900;
+    border-radius: 9999px;
+    box-shadow: 0px 5px 20px 1px #0B0C1161;
+
+
+    img{
+      height: 45px;
+      width: 45px;
+      margin-left: 25%;
+      margin-top: 15%;
+    }
+    p{
+      text-align: center;
+    }
+  }
+
+
+/* Botões Maiores*/
+.ui-button1{
+  width: 60%;
+  height: 9dvh;
+  background: #001355;
+  margin-left: 20%;
+  margin-top: 7dvh;
+  justify-content: center;
+  display: flex;
+  box-shadow: 0px 0px 10px 1px #0B0C11A6;
+  border-radius: 150px;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  opacity: 0;
+  animation: fallIn 700ms ease-out 120ms forwards;
+
+  a{
+    text-decoration: none;
+    color: #fff;
+    font-size: 20px;
+  }
+
+}
+
+.ui-button2{
+  width: 60%;
+  height: 9dvh;
+  background: #001355;
+  margin-left: 20%;
+  margin-top: 3dvh;
+  border-radius: 150px;
+  opacity: 0;
+  justify-content: center;
+  display: flex;
+  animation: fallIn 700ms ease-out 220ms forwards;
+  
+
+  button{
+    text-align: center;
+    width: 100%;
+    height: 9dvh;
+    border-radius: 150px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    box-shadow: 0px 0px 10px 1px #0B0C11A6;
+
+  }
+
+  a{
+    text-decoration: none;
+    color: #fff;
+  }
+
+}
+
+.ui-button3{
+  width: 60%;
+  height: 9dvh;
+  background: #001355;
+  margin-left: 20%;
+  margin-top: 3dvh;
+  border-radius: 150px;
+  opacity: 0;
+  animation: fallIn 700ms ease-out 340ms forwards;
+  justify-content: center;
+  display: flex;
+  box-shadow: 0px 0px 10px 1px #0B0C11A6;
+
+
+  button{
+    text-align: center;
+    width: 100%;
+    height: 9dvh;
+    border-radius: 150px;
+    background: none;
+    border: none;
+    font-size: 20px;
+  }
+
+  a{
+    text-decoration: none;
+    color: #fff;
+  }
+}
+.ui-button4{
+  width: 60%;
+  height: 9dvh;
+  background: #001355;
+  margin-left: 20%;
+  margin-top: 3dvh;
+  border-radius: 150px;
+  opacity: 0;
+  animation: fallIn 700ms ease-out 340ms forwards;
+  justify-content: center;
+  display: flex;
+  box-shadow: 0px 0px 10px 1px #0B0C11A6;
+
+
+  button{
+    text-align: center;
+    width: 100%;
+    height: 9dvh;
+    border-radius: 150px;
+    background: none;
+    border: none;
+    font-size: 20px;
+  }
+
+  a{
+    text-decoration: none;
+    color: #fff;
+  }
+}
+
+.ui-button1 a,
+.ui-button2 a,
+.ui-button3 a,
+.ui-button4 a{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.ui-button4 a{
+  justify-content: flex-start;
+  padding: 0 1.6rem;
+}
+
+.ui-button4 a svg{
+  margin-right: auto;
+}
+
+@keyframes fallIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

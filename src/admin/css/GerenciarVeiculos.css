@@ -1,0 +1,16 @@
+.voltar{
+    float: left;
+    margin-left: 7%;
+    margin-top: 5%;
+
+    a{
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        text-decoration: none;
+        font-size: large;
+        color: #000000;
+        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    }
+}
+
