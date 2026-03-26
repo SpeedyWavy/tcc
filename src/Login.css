@@ -9,6 +9,7 @@ h1{
     font-size: 45px;
     line-height: 100%;
     letter-spacing: 0%;
+    animation: fallIn 870ms ease-out forwards;
 }
 
 .login-logo{
@@ -24,6 +25,7 @@ h1{
     display: block;
     margin-left: 32%;
     margin-top: 10%;
+    animation: fallIn 890ms ease-out forwards;
 }
 
 .opcoes{
@@ -32,6 +34,7 @@ h1{
     margin-left: 10%;
     margin-top: 10%;
     font-family: "Inter", sans-serif;
+    animation: fallIn 1000ms ease-out forwards;
 
     input{
         height: 53px;
@@ -67,6 +70,7 @@ h1{
     color: #FFD400;
     margin-left: 20%;
     margin-top: 20%;
+    animation: fallIn 1320ms ease-out forwards;
 
     h2{
         float: left;

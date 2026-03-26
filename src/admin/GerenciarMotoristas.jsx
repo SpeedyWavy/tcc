@@ -131,8 +131,8 @@ function GerenciarMotoristas() {
       <div className="voltar"><a href="/app"><CornerDownLeft /> Voltar</a></div>
       <div className="adicionar">
         <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
-          <CirclePlus />
-          Adicionar
+          <CirclePlus id='icone-botao'/>
+          Cadastrar Motorista
         </button>
       </div>
 

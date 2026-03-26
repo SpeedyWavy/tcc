@@ -2,6 +2,7 @@
     float: left;
     margin-left: 7%;
     margin-top: 5%;
+    margin-right: 50%;
 
     a{
         display: inline-flex;
@@ -18,6 +19,7 @@
 
 .adicionar{
   width: 100%;
+  height: 5dvh;
   padding: 2dvh 5% 0;
   box-sizing: border-box;
 }
@@ -34,7 +36,7 @@
   cursor: pointer;
   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   box-shadow: 3px 3px 0px #0000005c;
-  margin-left: 35%;
+  margin-left: 10%;
   float: left;
   margin-top: 3%;
   transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
