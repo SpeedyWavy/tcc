@@ -12,14 +12,15 @@ import rotas from '../assets/rotas.png'
 function App() {
   return (
     <>
-      <div className="ui-header">
+      {/* Header principal */}
+      <div className="ui-header ui-header--compact">
         <div className="logo">
         </div>
         <div className="usuario">
           <img src={user} alt={user} />
           <p>Usuario</p>
         </div>
-        <div className="ui-header-extra"></div>
+        <div className="ui-header-extra ui-header-extra--compact"></div>
       </div>
 
       {/* Botões Menores Redondos */}

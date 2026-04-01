@@ -1,33 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
 
-/* Botão para Voltar */
-.voltar{
-    float: left;
-    margin-left: 7%;
-    margin-top: 5%;
-
-    a{
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        text-decoration: none;
-        font-size: large;
-        color: #000000;
-        font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-        transition: transform 180ms ease, color 180ms ease;
-    }
-}
-
-.voltar a:hover{
-    transform: translateX(-3px);
-    color: #2f3558;
-}
-
-.voltar a:active{
-    transform: translateX(-1px);
-}
-
-
 /* Botão pra adicionar */
 .adicionar{
   width: 100%;
@@ -84,19 +56,56 @@
     box-sizing: border-box;
 }
 
+/* Input de pesquisa */
 .filtro{
     justify-self: end;
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    width: min(100%, 320px);
+    width: min(100%, 560px);
     margin: 0;
     height: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 
+}
+
+.filtro-input-wrap{
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+
+.filtro-icon{
+    position: absolute;
+    left: 12px;
+    width: 18px;
+    height: 21px;
+    width: 21px;
+    color: #30418E;
 }
 
 .filtro .icone-filtro{
     flex-shrink: 0;
+}
+.busca-filtro{
+    font-family: "Inter", sans-serif;
+    width: auto;
+    font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+    color: #2f3558;
+    white-space: nowrap;
+    font-size: 20px;
+    font-weight: 300;
+}
+
+/* Icone do titulo do header */
+.ui-header-extra-icon{
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
 }
 
 .filtro-input{
@@ -104,9 +113,15 @@
     height: 5dvh;
     border-radius: 15px;
     border: none;
-    box-shadow: 5px 3px 0px #000000a9;
-    padding: 0 14px;
+    box-shadow: 3px 3px 0px #000000a9;
+    padding: 0 14px 0 40px;
     transition: transform 180ms ease, box-shadow 180ms ease;
+    background: #0013554D;
+    color: #30418E;
+    font-size: 20px;
+    font-weight: 300;
+    font-family: "Inter" sans-serif;
+    text-indent: 30px;
 }
 
 .filtro-input:hover{
@@ -120,6 +135,7 @@
     box-shadow: 6px 4px 0px #000000a9;
 }
 
+/* Area onde os dados dos motoristas aparecem */
 .motoristas-grid{
     width: 100%;
     display: grid;
@@ -229,34 +245,13 @@
     gap: 4px;
 }
 
+/* Animações para os primeiros 5 motoristas carregarem bonitinho */
 .motorista1{ animation: fallIn 700ms ease-out 220ms forwards; }
 .motorista2{ animation: fallIn 700ms ease-out 340ms forwards; }
 .motorista3{ animation: fallIn 700ms ease-out 460ms forwards; }
 .motorista4{ animation: fallIn 700ms ease-out 580ms forwards; }
 .motorista5{ animation: fallIn 700ms ease-out 700ms forwards; }
 
-/* Keyframes */
-@keyframes fallIn {
-  0% {
-    opacity: 0;
-    transform: translateY(-40px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes expandInfo {
-  0% {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 /* formulario de adicionar */
 .boadd-overlay{
@@ -400,6 +395,30 @@
     border-radius: 14px;
 }
 
+
+/* Keyframes */
+@keyframes fallIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expandInfo {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes popIn {
   0% {
     opacity: 0;
@@ -410,4 +429,3 @@
     transform: translateY(0) scale(1);
   }
 }
-

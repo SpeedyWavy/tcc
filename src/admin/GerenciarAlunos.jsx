@@ -2,10 +2,13 @@ import { useState } from 'react'
 import './css/GerenciarAlunos.css'
 import user from '../assets/place-user.png'
 import student2 from '../assets/student2.png'
-import { CornerDownLeft, CirclePlus } from 'lucide-react'
+import student3 from '../assets/student3.png'
+import { ArrowLeft, CirclePlus, Users, Search } from 'lucide-react'
 import { ArrowDownNarrowWide } from 'lucide-react'
 
 function GerenciarAlunos() {
+
+  // Informações do banco de dados (linkar o banco de dados aq)
   const [alunoAberto, setAlunoAberto] = useState(null)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [novoAluno, setNovoAluno] = useState({
@@ -18,6 +21,7 @@ function GerenciarAlunos() {
     unidade: 'Garcia',
   })
 
+  // informações so pra aparecer os elementos na tela enqnt n tem banco de dados
   const alunos = [
     {
       id: 1,
@@ -94,16 +98,26 @@ function GerenciarAlunos() {
 
   return (
     <>
+      {/* Header principal */}
       <div className="ui-header">
         <div className="logo"></div>
         <div className="usuario">
           <img src={user} alt={user} />
           <p>Usuario</p>
         </div>
-        <div className="ui-header-extra"></div>
+        <div className="ui-header-extra">
+          <a className="ui-back" href="/app" aria-label="Voltar para o painel">
+            <ArrowLeft />
+          </a>
+          <div className="ui-header-extra-title">
+            {/* Icone do titulo */}
+            <img src={student3} alt={student3} className="ui-header-extra-icon" />
+            <span>Alunos</span>
+          </div>
+        </div>
       </div>
-      <div className="voltar"><a href="/app"> <CornerDownLeft />   Voltar</a></div>
 
+      {/* Ações principais */}
       <div className="adicionar">
         <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
           <CirclePlus id='icone-botao'/>
@@ -111,7 +125,7 @@ function GerenciarAlunos() {
         </button>
       </div>
 
-      {/* pop-up do formulario ao apertar Adicionar */}
+      {/* Pop-up do formulario */}
       {formularioAberto && (
         <div className="boadd-overlay" onClick={fecharAdicionar}>
           <div
@@ -213,9 +227,16 @@ function GerenciarAlunos() {
         </div>
       )}
 
-      {/* Lista dos Alunos/Cadastros */}
+      {/* Lista de alunos */}
       <div className="cadastros">
-        <div className="filtro"> <input type="text" placeholder='Pesquisar' /> <ArrowDownNarrowWide className="icone-filtro" /> </div>
+        <div className="filtro">
+          <div className="filtro-input-wrap">
+            <Search className="filtro-icon" />
+            <input type="text" placeholder="Buscar aluno" className="filtro-input" />
+          </div>
+          <ArrowDownNarrowWide className="icone-filtro" />
+          <p className="busca-filtro">Filtrar Por</p>
+        </div>
         <div className="alunos-grid">
           {alunos.map((aluno) => (
             <div key={aluno.id} className="aluno-item">
@@ -236,7 +257,7 @@ function GerenciarAlunos() {
                 <p className='pontinhos'>&#8801;</p>
               </div>
 
-                {/* Informações ao Apertar para abrir */}
+                {/* informações ao apertar pra  abrir */}
               {alunoAberto === aluno.id && (
                 <div className="aluno-detalhes">
                   <div className="aluno-card-top">

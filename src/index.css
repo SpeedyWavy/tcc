@@ -23,6 +23,12 @@ body{
   align-items: flex-end;
   justify-content: space-between;
   padding: 0 5% calc(2.5dvh + 14px);
+  margin-bottom: 48px;
+}
+
+.ui-header--compact{
+  padding: 0 5% calc(2.5dvh + 14px);
+  margin-bottom: 12px;
 }
 
 .logo{
@@ -76,12 +82,65 @@ body{
 .ui-header-extra{
   background: #FFD400;
   width: 100%;
-  height: 12px;
+  height: 48px;
   position: absolute;
   left: 0;
-  bottom: 0;
+  bottom: -48px;
   box-shadow: 0px 5px 20px 1px #0B0C1161;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 5%;
+  box-sizing: border-box;
 
+}
+
+.ui-header-extra--compact{
+  height: 12px;
+  padding: 0;
+  gap: 0;
+  bottom: -12px;
+}
+
+.ui-header-extra--compact > *{
+  display: none;
+}
+
+.ui-back{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: #001355;
+  text-decoration: none;
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.ui-back:hover{
+  transform: translateX(-2px);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.ui-back:active{
+  transform: translateX(-1px);
+}
+
+.ui-header-extra-title{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Inter", Arial, "Helvetica Neue", Helvetica, sans-serif;
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #001355;
+  letter-spacing: 0.2px;
+}
+
+.ui-header-extra-title svg{
+  width: 28px;
+  height: 28px;
 }
 
 /* Header apenas da pagina de login */

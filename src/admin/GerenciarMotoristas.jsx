@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import './css/GerenciarMotoristas.css'
 import user from '../assets/place-user.png'
-import motorista2 from '../assets/motorista2.png'
-import { CornerDownLeft, ArrowDownNarrowWide, CirclePlus } from 'lucide-react'
+import motorista3 from '../assets/motorista3.png'
+import { ArrowLeft, ArrowDownNarrowWide, CirclePlus, Users, Search } from 'lucide-react'
 
 
 function GerenciarMotoristas() {
+
+  // Informações do banco de dados (linkar o banco de dados aq)
   const [motoristaAberto, setMotoristaAberto] = useState(null)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [passoCadastro, setPassoCadastro] = useState(1)
@@ -25,6 +27,7 @@ function GerenciarMotoristas() {
     confirmarSenha: '',
   })
 
+  // informações so pra aparecer os elementos na tela enqnt n tem banco de dados
   const motoristas = [
     {
       id: 1,
@@ -81,6 +84,39 @@ function GerenciarMotoristas() {
       horarios: '06:30 - 7:20, 11:45 - 14:00',
       unidade: 'Unidade Mimosa',
     },
+    {
+      id: 6,
+      nome: 'Motorista 6',
+      cpf: '000.000.000-05',
+      rg: '56.789.123-4',
+      cnh: 'B',
+      identificacaoTransporte: 'Linha 05 - Van 2',
+      contato: '(19) 90000-0005',
+      horarios: '06:30 - 7:20, 11:45 - 14:00',
+      unidade: 'Unidade Mimosa',
+    },
+    {
+      id: 7,
+      nome: 'Motorista 7',
+      cpf: '000.000.000-05',
+      rg: '56.789.123-4',
+      cnh: 'B',
+      identificacaoTransporte: 'Linha 05 - Van 2',
+      contato: '(19) 90000-0005',
+      horarios: '06:30 - 7:20, 11:45 - 14:00',
+      unidade: 'Unidade Mimosa',
+    },
+    {
+      id: 8,
+      nome: 'Motorista 8',
+      cpf: '000.000.000-05',
+      rg: '56.789.123-4',
+      cnh: 'B',
+      identificacaoTransporte: 'Linha 05 - Van 2',
+      contato: '(19) 90000-0005',
+      horarios: '06:30 - 7:20, 11:45 - 14:00',
+      unidade: 'Unidade Mimosa',
+    },
   ]
 
   const alternarMotorista = (id) => {
@@ -120,15 +156,25 @@ function GerenciarMotoristas() {
 
   return (
     <>
+      {/* Header principal */}
       <div className="ui-header">
         <div className="logo"></div>
         <div className="usuario">
           <img src={user} alt="Usuario" />
           <p>Usuario</p>
         </div>
-        <div className="ui-header-extra"></div>
+        <div className="ui-header-extra">
+          <a className="ui-back" href="/app" aria-label="Voltar para o painel">
+            <ArrowLeft />
+          </a>
+          <div className="ui-header-extra-title">
+            {/* Icone do titulo */}
+            <img src={motorista3} alt={motorista3} className="ui-header-extra-icon" />
+            <span>Motoristas</span>
+          </div>
+        </div>
       </div>
-      <div className="voltar"><a href="/app"><CornerDownLeft /> Voltar</a></div>
+      {/* Acoes principais */}
       <div className="adicionar">
         <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
           <CirclePlus id='icone-botao'/>
@@ -136,7 +182,7 @@ function GerenciarMotoristas() {
         </button>
       </div>
 
-      {/* Formulario pop-up ao apertar para adicionar */}
+      {/* Formulario pop-up */}
       {formularioAberto && (
         <div className="boadd-overlay" onClick={fecharAdicionar}>
           <div
@@ -293,11 +339,14 @@ function GerenciarMotoristas() {
       )}
 
 
-      {/* Lista dos Motoristas */}
+      {/* Lista de motoristas */}
       <div className="cadastros">
         <div className="filtro">
-          <input type="text" placeholder="Pesquisar" className="filtro-input" />
-          <ArrowDownNarrowWide className="icone-filtro" />
+          <div className="filtro-input-wrap">
+            <Search className="filtro-icon" />
+            <input type="text" placeholder="Buscar motorista" className="filtro-input" />
+          </div>
+          <ArrowDownNarrowWide className="icone-filtro" /><p className='busca-filtro'>Filtrar Por</p>
         </div>
         
 

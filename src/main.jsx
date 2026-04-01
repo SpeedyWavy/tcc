@@ -8,6 +8,7 @@ import GerenciarVeiculos from './admin/GerenciarVeiculos.jsx'
 import Login from './Login.jsx'
 
 const pathname = window.location.pathname.toLowerCase()
+// Seleciona a pagina com base na rota atual
 const CurrentPage = pathname === '/gerenciar-alunos'
   ? GerenciarAlunos
   : pathname === '/gerenciar-motoristas'
@@ -25,6 +26,7 @@ if (!rootEl) {
 
 createRoot(rootEl).render(
   <StrictMode>
+    {/* Renderizacao da pagina escolhida */}
     <CurrentPage />
   </StrictMode>,
 )

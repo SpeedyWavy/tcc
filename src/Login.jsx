@@ -5,10 +5,13 @@ function Login() {
   return (
     <>
       <main>
+        {/* Barras superiores */}
         <div className="ui-header1"></div>
         <div className="ui-header2"></div>
+        {/* Marca do sistema */}
         <div className="login-logo"></div>
         <h1>Bem Vindo</h1>
+        {/* Campos de acesso */}
         <div className="opcoes">
           <p>Insira seu Email</p>
           <input type="text" placeholder='Email'/>
@@ -16,13 +19,16 @@ function Login() {
           <input type="text" placeholder='Senha'/>
         </div>
 
+        {/* Botao principal */}
         <div className="entrar">
           <h2>Entrar</h2>
         </div>
 
+        {/* Rodape visual */}
         <div className="ui-footer"></div>
         <div className="ui-footer1"></div>
 
+        {/* Opcoes de acesso */}
         <div className="icones">
             <div className="continue">
             <div className="linha"></div>
