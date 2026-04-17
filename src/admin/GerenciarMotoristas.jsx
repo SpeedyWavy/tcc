@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import './css/GerenciarMotoristas.css'
-import user from '../assets/place-user.png'
+import motorista2 from '../assets/motorista2.png'
 import motorista3 from '../assets/motorista3.png'
-import { ArrowLeft, ArrowDownNarrowWide, CirclePlus, Users, Search } from 'lucide-react'
+import { ArrowLeft, ArrowDownNarrowWide, CirclePlus, Users, Search, ChevronDown, ChevronRight } from 'lucide-react'
+import UserMenu from './components/UserMenu.jsx'
 
 
 function GerenciarMotoristas() {
@@ -159,10 +160,7 @@ function GerenciarMotoristas() {
       {/* Header principal */}
       <div className="ui-header">
         <div className="logo"></div>
-        <div className="usuario">
-          <img src={user} alt="Usuario" />
-          <p>Usuario</p>
-        </div>
+        <UserMenu />
         <div className="ui-header-extra">
           <a className="ui-back" href="/app" aria-label="Voltar para o painel">
             <ArrowLeft />
@@ -365,7 +363,11 @@ function GerenciarMotoristas() {
                   }
                 }}
               >
-                <p className="setinha">{motoristaAberto === motorista.id ? 'v' : '>'}</p>
+                {motoristaAberto === motorista.id ? (
+                  <ChevronDown className="setinha" />
+                ) : (
+                  <ChevronRight className="setinha" />
+                )}
                 <h1>{motorista.nome}</h1>
                 <p className="pontinhos">&#8801;</p>
               </div>

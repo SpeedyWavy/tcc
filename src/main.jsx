@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './admin/App.jsx'
+import GerenciarAdministradores from './admin/GerenciarAdministradores.jsx'
 import GerenciarAlunos from './admin/GerenciarAlunos.jsx'
 import GerenciarMotoristas from './admin/GerenciarMotoristas.jsx'
 import GerenciarVeiculos from './admin/GerenciarVeiculos.jsx'
@@ -15,6 +16,8 @@ const CurrentPage = pathname === '/gerenciar-alunos'
     ? GerenciarMotoristas
     : pathname === '/gerenciar-veiculos'
       ? GerenciarVeiculos
+    : pathname === '/gerenciar-administradores'
+      ? GerenciarAdministradores
     : pathname === '/app'
       ? App
       : Login

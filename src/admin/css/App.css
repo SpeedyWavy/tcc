@@ -174,15 +174,15 @@
 
 /* Botões Maiores*/
 .ui-button1{
-  width: 60%;
+  width: 70%;
   height: 9dvh;
   background: #001355;
-  margin-left: 20%;
+  margin-left: 15%;
   margin-top: 7dvh;
   justify-content: center;
   display: flex;
   box-shadow: 0px 0px 10px 1px #0B0C11A6;
-  border-radius: 150px;
+  border-radius: 25px;
   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   opacity: 0;
   animation: fallIn 700ms ease-out 120ms forwards;
@@ -196,12 +196,12 @@
 }
 
 .ui-button2{
-  width: 60%;
+  width: 70%;
   height: 9dvh;
   background: #001355;
-  margin-left: 20%;
+  margin-left: 15%;
   margin-top: 3dvh;
-  border-radius: 150px;
+  border-radius: 25px;
   opacity: 0;
   justify-content: center;
   display: flex;
@@ -228,12 +228,12 @@
 }
 
 .ui-button3{
-  width: 60%;
+  width: 70%;
   height: 9dvh;
   background: #001355;
-  margin-left: 20%;
+  margin-left: 15%;
   margin-top: 3dvh;
-  border-radius: 150px;
+  border-radius: 25px;
   opacity: 0;
   animation: fallIn 700ms ease-out 340ms forwards;
   justify-content: center;
@@ -257,12 +257,12 @@
   }
 }
 .ui-button4{
-  width: 60%;
+  width: 70%;
   height: 9dvh;
   background: #001355;
-  margin-left: 20%;
+  margin-left: 15%;
   margin-top: 3dvh;
-  border-radius: 150px;
+  border-radius: 25px;
   opacity: 0;
   animation: fallIn 700ms ease-out 340ms forwards;
   justify-content: center;

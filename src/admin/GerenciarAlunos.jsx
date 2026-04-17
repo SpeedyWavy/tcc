@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import './css/GerenciarAlunos.css'
-import user from '../assets/place-user.png'
 import student2 from '../assets/student2.png'
 import student3 from '../assets/student3.png'
-import { ArrowLeft, CirclePlus, Users, Search } from 'lucide-react'
+import { ArrowLeft, CirclePlus, Users, Search, ChevronDown, ChevronRight } from 'lucide-react'
 import { ArrowDownNarrowWide } from 'lucide-react'
+import UserMenu from './components/UserMenu.jsx'
 
 function GerenciarAlunos() {
 
@@ -101,10 +101,7 @@ function GerenciarAlunos() {
       {/* Header principal */}
       <div className="ui-header">
         <div className="logo"></div>
-        <div className="usuario">
-          <img src={user} alt={user} />
-          <p>Usuario</p>
-        </div>
+        <UserMenu />
         <div className="ui-header-extra">
           <a className="ui-back" href="/app" aria-label="Voltar para o painel">
             <ArrowLeft />
@@ -217,7 +214,7 @@ function GerenciarAlunos() {
               </div>
 
               <button type="submit" className="boadd-confirmar">
-                Confirmar alterações
+                Criar Cadastro
               </button>
               <button type="button" className="boadd-cancelar" onClick={fecharAdicionar}>
                 Cancelar
@@ -252,7 +249,11 @@ function GerenciarAlunos() {
                   }
                 }}
               >
-                <p className='setinha'>{alunoAberto === aluno.id ? 'v' : '>'}</p>
+                {alunoAberto === aluno.id ? (
+                  <ChevronDown className='setinha' />
+                ) : (
+                  <ChevronRight className='setinha' />
+                )}
                 <h1>{aluno.nome}</h1>
                 <p className='pontinhos'>&#8801;</p>
               </div>

@@ -1,5 +1,4 @@
 import './css/App.css'
-import user from '../assets/place-user.png'
 import { CirclePlus } from 'lucide-react'
 import { Bus } from 'lucide-react';
 import { Users } from 'lucide-react';
@@ -8,6 +7,7 @@ import moto from '../assets/motorista.png'
 import veiculo from '../assets/veiculo.png'
 import revisao from '../assets/revisao.png'
 import rotas from '../assets/rotas.png'
+import UserMenu from './components/UserMenu.jsx'
 
 function App() {
   return (
@@ -16,10 +16,7 @@ function App() {
       <div className="ui-header ui-header--compact">
         <div className="logo">
         </div>
-        <div className="usuario">
-          <img src={user} alt={user} />
-          <p>Usuario</p>
-        </div>
+        <UserMenu />
         <div className="ui-header-extra ui-header-extra--compact"></div>
       </div>
 
@@ -40,10 +37,12 @@ function App() {
           </div>
         </a>
 
-        <div className="ui-round3">
-          <img src={veiculo} alt={veiculo} />
-          <p>Veiculos</p>
-        </div>
+        <a href="/gerenciar-veiculos" className="ui-round-link">
+          <div className="ui-round3">
+            <img src={veiculo} alt={veiculo} />
+            <p>Veiculos</p>
+          </div>
+        </a>
         </div>
 
         <div className="ui-rounds">

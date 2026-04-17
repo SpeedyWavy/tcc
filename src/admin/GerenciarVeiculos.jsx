@@ -1,76 +1,77 @@
-import './css/GerenciarVeiculos.css'
 import { useState } from 'react'
-import user from '../assets/place-user.png'
-import { ArrowLeft, Bus, CirclePlus } from 'lucide-react'
-
-
-  
+import './css/GerenciarVeiculos.css'
+import { ArrowLeft, ArrowDownNarrowWide, Bus, CirclePlus, Search, ChevronRight, ChevronDown } from 'lucide-react'
+import UserMenu from './components/UserMenu.jsx'
 
 function GerenciarVeiculos() {
-  // Constantes 
-  const [VeiculoAberto, setVeiculoAberto] = useState(null)
+  const [veiculoAberto, setVeiculoAberto] = useState(null)
   const [formularioAberto, setFormularioAberto] = useState(false)
-  // Constante do banco de dados
   const [novoVeiculo, setNovoVeiculo] = useState({
-    nome: '',
-    rm: '',
-    responsavel: '',
-    contatoResponsavel: '',
-    endereco: '',
-    transporte: '',
+    placa: '',
+    identificacao: '',
+    motoristaResp: '',
+    capacidadeTotal: '',
+    passageirosAtual: '',
+    ultimaRevisao: '',
+    observacaoRevisao: '',
     unidade: 'Garcia',
   })
 
   const veiculos = [
     {
       id: 1,
-      nome: 'Aluno 1',
-      rm: '37441',
+      nome: 'Veiculo 01',
+      placa: 'ABC-1D23',
+      identificacao: 'Linha 01 - Van 3',
+      capacidadeTotal: '15 passageiros',
+      passageirosAtual: '11 passageiros',
+      ultimaRevisao: '10/04/2026',
+      observacaoRevisao: 'Troca de oleo e verificacao dos freios.',
       unidade: 'Unidade Garcia',
-      identificacaoTransporte: 'Linha 01 - Van 3',
-      responsavel: 'Responsavel 1',
-      contatoResponsavel: '(19) 99999-0001',
-      endereco: 'Rua Barata Ribeiro, Cambui, Campinas - SP',
     },
     {
       id: 2,
-      nome: 'Aluno 2',
-      rm: '27051',
+      nome: 'Veiculo 02',
+      placa: 'EFG-4H56',
+      identificacao: 'Linha 02 - Onibus 2',
+      capacidadeTotal: '42 passageiros',
+      passageirosAtual: '36 passageiros',
+      ultimaRevisao: '03/04/2026',
+      observacaoRevisao: 'Revisao preventiva concluida sem pendencias.',
       unidade: 'Unidade Garcia',
-      identificacaoTransporte: 'Linha 02 - Ônibus 2',
-      responsavel: 'Responsavel 2',
-      contatoResponsavel: '(19) 99999-0002',
-      endereco: 'Avenida Francisco Glicerio, Centro, Campinas - SP',
     },
     {
       id: 3,
-      nome: 'Aluno 3',
-      rm: '38294',
+      nome: 'Veiculo 03',
+      placa: 'IJK-7L89',
+      identificacao: 'Linha 03 - Van 1',
+      capacidadeTotal: '15 passageiros',
+      passageirosAtual: '13 passageiros',
+      ultimaRevisao: '28/03/2026',
+      observacaoRevisao: 'Pneus traseiros substituidos.',
       unidade: 'Unidade Mimosa',
-      identificacaoTransporte: 'Linha 03 - Van 1',
-      responsavel: 'Responsavel 3',
-      contatoResponsavel: '(19) 99999-0003',
-      endereco: 'Rua Geraldo de Almeida Santos, Taquaral, Campinas - SP',
     },
     {
       id: 4,
-      nome: 'Aluno 4',
-      rm: '39212',
+      nome: 'Veiculo 04',
+      placa: 'MNO-1P23',
+      identificacao: 'Linha 04 - Onibus 5',
+      capacidadeTotal: '46 passageiros',
+      passageirosAtual: '40 passageiros',
+      ultimaRevisao: '15/03/2026',
+      observacaoRevisao: 'Necessario acompanhar desgaste das pastilhas.',
       unidade: 'Unidade Mimosa',
-      identificacaoTransporte: 'Linha 04 - Ônibus 5',
-      responsavel: 'Responsavel 4',
-      contatoResponsavel: '(19) 99999-0004',
-      endereco: 'Avenida John Boyd Dunlop, Jardim Aurelia, Campinas - SP',
     },
     {
       id: 5,
-      nome: 'Aluno 5',
-      rm: '37872',
+      nome: 'Veiculo 05',
+      placa: 'QRS-4T56',
+      identificacao: 'Linha 05 - Van 2',
+      capacidadeTotal: '18 passageiros',
+      passageirosAtual: '14 passageiros',
+      ultimaRevisao: '08/04/2026',
+      observacaoRevisao: 'Ar-condicionado revisado e higienizado.',
       unidade: 'Unidade Swiss',
-      identificacaoTransporte: 'Linha 05 - Van 2',
-      responsavel: 'Responsavel 5',
-      contatoResponsavel: '(19) 99999-0005',
-      endereco: 'Rua Alberto Faria, Vila Itapura, Campinas - SP',
     },
   ]
 
@@ -87,7 +88,7 @@ function GerenciarVeiculos() {
   }
 
   const atualizarCampo = (campo) => (e) => {
-    setNovoAluno((atual) => ({ ...atual, [campo]: e.target.value }))
+    setNovoVeiculo((atual) => ({ ...atual, [campo]: e.target.value }))
   }
 
   const enviarNovoVeiculo = (e) => {
@@ -95,93 +96,73 @@ function GerenciarVeiculos() {
     fecharAdicionar()
   }
 
-
   return (
     <>
       <div className="ui-header">
-              <div className="logo"></div>
-              <div className="usuario">
-                {/* <h1>Usuario</h1> */}
-                <img src={user} alt={user} />
-                <p>Usuario</p>
-              </div>
-              <div className="ui-header-extra">
-                <a className="ui-back" href="/app" aria-label="Voltar para o painel">
-                  <ArrowLeft />
-                </a>
-                <div className="ui-header-extra-title">
-                  <Bus />
-                  <span>Veiculos</span>
-                </div>
-              </div>
-            </div>
-      
-            <div className="adicionar">
-              <button type="button" className="adicionar-botao">
-                <CirclePlus id='icone-botao'/>
-                Cadastrar Veiculo
-              </button>
-            </div>
+        <div className="logo"></div>
+        <UserMenu />
+        <div className="ui-header-extra">
+          <a className="ui-back" href="/app" aria-label="Voltar para o painel">
+            <ArrowLeft />
+          </a>
+          <div className="ui-header-extra-title">
+            <Bus />
+            <span>Veiculos</span>
+          </div>
+        </div>
+      </div>
 
-            {/* pop-up do formulario ao apertar Adicionar */}
+      <div className="adicionar">
+        <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
+          <CirclePlus id="icone-botao" />
+          Cadastrar Veiculo
+        </button>
+      </div>
+
       {formularioAberto && (
         <div className="boadd-overlay" onClick={fecharAdicionar}>
           <div
             className="boadd-card"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="boadd-top">
-              <div className="boadd-avatar">
-                <img src={student2} alt="" />
-              </div>
-            </div>
+            <div className="boadd-top"></div>
 
-            <form className="boadd-form" onSubmit={enviarNovoAluno}>
+            <form className="boadd-form" onSubmit={enviarNovoVeiculo}>
+              <p className="boadd-label">Placa</p>
               <input
                 type="text"
-                placeholder="Digite o nome do aluno"
-                value={novoVeiculo.nome}
-                onChange={atualizarCampo('nome')}
-              />
-              <input
-                type="text"
-                placeholder="Insira o RM do aluno"
-                value={novoVeiculo.rm}
-                onChange={atualizarCampo('rm')}
-              />
-              <input
-                type="text"
-                placeholder="Nome do responsável"
-                value={novoVeiculo.responsavel}
-                onChange={atualizarCampo('responsavel')}
-              />
-              <input
-                type="text"
-                placeholder="Contato do responsável"
-                value={novoVeiculo.contatoResponsavel}
-                onChange={atualizarCampo('contatoResponsavel')}
-              />
-              <input
-                type="text"
-                placeholder="Endereço do aluno"
-                value={novoVeiculo.endereco}
-                onChange={atualizarCampo('endereco')}
+                placeholder="Digite a placa do veiculo"
+                value={novoVeiculo.placa}
+                onChange={atualizarCampo('placa')}
               />
 
-              <select
-                value={novoVeiculo.transporte}
-                onChange={atualizarCampo('transporte')}
-              >
-                <option value="">Identificação do transporte</option>
-                <option value="Linha 01 - Van 3">Linha 01 - Van 3</option>
-                <option value="Linha 02 - Ônibus 2">Linha 02 - Ônibus 2</option>
-                <option value="Linha 03 - Van 1">Linha 03 - Van 1</option>
-                <option value="Linha 04 - Ônibus 5">Linha 04 - Ônibus 5</option>
-                <option value="Linha 05 - Van 2">Linha 05 - Van 2</option>
-              </select>
+              <p className="boadd-label">Identificacao</p>
+              <input
+                type="text"
+                placeholder="Numero de identificacao do veiculo"
+                value={novoVeiculo.identificacao}
+                onChange={atualizarCampo('identificacao')}
+              />
 
+              <p className="boadd-label">Motorista</p>
+              <input
+                type="text"
+                placeholder="Motorista responsavel"
+                value={novoVeiculo.motoristaResp}
+                onChange={atualizarCampo('motoristaResp')}
+              />
+
+              <p className="boadd-label">Capacidade</p>
+              <input
+                type="text"
+                placeholder="Capacidade total"
+                value={novoVeiculo.capacidadeTotal}
+                onChange={atualizarCampo('capacidadeTotal')}
+              />
+
+              <p className="boadd-label">Unidade de atuacão</p>
               <div className="boadd-unidade">
-                <p>Unidade:</p>
+                <p className="boadd-unidade-titulo">Unidade:</p>
                 <label>
                   <input
                     type="radio"
@@ -200,7 +181,7 @@ function GerenciarVeiculos() {
                     checked={novoVeiculo.unidade === 'Vila Mimosa'}
                     onChange={atualizarCampo('unidade')}
                   />
-                  Mimosa
+                  Vila Mimosa
                 </label>
                 <label>
                   <input
@@ -215,7 +196,7 @@ function GerenciarVeiculos() {
               </div>
 
               <button type="submit" className="boadd-confirmar">
-                Confirmar alterações
+                Criar Cadastro
               </button>
               <button type="button" className="boadd-cancelar" onClick={fecharAdicionar}>
                 Cancelar
@@ -224,6 +205,58 @@ function GerenciarVeiculos() {
           </div>
         </div>
       )}
+
+      <div className="cadastros">
+        <div className="filtro">
+          <div className="filtro-input-wrap">
+            <Search className="filtro-icon" />
+            <input type="text" placeholder="Buscar veiculo" className="filtro-input" />
+          </div>
+          <ArrowDownNarrowWide className="icone-filtro" />
+          <p className="busca-filtro">Filtrar Por</p>
+        </div>
+
+        <div className="alunos-grid">
+          {veiculos.map((veiculo) => (
+            <div key={veiculo.id} className="aluno-item">
+              <div
+                className={`aluno aluno${veiculo.id} ${veiculoAberto === veiculo.id ? 'aberto' : ''}`}
+                onClick={() => alternarVeiculo(veiculo.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    alternarVeiculo(veiculo.id)
+                  }
+                }}
+              >
+                {veiculoAberto === veiculo.id ? (
+                  <ChevronDown className="setinha" />
+                ) : (
+                  <ChevronRight className="setinha" />
+                )}
+                <h1>{veiculo.nome}</h1>
+                <p className="pontinhos">&#8801;</p>
+              </div>
+
+              {veiculoAberto === veiculo.id && (
+                <div className="aluno-detalhes">
+                  <div className="aluno-info">
+                    <p><strong>Placa:</strong> {veiculo.placa}</p>
+                    <p><strong>Identificacao do Veiculo:</strong> {veiculo.identificacao}</p>
+                    <p><strong>Capacidade Total:</strong> {veiculo.capacidadeTotal}</p>
+                    <p><strong>Numero de Passageiros Atual:</strong> {veiculo.passageirosAtual}</p>
+                    <p><strong>Ultima Revisao:</strong> {veiculo.ultimaRevisao}</p>
+                    <p><strong>Observacao da Revisao:</strong> {veiculo.observacaoRevisao}</p>
+                    <p><strong>Unidade:</strong> {veiculo.unidade}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </>
   )
 }

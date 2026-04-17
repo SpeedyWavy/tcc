@@ -17,7 +17,7 @@ npm install lucide-react
 # Integrantes do grupo do TCC
 Lucas Brulezzi dos Santos - Frontend
 
-Davi Furlan Pereira - Backend  https://github.com/Furlan0130/TCCdef
+Davi Furlan Pereira - Backend
 
 Ana Clara Grigolon Dutra Rosa- Design
 
