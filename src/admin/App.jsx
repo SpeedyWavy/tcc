@@ -52,10 +52,12 @@ function App() {
           <p>Revisão</p>
         </div>
 
-        <div className="ui-round5">
-          <img src={rotas} alt={rotas} />
-          <p>Rotas</p>
-        </div>
+        <a href="/gerenciar-rotas" className="ui-round-link">
+          <div className="ui-round5">
+            <img src={rotas} alt={rotas} />
+            <p>Rotas</p>
+          </div>
+        </a>
         </div>
 
       {/* Botões Maiores */}

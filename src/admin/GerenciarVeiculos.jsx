@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowDownNarrowWide, Bus, CirclePlus, Search, ChevronRight, 
 import UserMenu from './components/UserMenu.jsx'
 
 function GerenciarVeiculos() {
+  // Informações do banco de dados (linkar o banco de dados aq)
   const [veiculoAberto, setVeiculoAberto] = useState(null)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [novoVeiculo, setNovoVeiculo] = useState({
@@ -17,6 +18,7 @@ function GerenciarVeiculos() {
     unidade: 'Garcia',
   })
 
+  // informações so pra aparecer os elementos na tela enqnt n tem banco de dados
   const veiculos = [
     {
       id: 1,
@@ -75,22 +77,27 @@ function GerenciarVeiculos() {
     },
   ]
 
+  // Abre e fecha o veiculo, garantindo que ao abrir um novo, o outro seja fechado
   const alternarVeiculo = (id) => {
     setVeiculoAberto((atual) => (atual === id ? null : id))
   }
 
+  // Abre o formulario para adicionar novo veiculo
   const abrirAdicionar = () => {
     setFormularioAberto(true)
   }
 
+  // Fecha o formulario
   const fecharAdicionar = () => {
     setFormularioAberto(false)
   }
 
+  // Atualiza cada campo do formulario
   const atualizarCampo = (campo) => (e) => {
     setNovoVeiculo((atual) => ({ ...atual, [campo]: e.target.value }))
   }
 
+  // Envia o novo veiculo (validar com backend)
   const enviarNovoVeiculo = (e) => {
     e.preventDefault()
     fecharAdicionar()
@@ -98,20 +105,24 @@ function GerenciarVeiculos() {
 
   return (
     <>
+      {/* Header principal */}
       <div className="ui-header">
         <div className="logo"></div>
         <UserMenu />
         <div className="ui-header-extra">
+          {/* Botão para voltar para app.jsx */}
           <a className="ui-back" href="/app" aria-label="Voltar para o painel">
             <ArrowLeft />
           </a>
           <div className="ui-header-extra-title">
+            {/* Icone do titulo */}
             <Bus />
             <span>Veiculos</span>
           </div>
         </div>
       </div>
 
+      {/* Ações principais */}
       <div className="adicionar">
         <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
           <CirclePlus id="icone-botao" />
@@ -119,6 +130,7 @@ function GerenciarVeiculos() {
         </button>
       </div>
 
+      {/* Pop-up do formulario */}
       {formularioAberto && (
         <div className="boadd-overlay" onClick={fecharAdicionar}>
           <div
@@ -206,7 +218,9 @@ function GerenciarVeiculos() {
         </div>
       )}
 
+      {/* Lista de veiculos */}
       <div className="cadastros">
+        {/* Barra de pesquisa e filtro */}
         <div className="filtro">
           <div className="filtro-input-wrap">
             <Search className="filtro-icon" />
@@ -216,6 +230,7 @@ function GerenciarVeiculos() {
           <p className="busca-filtro">Filtrar Por</p>
         </div>
 
+        {/* Grid com cards dos veiculos */}
         <div className="alunos-grid">
           {veiculos.map((veiculo) => (
             <div key={veiculo.id} className="aluno-item">
