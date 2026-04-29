@@ -13,6 +13,95 @@
         font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
     }
 }
+
+.admin-page--veiculos .cadastros{
+    width: 100%;
+    padding: 4dvh 5%;
+    display: grid;
+    gap: 2dvh;
+    box-sizing: border-box;
+}
+
+.admin-page--veiculos .filtro{
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: min(100%, 560px);
+    margin: 0;
+    height: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.admin-page--veiculos .filtro-input-wrap{
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+
+.admin-page--veiculos .filtro-icon{
+    position: absolute;
+    left: 12px;
+    width: 18px;
+    height: 18px;
+    color: #30418E;
+}
+
+.admin-page--veiculos .filtro .icone-filtro{
+    flex-shrink: 0;
+}
+
+.admin-page--veiculos .busca-filtro{
+    font-family: "Inter", sans-serif;
+    width: auto;
+    font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+    color: #2f3558;
+    white-space: nowrap;
+    font-size: 20px;
+    font-weight: 300;
+}
+
+.admin-page--veiculos .filtro-input{
+    width: 100%;
+    height: 5dvh;
+    border-radius: 15px;
+    border: none;
+    box-shadow: 5px 3px 0px #000000a9;
+    padding: 0 14px 0 44px;
+    background: #0013554D;
+    color: #30418E;
+    font-size: 20px;
+    font-weight: 300;
+    font-family: "Inter", sans-serif;
+    text-indent: 0;
+}
+
+.admin-page--veiculos .aluno{
+    color: #000;
+}
+
+.admin-page--veiculos .aluno h1,
+.admin-page--veiculos .aluno p,
+.admin-page--veiculos .aluno strong,
+.admin-page--veiculos .aluno-info,
+.admin-page--veiculos .aluno-detalhes p{
+    color: #000;
+}
+
+.admin-page--veiculos .aluno-detalhes{
+    color: #000;
+}
+
+@media (max-width: 700px){
+  .admin-page--veiculos .filtro{
+    justify-self: stretch;
+    width: 100%;
+  }
+}
 /* formulario de adicionar */
 .boadd-overlay{
     position: fixed;

@@ -97,7 +97,7 @@ function GerenciarAlunos() {
   }
 
   return (
-    <>
+    <main className="admin-page admin-page--alunos">
       {/* Header principal */}
       <div className="ui-header">
         <div className="logo"></div>
@@ -283,7 +283,7 @@ function GerenciarAlunos() {
           ))}
         </div>
       </div>
-    </>
+    </main>
   )
 }
 

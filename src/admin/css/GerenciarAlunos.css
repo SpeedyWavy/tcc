@@ -64,7 +64,7 @@
     box-sizing: border-box;
 }
 
-.filtro{
+.admin-page--alunos .filtro{
     justify-self: end;
     display: flex;
     align-items: center;
@@ -76,7 +76,7 @@
     justify-content: flex-end;
 }
 
-.filtro-input-wrap{
+.admin-page--alunos .filtro-input-wrap{
     position: relative;
     display: flex;
     align-items: center;
@@ -85,7 +85,7 @@
     min-width: 180px;
 }
 
-.filtro-icon{
+.admin-page--alunos .filtro-icon{
     position: absolute;
     left: 12px;
     width: 18px;
@@ -93,11 +93,11 @@
     color: #30418E;
 }
 
-.filtro .icone-filtro{
+.admin-page--alunos .filtro .icone-filtro{
     flex-shrink: 0;
 }
 
-.busca-filtro{
+.admin-page--alunos .busca-filtro{
     font-family: "Inter", sans-serif;
     width: auto;
     font-size: clamp(0.85rem, 2.2vw, 1.1rem);
@@ -114,18 +114,19 @@
     object-fit: contain;
 }
 
-.filtro-input{
+.admin-page--alunos .filtro-input{
     width: 100%;
     height: 5dvh;
     border-radius: 15px;
     border: none;
     box-shadow: 5px 3px 0px #000000a9;
-    padding: 0 14px 0 40px;
+    padding: 0 14px 0 44px;
     background: #0013554D;
     color: #30418E;
     font-size: 20px;
     font-weight: 300;
     font-family: "Inter" sans-serif;
+    text-indent: 0;
 }
 
 .alunos-grid{
@@ -147,7 +148,7 @@
     min-height: 7.5dvh;
     width: 100%;
     background: #bfc3d6;
-    color: #2f3558;
+    color: #000;
     font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
     display: flex;
     align-items: center;
@@ -157,6 +158,15 @@
     transition: background 180ms ease, transform 180ms ease;
     padding: 0.9rem 1rem;
     box-sizing: border-box;
+}
+
+.aluno h1,
+.aluno p,
+.aluno strong,
+.aluno-info,
+.aluno-info-extra,
+.aluno-detalhes p{
+    color: #000;
 }
 
 .aluno:hover{
@@ -186,7 +196,7 @@
 .aluno-detalhes{
     width: 100%;
     background: #b4b9cf;
-    color: #2f3558;
+    color: #000;
     border-radius: 8px;
     margin-top: 0;
     padding: 12px 16px;
@@ -195,7 +205,7 @@
 }
 
 @media (max-width: 700px){
-  .filtro{
+  .admin-page--alunos .filtro{
     justify-self: stretch;
     width: 100%;
   }

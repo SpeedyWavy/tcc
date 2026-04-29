@@ -3,6 +3,7 @@ import './css/GerenciarRotas.css'
 import {
   ArrowLeft,
   ArrowDownNarrowWide,
+  CircleCheckBig,
   ChevronDown,
   ChevronRight,
   EllipsisVertical,
@@ -17,13 +18,6 @@ function GerenciarRotas() {
   const [veiculoAberto, setVeiculoAberto] = useState(null)
   const [rotaAberta, setRotaAberta] = useState(null)
   const [menuAberto, setMenuAberto] = useState(null)
-
-  // Status
-  const prioridadeStatus = {
-    'Aguardando Saida': 1,
-    'Em Transito': 2,
-    Atrasado: 3,
-  }
 
   // Constantes identificando cada veiculo e sua devida rota
   const veiculos = [
@@ -40,7 +34,7 @@ function GerenciarRotas() {
         {
           id: '1-rota-2',
           nome: 'Rota 2',
-          status: 'Em Transito',
+          status: 'Aguardando Saida',
           alunos: ['Aluno 4', 'Aluno 5'],
         },
       ],
@@ -52,13 +46,13 @@ function GerenciarRotas() {
         {
           id: '2-rota-1',
           nome: 'Rota 1',
-          status: 'Aguardando Saida',
+          status: 'Em Transito',
           alunos: ['Aluno 6', 'Aluno 7'],
         },
         {
           id: '2-rota-2',
           nome: 'Rota 2',
-          status: 'Em Transito',
+          status: 'Aguardando Saida',
           alunos: ['Aluno 8', 'Aluno 9'],
         },
       ],
@@ -82,8 +76,14 @@ function GerenciarRotas() {
         {
           id: '4-rota-1',
           nome: 'Rota 1',
-          status: 'Em Transito',
+          status: 'Concluido',
           alunos: ['Aluno 12', 'Aluno 13'],
+        },
+        {
+          id: '4-rota-2',
+          nome: 'Rota 2',
+          status: 'Em Transito',
+          alunos: ['Aluno 14', 'Aluno 15'],
         },
       ],
     },
@@ -94,8 +94,14 @@ function GerenciarRotas() {
         {
           id: '5-rota-1',
           nome: 'Rota 1',
-          status: 'Atrasado',
-          alunos: ['Aluno 14', 'Aluno 15'],
+          status: 'Concluido',
+          alunos: ['Aluno 16', 'Aluno 17'],
+        },
+        {
+          id: '5-rota-2',
+          nome: 'Rota 2',
+          status: 'Concluido',
+          alunos: ['Aluno 18', 'Aluno 19'],
         },
       ],
     },
@@ -107,7 +113,7 @@ function GerenciarRotas() {
           id: '6-rota-1',
           nome: 'Rota 1',
           status: 'Em Transito',
-          alunos: ['Aluno 16', 'Aluno 17'],
+          alunos: ['Aluno 20', 'Aluno 21'],
         },
       ],
     },
@@ -119,7 +125,7 @@ function GerenciarRotas() {
           id: '7-rota-1',
           nome: 'Rota 1',
           status: 'Aguardando Saida',
-          alunos: ['Aluno 18', 'Aluno 19'],
+          alunos: ['Aluno 22', 'Aluno 23'],
         },
       ],
     },
@@ -130,8 +136,14 @@ function GerenciarRotas() {
         {
           id: '8-rota-1',
           nome: 'Rota 1',
-          status: 'Em Transito',
-          alunos: ['Aluno 20', 'Aluno 21'],
+          status: 'Concluido',
+          alunos: ['Aluno 24', 'Aluno 25'],
+        },
+        {
+          id: '8-rota-2',
+          nome: 'Rota 2',
+          status: 'Aguardando Saida',
+          alunos: ['Aluno 26', 'Aluno 27'],
         },
       ],
     },
@@ -143,7 +155,7 @@ function GerenciarRotas() {
           id: '9-rota-1',
           nome: 'Rota 1',
           status: 'Atrasado',
-          alunos: ['Aluno 22', 'Aluno 23'],
+          alunos: ['Aluno 28', 'Aluno 29'],
         },
       ],
     },
@@ -174,15 +186,8 @@ function GerenciarRotas() {
 
   // Obtem o Status do Veiculo, verificando o status de suas rotas e retornando o mais crítico
   const obterStatusGeral = (rotas) => {
-    return rotas.reduce((statusAtual, rota) => {
-      if (!statusAtual) {
-        return rota.status
-      }
-
-      return prioridadeStatus[rota.status] > prioridadeStatus[statusAtual]
-        ? rota.status
-        : statusAtual
-    }, null)
+    const primeiraRotaPendente = rotas.find((rota) => rota.status !== 'Concluido')
+    return primeiraRotaPendente ? primeiraRotaPendente.status : 'Concluido'
   }
 
   // mostra o Status do veiculo com a cor correspondente
@@ -192,13 +197,14 @@ function GerenciarRotas() {
     return (
       <span className={`rotas-status rotas-status--${classeStatus}`}>
         {status === 'Atrasado' && <TriangleAlert className="rotas-status-alerta" />}
+        {status === 'Concluido' && <CircleCheckBig className="rotas-status-check" />}
         {status}
       </span>
     )
   }
 
   return (
-    <>
+    <div className="admin-page admin-page--rotas">
       {/* Header da pagina */}
       <div className="ui-header">
         <div className="logo"></div>
@@ -257,7 +263,7 @@ function GerenciarRotas() {
                     ) : (
                       <ChevronRight className="rotas-seta" />
                     )}
-                    <span>{veiculo.nome}</span>
+                    <span className="rotas-nome-veiculo">{veiculo.nome}</span>
                   </button>
 
                   <div className="rotas-celula rotas-celula--status">
@@ -301,7 +307,7 @@ function GerenciarRotas() {
                           ) : (
                             <ChevronRight className="rotas-seta" />
                           )}
-                          <span>{rota.nome}</span>
+                          <span className="rotas-nome-veiculo">{rota.nome}</span>
                         </button>
 
                         <div className="rotas-celula rotas-celula--status">
@@ -342,7 +348,7 @@ function GerenciarRotas() {
           })}
         </section>
       </main>
-    </>
+    </div>
   )
 }
 

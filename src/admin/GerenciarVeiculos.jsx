@@ -104,7 +104,7 @@ function GerenciarVeiculos() {
   }
 
   return (
-    <>
+    <main className="admin-page admin-page--veiculos">
       {/* Header principal */}
       <div className="ui-header">
         <div className="logo"></div>
@@ -272,7 +272,7 @@ function GerenciarVeiculos() {
           ))}
         </div>
       </div>
-    </>
+    </main>
   )
 }
 

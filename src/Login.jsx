@@ -1,10 +1,9 @@
 import './Login.css'
-import logords from './assets/logo-rds.png'
 
 function Login() {
   return (
     <>
-      <main>
+      <main className="login-page">
         {/* Barras superiores */}
         <div className="ui-header1"></div>
         <div className="ui-header2"></div>
@@ -15,18 +14,20 @@ function Login() {
         <div className="opcoes">
           <p>Insira seu Email</p>
           <input type="text" placeholder='Email'/>
-          <p>Insira sua Senha</p>
-          <input type="text" placeholder='Senha'/>
+          <div className="campo-senha">
+            <p>Insira sua Senha</p>
+            <input type="text" placeholder='Senha'/>
+            <div className="esqueci">
+              <a href="/suporte">Esqueceu a Senha?</a>
+            </div>
+          </div>
         </div>
+        
 
         {/* Botao principal */}
         <div className="entrar">
           <h2>Entrar</h2>
         </div>
-
-        {/* Rodape visual */}
-        <div className="ui-footer"></div>
-        <div className="ui-footer1"></div>
 
         {/* Opcoes de acesso */}
         <div className="icones">
@@ -42,8 +43,20 @@ function Login() {
           >
             Admin
           </button>
-          <button id="apple" type="button">Motorista</button>
+          <button
+            id="apple"
+            type="button"
+            onClick={() => { window.location.href = '/inicial'; }}
+          >
+            Motorista
+          </button>
           <button type="button">Usuario</button>
+        </div>
+
+        {/* Rodape visual */}
+        <div className="page-footer">
+          <div className="ui-footer"></div>
+          <div className="ui-footer1"></div>
         </div>
 
     </main>

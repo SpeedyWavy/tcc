@@ -57,7 +57,7 @@
 }
 
 /* Input de pesquisa */
-.filtro{
+.admin-page--motoristas .filtro{
     justify-self: end;
     display: flex;
     align-items: center;
@@ -70,7 +70,7 @@
 
 }
 
-.filtro-input-wrap{
+.admin-page--motoristas .filtro-input-wrap{
     position: relative;
     display: flex;
     align-items: center;
@@ -79,7 +79,7 @@
     min-width: 180px;
 }
 
-.filtro-icon{
+.admin-page--motoristas .filtro-icon{
     position: absolute;
     left: 12px;
     width: 18px;
@@ -88,10 +88,10 @@
     color: #30418E;
 }
 
-.filtro .icone-filtro{
+.admin-page--motoristas .filtro .icone-filtro{
     flex-shrink: 0;
 }
-.busca-filtro{
+.admin-page--motoristas .busca-filtro{
     font-family: "Inter", sans-serif;
     width: auto;
     font-size: clamp(0.85rem, 2.2vw, 1.1rem);
@@ -108,28 +108,28 @@
     object-fit: contain;
 }
 
-.filtro-input{
+.admin-page--motoristas .filtro-input{
     width: 100%;
     height: 5dvh;
     border-radius: 15px;
     border: none;
     box-shadow: 3px 3px 0px #000000a9;
-    padding: 0 14px 0 40px;
+    padding: 0 14px 0 44px;
     transition: transform 180ms ease, box-shadow 180ms ease;
     background: #0013554D;
     color: #30418E;
     font-size: 20px;
     font-weight: 300;
     font-family: "Inter" sans-serif;
-    text-indent: 30px;
+    text-indent: 0;
 }
 
-.filtro-input:hover{
+.admin-page--motoristas .filtro-input:hover{
     transform: translateY(-1px);
     box-shadow: 6px 4px 0px #000000a9;
 }
 
-.filtro-input:focus{
+.admin-page--motoristas .filtro-input:focus{
     outline: none;
     transform: translateY(-1px);
     box-shadow: 6px 4px 0px #000000a9;
@@ -155,7 +155,7 @@
     min-height: 7.5dvh;
     width: 100%;
     background: #bfc3d6;
-    color: #2f3558;
+    color: #000;
     font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
     display: flex;
     align-items: center;
@@ -165,6 +165,15 @@
     transition: background 180ms ease, transform 180ms ease;
     padding: 0.9rem 1rem;
     box-sizing: border-box;
+}
+
+.motorista h1,
+.motorista p,
+.motorista strong,
+.motorista-info,
+.motorista-info-extra,
+.motorista-detalhes p{
+    color: #000;
 }
 
 .motorista:hover{
@@ -194,7 +203,7 @@
 .motorista-detalhes{
     width: 100%;
     background: #b4b9cf;
-    color: #2f3558;
+    color: #000;
     border-radius: 8px;
     margin-top: 0;
     padding: 12px 16px;
@@ -203,7 +212,7 @@
 }
 
 @media (max-width: 700px){
-  .filtro{
+  .admin-page--motoristas .filtro{
     justify-self: stretch;
     width: 100%;
   }

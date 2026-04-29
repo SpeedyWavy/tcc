@@ -13,7 +13,7 @@
     box-sizing: border-box;
 }
 
-.filtro {
+.admin-page--rotas .filtro {
     justify-self: end;
     display: flex;
     align-items: center;
@@ -25,7 +25,7 @@
     justify-content: flex-end;
 }
 
-.filtro-input-wrap {
+.admin-page--rotas .filtro-input-wrap {
     position: relative;
     display: flex;
     align-items: center;
@@ -34,7 +34,7 @@
     min-width: 180px;
 }
 
-.filtro-icon {
+.admin-page--rotas .filtro-icon {
     position: absolute;
     left: 12px;
     width: 18px;
@@ -42,11 +42,11 @@
     color: #30418E;
 }
 
-.filtro .icone-filtro {
+.admin-page--rotas .filtro .icone-filtro {
     flex-shrink: 0;
 }
 
-.busca-filtro {
+.admin-page--rotas .busca-filtro {
     font-family: "Inter", sans-serif;
     width: auto;
     font-size: clamp(0.85rem, 2.2vw, 1.1rem);
@@ -56,18 +56,19 @@
     font-weight: 300;
 }
 
-.filtro-input {
+.admin-page--rotas .filtro-input {
     width: 100%;
     height: 5dvh;
     border-radius: 15px;
     border: none;
     box-shadow: 5px 3px 0px #000000a9;
-    padding: 0 14px 0 40px;
+    padding: 0 14px 0 44px;
     background: #0013554D;
     color: #30418E;
     font-size: 20px;
     font-weight: 300;
     font-family: "Inter", sans-serif;
+    text-indent: 0;
 }
 
 .rotas-cadastros {
@@ -125,16 +126,23 @@
     background: rgba(183, 189, 219, 0.6);
 }
 
-.rotas-celula--veiculo {
+.admin-page--rotas .rotas-celula--veiculo {
     width: 100%;
     border: none;
     display: flex;
     align-items: center;
     gap: 8px;
     color: #4b5da6;
-    font-size: 1.02rem;
     text-align: left;
     cursor: pointer;
+}
+
+.admin-page--rotas .rotas-celula--veiculo .rotas-nome-veiculo {
+    font-size: 18.5px !important;
+}
+
+.admin-page--rotas .rotas-nome-veiculo {
+    font-size: 20px !important;
 }
 
 .rotas-celula--status {
@@ -178,7 +186,16 @@
     color: #d51616;
 }
 
+.rotas-status--concluido {
+    color: #4B5DA6;
+}
+
 .rotas-status-alerta {
+    width: 16px;
+    height: 16px;
+}
+
+.rotas-status-check {
     width: 16px;
     height: 16px;
 }
@@ -250,7 +267,7 @@
         width: calc(100% - 10px);
     }
 
-    .filtro {
+    .admin-page--rotas .filtro {
         justify-self: stretch;
         width: 100%;
     }
@@ -269,8 +286,12 @@
         padding: 0 10px;
     }
 
-    .rotas-celula--veiculo {
-        font-size: 0.96rem;
+    .admin-page--rotas .rotas-celula--veiculo {
+        font-size: 0.8rem !important;
+    }
+
+    .admin-page--rotas .rotas-nome-veiculo {
+        font-size: 0.84rem !important;
     }
 
     .rotas-status {

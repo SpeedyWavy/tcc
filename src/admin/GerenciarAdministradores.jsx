@@ -67,7 +67,7 @@ function GerenciarAdministradores() {
   }
 
   return (
-    <>
+    <main className="admin-page admin-page--administradores">
       <div className="ui-header">
         <div className="logo"></div>
         <UserMenu />
@@ -123,7 +123,7 @@ function GerenciarAdministradores() {
               />
 
               <button type="submit" className="boadd-confirmar">
-                Confirmar alteracoes
+                Criar Cadastro
               </button>
               <button type="button" className="boadd-cancelar" onClick={fecharAdicionar}>
                 Cancelar
@@ -180,7 +180,7 @@ function GerenciarAdministradores() {
           ))}
         </div>
       </div>
-    </>
+    </main>
   )
 }
 

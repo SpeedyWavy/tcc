@@ -156,7 +156,7 @@ function GerenciarMotoristas() {
   }
 
   return (
-    <>
+    <main className="admin-page admin-page--motoristas">
       {/* Header principal */}
       <div className="ui-header">
         <div className="logo"></div>
@@ -394,7 +394,7 @@ function GerenciarMotoristas() {
           ))}
         </div>
       </div>
-    </>
+    </main>
   )
 }
 

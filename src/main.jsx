@@ -8,6 +8,9 @@ import GerenciarMotoristas from './admin/GerenciarMotoristas.jsx'
 import GerenciarRotas from './admin/GerenciarRotas.jsx'
 import GerenciarVeiculos from './admin/GerenciarVeiculos.jsx'
 import Login from './Login.jsx'
+import Suporte from './Suporte.jsx'
+import AlunosMotorista from './motorista/Alunos.jsx'
+import Inicial from './motorista/Inicial.jsx'
 
 const pathname = window.location.pathname.toLowerCase()
 // Seleciona a pagina com base na rota atual
@@ -21,9 +24,16 @@ const CurrentPage = pathname === '/gerenciar-alunos'
       ? GerenciarRotas
     : pathname === '/gerenciar-administradores'
       ? GerenciarAdministradores
+    : pathname === '/suporte'
+      ? Suporte
+    : pathname === '/motorista-alunos'
+      ? AlunosMotorista
+    : pathname === '/inicial'
+      ? Inicial
     : pathname === '/app'
       ? App
       : Login
+    
 
 const rootEl = document.getElementById('root')
 if (!rootEl) {
