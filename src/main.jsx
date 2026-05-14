@@ -5,6 +5,7 @@ import App from './admin/App.jsx'
 import GerenciarAdministradores from './admin/GerenciarAdministradores.jsx'
 import GerenciarAlunos from './admin/GerenciarAlunos.jsx'
 import GerenciarMotoristas from './admin/GerenciarMotoristas.jsx'
+import GerenciarRevisoes from './admin/GerenciarRevisoes.jsx'
 import GerenciarRotas from './admin/GerenciarRotas.jsx'
 import GerenciarVeiculos from './admin/GerenciarVeiculos.jsx'
 import Login from './Login.jsx'
@@ -20,6 +21,8 @@ const CurrentPage = pathname === '/gerenciar-alunos'
     ? GerenciarMotoristas
     : pathname === '/gerenciar-veiculos'
       ? GerenciarVeiculos
+    : pathname === '/gerenciar-revisoes'
+      ? GerenciarRevisoes
     : pathname === '/gerenciar-rotas'
       ? GerenciarRotas
     : pathname === '/gerenciar-administradores'

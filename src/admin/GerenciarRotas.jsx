@@ -12,12 +12,14 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
+import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 
 function GerenciarRotas() {
   // Informações do banco de dados (linkar o banco de dados aq)
   const [veiculoAberto, setVeiculoAberto] = useState(null)
   const [rotaAberta, setRotaAberta] = useState(null)
   const [menuAberto, setMenuAberto] = useState(null)
+  const { notification, showError, clearNotification } = useActionNotification()
 
   // Constantes identificando cada veiculo e sua devida rota
   const veiculos = [
@@ -203,6 +205,11 @@ function GerenciarRotas() {
     )
   }
 
+  const notificarErro = (mensagem) => {
+    showError(mensagem)
+    setMenuAberto(null)
+  }
+
   return (
     <div className="admin-page admin-page--rotas">
       {/* Header da pagina */}
@@ -221,6 +228,8 @@ function GerenciarRotas() {
           </div>
         </div>
       </div>
+
+      <ActionNotification notification={notification} onClose={clearNotification} />
 
       {/* Parte principal com cada veiculo listado e a Const para abrir cada veiculo e ver sua rota */}
       <main className="rotas-pagina" onClick={() => setMenuAberto(null)}>
@@ -282,8 +291,8 @@ function GerenciarRotas() {
                       {/* Menu para editar ou excluir a rota ao apertar nos 3 pontinhos */}
                       {menuVeiculoAberto && (
                         <div className="rotas-menu">
-                          <button type="button">Editar</button>
-                          <button type="button">Excluir</button>
+                          <button type="button" onClick={() => notificarErro('Erro ao editar cadastro.')}>Editar</button>
+                          <button type="button" onClick={() => notificarErro('Erro ao excluir cadastro.')}>Excluir</button>
                         </div>
                       )}
                     </div>
@@ -325,8 +334,8 @@ function GerenciarRotas() {
 
                             {menuRotaAberto && (
                               <div className="rotas-menu">
-                                <button type="button">Editar</button>
-                                <button type="button">Excluir</button>
+                                <button type="button" onClick={() => notificarErro('Erro ao editar cadastro.')}>Editar</button>
+                                <button type="button" onClick={() => notificarErro('Erro ao excluir cadastro.')}>Excluir</button>
                               </div>
                             )}
                           </div>

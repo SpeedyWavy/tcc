@@ -4,6 +4,7 @@ import motorista2 from '../assets/motorista2.png'
 import motorista3 from '../assets/motorista3.png'
 import { ArrowLeft, ArrowDownNarrowWide, CirclePlus, Users, Search, ChevronDown, ChevronRight } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
+import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 
 
 function GerenciarMotoristas() {
@@ -27,6 +28,7 @@ function GerenciarMotoristas() {
     senha: '',
     confirmarSenha: '',
   })
+  const { notification, showError, clearNotification } = useActionNotification()
 
   // informações so pra aparecer os elementos na tela enqnt n tem banco de dados
   const motoristas = [
@@ -140,6 +142,7 @@ function GerenciarMotoristas() {
 
   const enviarNovoMotorista = (e) => {
     e.preventDefault()
+    showError('Erro ao cadastrar motorista.')
     fecharAdicionar()
   }
 
@@ -173,6 +176,8 @@ function GerenciarMotoristas() {
         </div>
       </div>
       {/* Acoes principais */}
+      <ActionNotification notification={notification} onClose={clearNotification} />
+
       <div className="adicionar">
         <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
           <CirclePlus id='icone-botao'/>

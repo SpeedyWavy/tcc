@@ -1,7 +1,5 @@
 import './css/App.css'
-import { CirclePlus } from 'lucide-react'
-import { Bus } from 'lucide-react';
-import { Users } from 'lucide-react';
+import { CirclePlus, Bus, Users } from 'lucide-react'
 import student from '../assets/student.png'
 import moto from '../assets/motorista.png'
 import veiculo from '../assets/veiculo.png'
@@ -12,7 +10,6 @@ import UserMenu from './components/UserMenu.jsx'
 function App() {
   return (
     <>
-      {/* Header principal */}
       <div className="ui-header ui-header--compact">
         <div className="logo">
         </div>
@@ -20,9 +17,7 @@ function App() {
         <div className="ui-header-extra ui-header-extra--compact"></div>
       </div>
 
-      {/* Botões Menores Redondos */}
       <div className="ui-round">
-
         <a href="/gerenciar-alunos" className="ui-round-link">
           <div className="ui-round1">
             <img src={student} alt={student} />
@@ -43,14 +38,15 @@ function App() {
             <p>Veiculos</p>
           </div>
         </a>
-        </div>
+      </div>
 
-        <div className="ui-rounds">
-
-        <div className="ui-round4">
-          <img src={revisao} alt={revisao} />
-          <p>Revisão</p>
-        </div>
+      <div className="ui-rounds">
+        <a href="/gerenciar-revisoes" className="ui-round-link">
+          <div className="ui-round4">
+            <img src={revisao} alt={revisao} />
+            <p>Revisão</p>
+          </div>
+        </a>
 
         <a href="/gerenciar-rotas" className="ui-round-link">
           <div className="ui-round5">
@@ -58,9 +54,8 @@ function App() {
             <p>Rotas</p>
           </div>
         </a>
-        </div>
+      </div>
 
-      {/* Botões Maiores */}
       <div className="ui-button1">
         <a href="/gerenciar-alunos"><CirclePlus /> Adicionar Cadastro</a>
       </div>

@@ -52,7 +52,7 @@ h1{
         background: #BAC0DC;
         border-radius: 10px;
         text-indent: 15px;
-        color: #BAC0DC;
+        /* color: #BAC0DC; */
         font-size: 18px;
         font-weight: 500;
     }

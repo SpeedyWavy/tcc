@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import user from '../../assets/place-user.png'
 import { Camera, ChevronDown } from 'lucide-react'
+import ActionNotification, { useActionNotification } from './ActionNotification.jsx'
 
 const cadastroInicial = {
   nome: '',
@@ -15,6 +16,11 @@ function UserMenu() {
   const [editorAberto, setEditorAberto] = useState(false)
   const [cadastro, setCadastro] = useState(cadastroInicial)
   const menuRef = useRef(null)
+  const {
+    notification,
+    showError,
+    clearNotification,
+  } = useActionNotification()
 
   useEffect(() => {
     if (!menuAberto) {
@@ -48,11 +54,12 @@ function UserMenu() {
 
   const confirmarEdicao = (event) => {
     event.preventDefault()
+    showError('Erro ao editar cadastro.')
     fecharEditor()
   }
 
   const excluirCadastro = () => {
-    setCadastro(cadastroInicial)
+    showError('Erro ao excluir cadastro.')
     fecharEditor()
   }
 
@@ -62,6 +69,7 @@ function UserMenu() {
 
   return (
     <>
+      <ActionNotification notification={notification} onClose={clearNotification} />
       <div className="usuario" ref={menuRef}>
         <button
           type="button"

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './css/GerenciarAdministradores.css'
 import { ArrowLeft, ArrowDownNarrowWide, CirclePlus, Search, ChevronDown, ChevronRight, Users } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
+import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 
 function GerenciarAdministradores() {
   const [administradorAberto, setAdministradorAberto] = useState(null)
@@ -11,6 +12,7 @@ function GerenciarAdministradores() {
     cpf: '',
     email: '',
   })
+  const { notification, showError, clearNotification } = useActionNotification()
 
   const administradores = [
     {
@@ -63,6 +65,7 @@ function GerenciarAdministradores() {
 
   const enviarNovoAdministrador = (e) => {
     e.preventDefault()
+    showError('Erro ao cadastrar administrador.')
     fecharAdicionar()
   }
 
@@ -81,6 +84,8 @@ function GerenciarAdministradores() {
           </div>
         </div>
       </div>
+
+      <ActionNotification notification={notification} onClose={clearNotification} />
 
       <div className="adicionar">
         <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>

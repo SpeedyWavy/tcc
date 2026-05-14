@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './css/GerenciarVeiculos.css'
 import { ArrowLeft, ArrowDownNarrowWide, Bus, CirclePlus, Search, ChevronRight, ChevronDown } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
+import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 
 function GerenciarVeiculos() {
   // Informações do banco de dados (linkar o banco de dados aq)
@@ -17,6 +18,7 @@ function GerenciarVeiculos() {
     observacaoRevisao: '',
     unidade: 'Garcia',
   })
+  const { notification, showError, clearNotification } = useActionNotification()
 
   // informações so pra aparecer os elementos na tela enqnt n tem banco de dados
   const veiculos = [
@@ -100,6 +102,7 @@ function GerenciarVeiculos() {
   // Envia o novo veiculo (validar com backend)
   const enviarNovoVeiculo = (e) => {
     e.preventDefault()
+    showError('Erro ao cadastrar veiculo.')
     fecharAdicionar()
   }
 
@@ -123,6 +126,8 @@ function GerenciarVeiculos() {
       </div>
 
       {/* Ações principais */}
+      <ActionNotification notification={notification} onClose={clearNotification} />
+
       <div className="adicionar">
         <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
           <CirclePlus id="icone-botao" />
