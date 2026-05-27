@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import './css/GerenciarRotas.css'
+import styles from './css/GerenciarRotas.module.css'
 import {
   ArrowLeft,
   ArrowDownNarrowWide,
@@ -198,8 +198,8 @@ function GerenciarRotas() {
 
     return (
       <span className={`rotas-status rotas-status--${classeStatus}`}>
-        {status === 'Atrasado' && <TriangleAlert className="rotas-status-alerta" />}
-        {status === 'Concluido' && <CircleCheckBig className="rotas-status-check" />}
+        {status === 'Atrasado' && <TriangleAlert className={styles['rotas-status-alerta']} />}
+        {status === 'Concluido' && <CircleCheckBig className={styles['rotas-status-check']} />}
         {status}
       </span>
     )
@@ -211,10 +211,10 @@ function GerenciarRotas() {
   }
 
   return (
-    <div className="admin-page admin-page--rotas">
+    <div className={`${styles['admin-page']} ${styles['admin-page--rotas']}`}>
       {/* Header da pagina */}
       <div className="ui-header">
-        <div className="logo"></div>
+        <div className={styles['logo']}></div>
         <UserMenu />
 
         {/* Botão para voltar para app.jsx */}
@@ -232,24 +232,24 @@ function GerenciarRotas() {
       <ActionNotification notification={notification} onClose={clearNotification} />
 
       {/* Parte principal com cada veiculo listado e a Const para abrir cada veiculo e ver sua rota */}
-      <main className="rotas-pagina" onClick={() => setMenuAberto(null)}>
-        <section className="cadastros rotas-cadastros">
+      <main className={styles['rotas-pagina']} onClick={() => setMenuAberto(null)}>
+        <section className={`${styles['cadastros']} ${styles['rotas-cadastros']}`}>
           {/* Barra de pesquisa e filtro */}
-          <div className="filtro rotas-filtro">
-            <div className="filtro-input-wrap">
-              <Search className="filtro-icon" />
-              <input type="text" placeholder="Buscar rota" className="filtro-input" />
+          <div className={`${styles['filtro']} ${styles['rotas-filtro']}`}>
+            <div className={styles['filtro-input-wrap']}>
+              <Search className={styles['filtro-icon']} />
+              <input type="text" placeholder="Buscar rota" className={styles['filtro-input']} />
             </div>
-            <ArrowDownNarrowWide className="icone-filtro" />
-            <p className="busca-filtro">Filtrar Por</p>
+            <ArrowDownNarrowWide className={styles['icone-filtro']} />
+            <p className={styles['busca-filtro']}>Filtrar Por</p>
           </div>
         </section>
 
         {/* Tabela com rotas dos veiculos */}
-        <section className="rotas-tabela">
-          <div className="rotas-cabecalho">
-            <div className="rotas-coluna rotas-coluna--veiculo">Veiculo</div>
-            <div className="rotas-coluna rotas-coluna--status">Status</div>
+        <section className={styles['rotas-tabela']}>
+          <div className={styles['rotas-cabecalho']}>
+            <div className={`${styles['rotas-coluna']} ${styles['rotas-coluna--veiculo']}`}>Veiculo</div>
+            <div className={`${styles['rotas-coluna']} ${styles['rotas-coluna--status']}`}>Status</div>
           </div>
 
           {/* Utilização da constante para abrir cada informação dos veiculos */}
@@ -260,28 +260,28 @@ function GerenciarRotas() {
 
             // Cada rota de veiculo mostrado aq juntamente do status
             return (
-              <div key={veiculo.id} className="rotas-bloco">
-                <div className="rotas-linha">
+              <div key={veiculo.id} className={styles['rotas-bloco']}>
+                <div className={styles['rotas-linha']}>
                   <button
                     type="button"
-                    className="rotas-celula rotas-celula--veiculo"
+                    className={`${styles['rotas-celula']} ${styles['rotas-celula--veiculo']}`}
                     onClick={() => alternarVeiculo(veiculo.id)}
                   >
                     {aberto ? (
-                      <ChevronDown className="rotas-seta" />
+                      <ChevronDown className={styles['rotas-seta']} />
                     ) : (
-                      <ChevronRight className="rotas-seta" />
+                      <ChevronRight className={styles['rotas-seta']} />
                     )}
-                    <span className="rotas-nome-veiculo">{veiculo.nome}</span>
+                    <span className={styles['rotas-nome-veiculo']}>{veiculo.nome}</span>
                   </button>
 
-                  <div className="rotas-celula rotas-celula--status">
+                  <div className={`${styles['rotas-celula']} ${styles['rotas-celula--status']}`}>
                     {renderizarStatus(statusGeral)}
 
-                    <div className="rotas-menu-wrap" onClick={(e) => e.stopPropagation()}>
+                    <div className={styles['rotas-menu-wrap']} onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
-                        className="rotas-menu-trigger"
+                        className={styles['rotas-menu-trigger']}
                         aria-label={`Abrir menu de ${veiculo.nome}`}
                         onClick={() => alternarMenu(veiculo.id)}
                       >
@@ -290,7 +290,7 @@ function GerenciarRotas() {
 
                       {/* Menu para editar ou excluir a rota ao apertar nos 3 pontinhos */}
                       {menuVeiculoAberto && (
-                        <div className="rotas-menu">
+                        <div className={styles['rotas-menu']}>
                           <button type="button" onClick={() => notificarErro('Erro ao editar cadastro.')}>Editar</button>
                           <button type="button" onClick={() => notificarErro('Erro ao excluir cadastro.')}>Excluir</button>
                         </div>
@@ -304,28 +304,28 @@ function GerenciarRotas() {
                   const rotaExpandida = rotaAberta === rota.id
 
                   return (
-                    <div key={rota.id} className="rotas-subgrupo">
-                      <div className="rotas-linha rotas-linha--filha">
+                    <div key={rota.id} className={styles['rotas-subgrupo']}>
+                      <div className={`${styles['rotas-linha']} ${styles['rotas-linha--filha']}`}>
                         <button
                           type="button"
-                          className="rotas-celula rotas-celula--veiculo rotas-celula--rota"
+                          className={`${styles['rotas-celula']} ${styles['rotas-celula--veiculo']} ${styles['rotas-celula--rota']}`}
                           onClick={() => alternarRota(rota.id)}
                         >
                           {rotaExpandida ? (
-                            <ChevronDown className="rotas-seta" />
+                            <ChevronDown className={styles['rotas-seta']} />
                           ) : (
-                            <ChevronRight className="rotas-seta" />
+                            <ChevronRight className={styles['rotas-seta']} />
                           )}
-                          <span className="rotas-nome-veiculo">{rota.nome}</span>
+                          <span className={styles['rotas-nome-veiculo']}>{rota.nome}</span>
                         </button>
 
-                        <div className="rotas-celula rotas-celula--status">
+                        <div className={`${styles['rotas-celula']} ${styles['rotas-celula--status']}`}>
                           {renderizarStatus(rota.status)}
 
-                          <div className="rotas-menu-wrap" onClick={(e) => e.stopPropagation()}>
+                          <div className={styles['rotas-menu-wrap']} onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
-                              className="rotas-menu-trigger"
+                              className={styles['rotas-menu-trigger']}
                               aria-label={`Abrir menu de ${rota.nome}`}
                               onClick={() => alternarMenu(rota.id)}
                             >
@@ -333,7 +333,7 @@ function GerenciarRotas() {
                             </button>
 
                             {menuRotaAberto && (
-                              <div className="rotas-menu">
+                              <div className={styles['rotas-menu']}>
                                 <button type="button" onClick={() => notificarErro('Erro ao editar cadastro.')}>Editar</button>
                                 <button type="button" onClick={() => notificarErro('Erro ao excluir cadastro.')}>Excluir</button>
                               </div>
@@ -343,7 +343,7 @@ function GerenciarRotas() {
                       </div>
 
                       {rotaExpandida && (
-                        <div className="rotas-alunos">
+                        <div className={styles['rotas-alunos']}>
                           {rota.alunos.map((aluno) => (
                             <p key={aluno}>{aluno}</p>
                           ))}

@@ -12,8 +12,16 @@ import Login from './Login.jsx'
 import Suporte from './Suporte.jsx'
 import AlunosMotorista from './motorista/Alunos.jsx'
 import Inicial from './motorista/Inicial.jsx'
+import { requireAuth } from './auth.js'
+import Mais from './admin/Mais.jsx'
 
 const pathname = window.location.pathname.toLowerCase()
+const authState = requireAuth(pathname)
+
+if (authState.redirectTo && authState.redirectTo !== pathname) {
+  window.location.replace(authState.redirectTo)
+}
+
 // Seleciona a pagina com base na rota atual
 const CurrentPage = pathname === '/gerenciar-alunos'
   ? GerenciarAlunos
@@ -31,21 +39,24 @@ const CurrentPage = pathname === '/gerenciar-alunos'
       ? Suporte
     : pathname === '/motorista-alunos'
       ? AlunosMotorista
+    : pathname === '/mais'
+      ? Mais
     : pathname === '/inicial'
       ? Inicial
     : pathname === '/app'
       ? App
       : Login
-    
 
 const rootEl = document.getElementById('root')
 if (!rootEl) {
   throw new Error('Root element not found')
 }
 
-createRoot(rootEl).render(
-  <StrictMode>
-    {/* Renderizacao da pagina escolhida */}
-    <CurrentPage />
-  </StrictMode>,
-)
+if (authState.allowed) {
+  createRoot(rootEl).render(
+    <StrictMode>
+      {/* Renderizacao da pagina escolhida */}
+      <CurrentPage />
+    </StrictMode>,
+  )
+}

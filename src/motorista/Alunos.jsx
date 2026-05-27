@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import './css/Alunos.css'
+import styles from './css/Alunos.module.css'
 import student3 from '../assets/student3.png'
 import { ArrowLeft, ChevronDown, ChevronRight, Search } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
@@ -81,38 +81,38 @@ function Alunos() {
   )
 
   return (
-    <main className="motorista-page motorista-page--alunos">
+    <main className={`${styles['motorista-page']} ${styles['motorista-page--alunos']}`}>
       <div className="ui-header">
-        <div className="logo"></div>
+        <div className={styles['logo']}></div>
         <UserMenu />
         <div className="ui-header-extra">
           <a className="ui-back" href="/inicial" aria-label="Voltar para o painel do motorista">
             <ArrowLeft />
           </a>
           <div className="ui-header-extra-title">
-            <img src={student3} alt={student3} className="ui-header-extra-icon" />
+            <img src={student3} alt={student3} className={styles['ui-header-extra-icon']} />
             <span>Alunos</span>
           </div>
         </div>
       </div>
 
-      <div className="cadastros">
-        <div className="motorista-alunos-busca">
-          <div className="motorista-alunos-busca-wrap">
-            <Search className="motorista-alunos-busca-icon" />
+      <div className={styles['cadastros']}>
+        <div className={styles['motorista-alunos-busca']}>
+          <div className={styles['motorista-alunos-busca-wrap']}>
+            <Search className={styles['motorista-alunos-busca-icon']} />
             <input
               type="text"
               placeholder="Buscar aluno"
-              className="motorista-alunos-busca-input"
+              className={styles['motorista-alunos-busca-input']}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="alunos-grid">
+        <div className={styles['alunos-grid']}>
           {alunosFiltrados.map((aluno) => (
-            <div key={aluno.id} className="aluno-item">
+            <div key={aluno.id} className={styles['aluno-item']}>
               <div
                 className={`aluno aluno${aluno.id} ${alunoAberto === aluno.id ? 'aberto' : ''}`}
                 onClick={() => alternarAluno(aluno.id)}
@@ -126,31 +126,31 @@ function Alunos() {
                 }}
               >
                 {alunoAberto === aluno.id ? (
-                  <ChevronDown className="setinha" />
+                  <ChevronDown className={styles['setinha']} />
                 ) : (
-                  <ChevronRight className="setinha" />
+                  <ChevronRight className={styles['setinha']} />
                 )}
                 <h1>{aluno.nome}</h1>
-                <p className="pontinhos">&#8801;</p>
+                <p className={styles['pontinhos']}>&#8801;</p>
               </div>
 
               {alunoAberto === aluno.id && (
-                <div className="aluno-detalhes">
-                  <div className="aluno-card-top">
-                    <div className="aluno-foto" />
-                    <div className="aluno-info">
+                <div className={styles['aluno-detalhes']}>
+                  <div className={styles['aluno-card-top']}>
+                    <div className={styles['aluno-foto']} />
+                    <div className={styles['aluno-info']}>
                       <p><strong>RM:</strong> {aluno.rm}</p>
                       <p><strong>Unidade:</strong> {aluno.unidade}</p>
                       <p><strong>Transporte:</strong> {aluno.identificacaoTransporte}</p>
                       <p><strong>Responsavel:</strong> {aluno.responsavel}</p>
                     </div>
                   </div>
-                  <div className="aluno-info-extra">
+                  <div className={styles['aluno-info-extra']}>
                     <p><strong>Contato do responsavel:</strong> {aluno.contatoResponsavel}</p>
                     <p><strong>Endereco:</strong> {aluno.endereco}</p>
                   </div>
-                  <div className="aluno-mapa">
-                    <div className="mapa-placeholder" />
+                  <div className={styles['aluno-mapa']}>
+                    <div className={styles['mapa-placeholder']} />
                   </div>
                 </div>
               )}

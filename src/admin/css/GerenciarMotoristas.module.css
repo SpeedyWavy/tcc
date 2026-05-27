@@ -1,0 +1,506 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
+
+
+.logo {
+  width: 180px;
+  height: 90px;
+  background-image: url('../../assets/logo-rds.png');
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: contain;
+}
+
+/* Botão pra adicionar */
+.adicionar{
+  width: 100%;
+  padding: 2dvh 5% 0;
+  box-sizing: border-box;
+}
+
+.adicionar-botao{
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: #001355;
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px #0000005c;
+  margin-left: 15%;
+  width: 70%;
+  height: 55px;
+  margin-top: 4%;
+  float: left;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  font-weight: 750;
+  font-size: 20px;
+  font-family: "Inter" sans-serif;
+  font-style: black;
+  /* text-indent: 20px; */
+  text-align: center;
+  color: #FFD400;
+  box-shadow: 0px 0px 10px 1px #0B0C11A6;
+}
+#icone-botao{
+    margin-left: 10%;
+}
+
+.adicionar-botao:hover{
+  transform: translateY(-2px);
+  box-shadow: 5px 5px 0px #0000005c;
+}
+
+.adicionar-botao:active{
+  transform: translateY(0);
+  box-shadow: 2px 2px 0px #0000005c;
+}
+
+/* Lista de Motoristas */
+.cadastros{
+    width: 100%;
+    padding: 4dvh 5%;
+    display: grid;
+    gap: 2dvh;
+    box-sizing: border-box;
+}
+
+/* Input de pesquisa */
+.admin-page--motoristas .filtro{
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: min(100%, 560px);
+    margin: 0;
+    height: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+
+}
+
+.admin-page--motoristas .filtro-input-wrap{
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+
+.admin-page--motoristas .filtro-icon{
+    position: absolute;
+    left: 12px;
+    width: 18px;
+    height: 21px;
+    width: 21px;
+    color: #30418E;
+}
+
+.admin-page--motoristas .filtro .icone-filtro{
+    flex-shrink: 0;
+}
+
+.admin-page--motoristas .filtro-botao{
+    border: none;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    padding: 0;
+}
+.admin-page--motoristas .busca-filtro{
+    font-family: "Inter", sans-serif;
+    width: auto;
+    font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+    color: #2f3558;
+    white-space: nowrap;
+    font-size: 20px;
+    font-weight: 300;
+}
+
+/* Icone do titulo do header */
+.ui-header-extra-icon{
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+}
+
+.admin-page--motoristas .filtro-input{
+    width: 100%;
+    height: 5dvh;
+    border-radius: 15px;
+    border: none;
+    box-shadow: 3px 3px 0px #000000a9;
+    padding: 0 14px 0 44px;
+    transition: transform 180ms ease, box-shadow 180ms ease;
+    background: #0013554D;
+    color: #30418E;
+    font-size: 20px;
+    font-weight: 300;
+    font-family: "Inter" sans-serif;
+    text-indent: 0;
+}
+
+.admin-page--motoristas .filtro-input:hover{
+    transform: translateY(-1px);
+    box-shadow: 6px 4px 0px #000000a9;
+}
+
+.admin-page--motoristas .filtro-input:focus{
+    outline: none;
+    transform: translateY(-1px);
+    box-shadow: 6px 4px 0px #000000a9;
+}
+
+/* Area onde os dados dos motoristas aparecem */
+.motoristas-grid{
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.motorista-item{
+    width: 100%;
+    margin-top: 0;
+    display: grid;
+    gap: 0.7rem;
+    align-content: start;
+}
+
+.motorista{
+    min-height: 7.5dvh;
+    width: 100%;
+    background: #bfc3d6;
+    color: #000;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 180ms ease, transform 180ms ease;
+    padding: 0.9rem 1rem;
+    box-sizing: border-box;
+}
+
+.motorista h1,
+.motorista p,
+.motorista strong,
+.motorista-info,
+.motorista-info-extra,
+.motorista-detalhes p{
+    color: #000;
+}
+
+.motorista:hover{
+    transform: translateY(-2px);
+}
+
+.motorista.aberto{
+    background: #b4b9cf;
+}
+
+.motorista .setinha{
+    margin-left: 0;
+    font-size: 26px;
+}
+
+.motorista h1{
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.motorista .pontinhos{
+    font-size: 30px;
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.item-acoes{
+    position: relative;
+    margin-left: auto;
+}
+
+.item-acoes-trigger{
+    border: none;
+    background: transparent;
+    color: #000;
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+.item-acoes-popover{
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 140px;
+    background: #dfe2f7;
+    border-radius: 12px;
+    box-shadow: 0 12px 24px rgba(10, 15, 40, 0.25);
+    padding: 0.4rem;
+    display: grid;
+    gap: 0.2rem;
+    z-index: 5;
+}
+
+.item-acoes-popover button{
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 0.7rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    color: #1c2350;
+    font-weight: 600;
+}
+
+.item-acoes-popover button:hover{
+    background: rgba(48, 65, 142, 0.12);
+}
+
+.motorista-detalhes{
+    width: 100%;
+    background: #b4b9cf;
+    color: #000;
+    border-radius: 8px;
+    margin-top: 0;
+    padding: 12px 16px;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    animation: expandInfo 220ms ease-out forwards;
+}
+
+@media (max-width: 700px){
+  .admin-page--motoristas .filtro{
+    justify-self: stretch;
+    width: 100%;
+  }
+}
+
+.motorista-detalhes p{
+    margin: 4px 0;
+}
+
+.motorista-card-top{
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+.motorista-foto{
+    width: 84px;
+    height: 105px;
+    background: #ffffff;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 0 0 1px #d6d6d6;
+}
+
+.motorista-info{
+    display: grid;
+    gap: 4px;
+}
+
+.motorista-info strong{
+    font-weight: 700;
+}
+
+.motorista-info-extra{
+    margin-top: 10px;
+    display: grid;
+    gap: 4px;
+}
+
+/* Animações para os primeiros 5 motoristas carregarem bonitinho */
+.motorista1{ animation: fallIn 700ms ease-out 220ms forwards; }
+.motorista2{ animation: fallIn 700ms ease-out 340ms forwards; }
+.motorista3{ animation: fallIn 700ms ease-out 460ms forwards; }
+.motorista4{ animation: fallIn 700ms ease-out 580ms forwards; }
+.motorista5{ animation: fallIn 700ms ease-out 700ms forwards; }
+
+
+/* formulario de adicionar */
+.boadd-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(18, 24, 52, 0.55);
+    display: grid;
+    place-items: center;
+    padding: 2rem 1.2rem;
+    z-index: 1000;
+}
+
+.boadd-card{
+    width: min(420px, 100%);
+    background: #e3e6ff;
+    border-radius: 18px;
+    padding: 1.2rem 1.2rem 1.6rem;
+    box-shadow: 0 20px 40px rgba(10, 15, 40, 0.35);
+    display: grid;
+    gap: 1rem;
+    animation: popIn 180ms ease-out forwards;
+}
+
+.boadd-top{
+    display: grid;
+    justify-content: start;
+}
+
+.boadd-avatar{
+    width: 64px;
+    height: 64px;
+    background: #cbd1ff;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    position: relative;
+    box-shadow: 0 8px 16px rgba(20, 25, 70, 0.2);
+}
+
+.boadd-avatar img{
+    width: 70%;
+    height: 70%;
+    border-radius: 50%;
+}
+
+.boadd-form{
+    display: grid;
+    gap: 0.8rem;
+}
+
+.boadd-label{
+    display: grid;
+    gap: 0.4rem;
+    color: #2f3558;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    font-weight: 700;
+}
+
+.boadd-titulo{
+    margin: 0 0 0.4rem;
+    text-align: center;
+    color: #1c2350;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    font-size: 1.3rem;
+}
+
+.boadd-form input,
+.boadd-form select{
+    width: 100%;
+    background: #b8bddc;
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 0.9rem;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    font-size: 1rem;
+    color: #2f3558;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.boadd-form input::placeholder{
+    color: #3a4080;
+}
+
+.boadd-unidade{
+    background: #b8bddc;
+    border-radius: 12px;
+    padding: 0.8rem 0.9rem;
+    display: grid;
+    gap: 0.4rem;
+    color: #2f3558;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+}
+
+.boadd-unidade p{
+    margin: 0;
+    font-weight: 700;
+}
+
+.boadd-unidade label{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 20px;
+}
+
+.boadd-unidade label input{
+    width: 20px;
+    height: 20px;
+}
+
+.boadd-confirmar{
+    margin-top: 0.3rem;
+    background: #001a63;
+    color: #ffdf3a;
+    border: none;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 18px rgba(0, 10, 50, 0.3);
+}
+
+.boadd-cancelar{
+    background: transparent;
+    border: none;
+    color: #1c2350;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.boadd-voltar{
+    background: transparent;
+    border: 2px solid #001a63;
+    color: #001a63;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.7rem 1rem;
+    border-radius: 14px;
+}
+
+
+/* Keyframes */
+@keyframes fallIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expandInfo {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

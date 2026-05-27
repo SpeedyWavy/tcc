@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import user from '../../assets/place-user.png'
 import { Camera, ChevronDown } from 'lucide-react'
 import ActionNotification, { useActionNotification } from './ActionNotification.jsx'
+import { clearSession, getStoredUser } from '../../auth.js'
+import styles from './UserMenu.module.css'
 
 const cadastroInicial = {
   nome: '',
@@ -15,6 +17,7 @@ function UserMenu() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [editorAberto, setEditorAberto] = useState(false)
   const [cadastro, setCadastro] = useState(cadastroInicial)
+  const [usuarioLogado] = useState(() => getStoredUser())
   const menuRef = useRef(null)
   const {
     notification,
@@ -64,27 +67,28 @@ function UserMenu() {
   }
 
   const sairDaConta = () => {
+    clearSession()
     window.location.href = '/'
   }
 
   return (
     <>
       <ActionNotification notification={notification} onClose={clearNotification} />
-      <div className="usuario" ref={menuRef}>
+      <div className={styles.usuario} ref={menuRef}>
         <button
           type="button"
-          className="usuario-trigger"
+          className={styles['usuario-trigger']}
           onClick={() => setMenuAberto((atual) => !atual)}
           aria-haspopup="menu"
           aria-expanded={menuAberto}
         >
           <img src={user} alt="Usuario" />
-          <span className="usuario-nome">Usuario</span>
-          <ChevronDown className={`usuario-chevron ${menuAberto ? 'aberto' : ''}`} />
+          <span className={styles['usuario-nome']}>{usuarioLogado?.full_name || 'Usuario'}</span>
+          <ChevronDown className={menuAberto ? `${styles['usuario-chevron']} ${styles.aberto}` : styles['usuario-chevron']} />
         </button>
 
         {menuAberto && (
-          <div className="usuario-popover" role="menu">
+          <div className={styles['usuario-popover']} role="menu">
             <button type="button" onClick={abrirEditor}>
               Editar Cadastro
             </button>
@@ -96,22 +100,22 @@ function UserMenu() {
       </div>
 
       {editorAberto && (
-        <div className="user-edit-overlay" onClick={fecharEditor}>
+        <div className={styles['user-edit-overlay']} onClick={fecharEditor}>
           <div
-            className="user-edit-card"
+            className={styles['user-edit-card']}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="user-edit-avatar-wrap">
-              <div className="user-edit-avatar">
+            <div className={styles['user-edit-avatar-wrap']}>
+              <div className={styles['user-edit-avatar']}>
                 <img src={user} alt="Usuario" />
-                <button type="button" className="user-edit-camera" aria-label="Alterar foto">
+                <button type="button" className={styles['user-edit-camera']} aria-label="Alterar foto">
                   <Camera />
                 </button>
               </div>
             </div>
 
-            <form className="user-edit-form" onSubmit={confirmarEdicao}>
-              <label className="user-edit-label">
+            <form className={styles['user-edit-form']} onSubmit={confirmarEdicao}>
+              <label className={styles['user-edit-label']}>
                 Informe o nome o administrador:
                 <input
                   type="text"
@@ -151,7 +155,7 @@ function UserMenu() {
                 />
               </label>
 
-              <label className="user-edit-label">
+              <label className={styles['user-edit-label']}>
                 Confirme a nova senha:
                 <input
                   type="password"
@@ -161,13 +165,13 @@ function UserMenu() {
                 />
               </label>
 
-              <button type="submit" className="user-edit-confirmar">
+              <button type="submit" className={styles['user-edit-confirmar']}>
                 Confirmar alteracoes
               </button>
-              <button type="button" className="user-edit-excluir" onClick={excluirCadastro}>
+              <button type="button" className={styles['user-edit-excluir']} onClick={excluirCadastro}>
                 Excluir cadastro
               </button>
-              <button type="button" className="user-edit-cancelar" onClick={fecharEditor}>
+              <button type="button" className={styles['user-edit-cancelar']} onClick={fecharEditor}>
                 Cancelar
               </button>
             </form>

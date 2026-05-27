@@ -1,126 +1,77 @@
-import { useState } from 'react'
-import './css/GerenciarMotoristas.css'
+import { useEffect, useRef, useState } from 'react'
+import styles from './css/GerenciarMotoristas.module.css'
 import motorista2 from '../assets/motorista2.png'
 import motorista3 from '../assets/motorista3.png'
-import { ArrowLeft, ArrowDownNarrowWide, CirclePlus, Users, Search, ChevronDown, ChevronRight } from 'lucide-react'
+import { ArrowLeft, ArrowDownNarrowWide, CirclePlus, Search, ChevronDown, ChevronRight } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
+import FilterPanel from './components/FilterPanel.jsx'
+import { apiRequest } from '../api.js'
 
+const motoristaInicial = {
+  nome: '',
+  cpf: '',
+  rg: '',
+  categoriaCnh: '',
+  identificacaoTransporte: '',
+  contato: '',
+  horarios: '',
+  unidade: 'Garcia',
+}
+
+const acessoInicial = {
+  email: '',
+  senha: '',
+  confirmarSenha: '',
+}
 
 function GerenciarMotoristas() {
-
-  // Informações do banco de dados (linkar o banco de dados aq)
   const [motoristaAberto, setMotoristaAberto] = useState(null)
   const [formularioAberto, setFormularioAberto] = useState(false)
+  const [editorAberto, setEditorAberto] = useState(false)
   const [passoCadastro, setPassoCadastro] = useState(1)
-  const [novoMotorista, setNovoMotorista] = useState({
-    nome: '',
-    cpf: '',
-    rg: '',
-    categoriaCnh: '',
-    identificacaoTransporte: '',
-    contato: '',
-    horarios: '',
-    unidade: 'Garcia',
-  })
-  const [acessoMotorista, setAcessoMotorista] = useState({
-    email: '',
-    senha: '',
-    confirmarSenha: '',
-  })
-  const { notification, showError, clearNotification } = useActionNotification()
+  const [novoMotorista, setNovoMotorista] = useState(motoristaInicial)
+  const [acessoMotorista, setAcessoMotorista] = useState(acessoInicial)
+  const [motoristaEmEdicao, setMotoristaEmEdicao] = useState(null)
+  const [passoEdicao, setPassoEdicao] = useState(1)
+  const [motoristas, setMotoristas] = useState([])
+  const [busca, setBusca] = useState('')
+  const [menuAberto, setMenuAberto] = useState(null)
+  const [filtroAberto, setFiltroAberto] = useState(false)
+  const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], horarios: [], transporte: [] })
+  const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], horarios: [], transporte: [] })
+  const menuRef = useRef(null)
+  const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
-  // informações so pra aparecer os elementos na tela enqnt n tem banco de dados
-  const motoristas = [
-    {
-      id: 1,
-      nome: 'Motorista 1',
-      cpf: '000.000.000-01',
-      rg: '12.345.678-9',
-      cnh: 'B',
-      identificacaoTransporte: 'Linha 01 - Van 12',
-      contato: '(19) 90000-0001',
-      horarios: '06:30 - 7:20, 11:45 - 14:00',
-      unidade: 'Unidade Garcia',
-    },
-    {
-      id: 2,
-      nome: 'Motorista 2',
-      cpf: '000.000.000-02',
-      rg: '98.765.432-1',
-      cnh: 'D',
-      identificacaoTransporte: 'Linha 02 - Onibus 3',
-      contato: '(19) 90000-0002',
-      horarios: '06:30 - 7:20, 11:45 - 14:00',
-      unidade: 'Unidade Mimosa',
-    },
-    {
-      id: 3,
-      nome: 'Motorista 3',
-      cpf: '000.000.000-03',
-      rg: '45.678.912-3',
-      cnh: 'B',
-      identificacaoTransporte: 'Linha 03 - Van 8',
-      contato: '(19) 90000-0003',
-      horarios: '06:30 - 7:20, 11:45 - 14:00',
-      unidade: 'Unidade Swiss',
-    },
-    {
-      id: 4,
-      nome: 'Motorista 4',
-      cpf: '000.000.000-04',
-      rg: '23.456.789-0',
-      cnh: 'D',
-      identificacaoTransporte: 'Linha 04 - Onibus 1',
-      contato: '(19) 90000-0004',
-      horarios: '06:30 - 7:20, 11:45 - 14:00',
-      unidade: 'Unidade Garcia',
-    },
-    {
-      id: 5,
-      nome: 'Motorista 5',
-      cpf: '000.000.000-05',
-      rg: '56.789.123-4',
-      cnh: 'B',
-      identificacaoTransporte: 'Linha 05 - Van 2',
-      contato: '(19) 90000-0005',
-      horarios: '06:30 - 7:20, 11:45 - 14:00',
-      unidade: 'Unidade Mimosa',
-    },
-    {
-      id: 6,
-      nome: 'Motorista 6',
-      cpf: '000.000.000-05',
-      rg: '56.789.123-4',
-      cnh: 'B',
-      identificacaoTransporte: 'Linha 05 - Van 2',
-      contato: '(19) 90000-0005',
-      horarios: '06:30 - 7:20, 11:45 - 14:00',
-      unidade: 'Unidade Mimosa',
-    },
-    {
-      id: 7,
-      nome: 'Motorista 7',
-      cpf: '000.000.000-05',
-      rg: '56.789.123-4',
-      cnh: 'B',
-      identificacaoTransporte: 'Linha 05 - Van 2',
-      contato: '(19) 90000-0005',
-      horarios: '06:30 - 7:20, 11:45 - 14:00',
-      unidade: 'Unidade Mimosa',
-    },
-    {
-      id: 8,
-      nome: 'Motorista 8',
-      cpf: '000.000.000-05',
-      rg: '56.789.123-4',
-      cnh: 'B',
-      identificacaoTransporte: 'Linha 05 - Van 2',
-      contato: '(19) 90000-0005',
-      horarios: '06:30 - 7:20, 11:45 - 14:00',
-      unidade: 'Unidade Mimosa',
-    },
-  ]
+  const carregarMotoristas = async () => {
+    try {
+      const data = await apiRequest('/api/drivers')
+      setMotoristas(Array.isArray(data) ? data : [])
+    } catch (error) {
+      showError(error.message || 'Erro ao carregar motoristas.')
+    }
+  }
+
+  useEffect(() => {
+    carregarMotoristas()
+  }, [])
+
+  useEffect(() => {
+    if (!menuAberto) {
+      return undefined
+    }
+
+    const fecharAoClicarFora = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuAberto(null)
+      }
+    }
+
+    document.addEventListener('mousedown', fecharAoClicarFora)
+    return () => {
+      document.removeEventListener('mousedown', fecharAoClicarFora)
+    }
+  }, [menuAberto])
 
   const alternarMotorista = (id) => {
     setMotoristaAberto((atual) => (atual === id ? null : id))
@@ -134,16 +85,46 @@ function GerenciarMotoristas() {
   const fecharAdicionar = () => {
     setFormularioAberto(false)
     setPassoCadastro(1)
+    setNovoMotorista(motoristaInicial)
+    setAcessoMotorista(acessoInicial)
+  }
+
+  const abrirEditor = (motorista) => {
+    setMenuAberto(null)
+    setMotoristaEmEdicao(motorista)
+    setNovoMotorista({
+      nome: motorista.full_name || '',
+      cpf: motorista.cpf || '',
+      rg: motorista.rg || '',
+      categoriaCnh: motorista.cnh_category || '',
+      identificacaoTransporte: motorista.transport_identification || '',
+      contato: motorista.contact || '',
+      horarios: motorista.schedules || '',
+      unidade: motorista.unit || 'Garcia',
+    })
+    setAcessoMotorista({
+      email: motorista.email || '',
+      senha: '',
+      confirmarSenha: '',
+    })
+    setPassoEdicao(1)
+    setEditorAberto(true)
+  }
+
+  const fecharEditor = () => {
+    setEditorAberto(false)
+    setMotoristaEmEdicao(null)
+    setPassoEdicao(1)
+    setNovoMotorista(motoristaInicial)
+    setAcessoMotorista(acessoInicial)
   }
 
   const atualizarCampo = (campo) => (e) => {
     setNovoMotorista((atual) => ({ ...atual, [campo]: e.target.value }))
   }
 
-  const enviarNovoMotorista = (e) => {
-    e.preventDefault()
-    showError('Erro ao cadastrar motorista.')
-    fecharAdicionar()
+  const atualizarAcesso = (campo) => (e) => {
+    setAcessoMotorista((atual) => ({ ...atual, [campo]: e.target.value }))
   }
 
   const irParaAcesso = () => {
@@ -154,77 +135,207 @@ function GerenciarMotoristas() {
     setPassoCadastro(1)
   }
 
-  const atualizarAcesso = (campo) => (e) => {
-    setAcessoMotorista((atual) => ({ ...atual, [campo]: e.target.value }))
+  const enviarNovoMotorista = async (e) => {
+    e.preventDefault()
+
+    if (!novoMotorista.cpf.trim()) {
+      showError('Informe o CPF do motorista para criar o cadastro.')
+      return
+    }
+
+    if (acessoMotorista.senha !== acessoMotorista.confirmarSenha) {
+      showError('As senhas do motorista nao conferem.')
+      return
+    }
+
+    try {
+      await apiRequest('/api/drivers', {
+        method: 'POST',
+        body: JSON.stringify({
+          full_name: novoMotorista.nome.trim(),
+          password: acessoMotorista.senha,
+          cpf: novoMotorista.cpf.trim(),
+          email: acessoMotorista.email.trim(),
+          rg: novoMotorista.rg.trim(),
+          cnh_category: novoMotorista.categoriaCnh,
+          transport_identification: novoMotorista.identificacaoTransporte.trim(),
+          contact: novoMotorista.contato.trim(),
+          schedules: novoMotorista.horarios.trim(),
+          unit: novoMotorista.unidade,
+        }),
+      })
+
+      await carregarMotoristas()
+      showSuccess('Motorista cadastrado com sucesso.')
+      fecharAdicionar()
+    } catch (error) {
+      showError(error.message || 'Erro ao cadastrar motorista.')
+    }
   }
 
+  const salvarEdicaoMotorista = async (e) => {
+    e.preventDefault()
+
+    if (!motoristaEmEdicao) {
+      return
+    }
+
+    if (!novoMotorista.cpf.trim()) {
+      showError('O CPF do motorista e obrigatorio.')
+      return
+    }
+
+    if (acessoMotorista.senha && acessoMotorista.senha !== acessoMotorista.confirmarSenha) {
+      showError('As senhas do motorista nao conferem.')
+      return
+    }
+
+    try {
+      await apiRequest(`/api/drivers/${motoristaEmEdicao.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          full_name: novoMotorista.nome.trim(),
+          password: acessoMotorista.senha || undefined,
+          cpf: novoMotorista.cpf.trim(),
+          email: acessoMotorista.email.trim(),
+          rg: novoMotorista.rg.trim(),
+          cnh_category: novoMotorista.categoriaCnh,
+          transport_identification: novoMotorista.identificacaoTransporte.trim(),
+          contact: novoMotorista.contato.trim(),
+          schedules: novoMotorista.horarios.trim(),
+          unit: novoMotorista.unidade,
+        }),
+      })
+
+      await carregarMotoristas()
+      showSuccess('Motorista atualizado com sucesso.')
+      fecharEditor()
+    } catch (error) {
+      showError(error.message || 'Erro ao atualizar motorista.')
+    }
+  }
+
+  const excluirMotorista = async (motorista) => {
+    setMenuAberto(null)
+    const confirmou = window.confirm(`Deseja excluir o motorista "${motorista.full_name}"?`)
+    if (!confirmou) {
+      return
+    }
+
+    try {
+      await apiRequest(`/api/drivers/${motorista.id}`, { method: 'DELETE' })
+      await carregarMotoristas()
+      showSuccess('Motorista excluido com sucesso.')
+      if (motoristaEmEdicao?.id === motorista.id) {
+        fecharEditor()
+      }
+    } catch (error) {
+      showError(error.message || 'Erro ao excluir motorista.')
+    }
+  }
+
+  const opcoesUnidade = [...new Set(motoristas.map((motorista) => motorista.unit).filter(Boolean))]
+  const opcoesHorarios = [...new Set(motoristas.map((motorista) => motorista.schedules).filter(Boolean))]
+  const opcoesTransporte = [...new Set(motoristas.map((motorista) => motorista.transport_identification).filter(Boolean))]
+
+  const secoesFiltro = [
+    { id: 'unidade', label: 'Unidade', options: opcoesUnidade.map((value) => ({ value, label: value })) },
+    { id: 'horarios', label: 'Horarios', options: opcoesHorarios.map((value) => ({ value, label: value })) },
+    { id: 'transporte', label: 'Veiculo', options: opcoesTransporte.map((value) => ({ value, label: value })) },
+  ]
+
+  const alternarFiltro = (secao, valor) => {
+    setFiltrosRascunho((atual) => {
+      const valores = atual[secao] || []
+      const existe = valores.includes(valor)
+      return {
+        ...atual,
+        [secao]: existe ? valores.filter((item) => item !== valor) : [...valores, valor],
+      }
+    })
+  }
+
+  const aplicarFiltros = () => {
+    setFiltrosAplicados(filtrosRascunho)
+    setFiltroAberto(false)
+  }
+
+  const limparFiltros = () => {
+    const vazio = { unidade: [], horarios: [], transporte: [] }
+    setFiltrosRascunho(vazio)
+    setFiltrosAplicados(vazio)
+  }
+
+  const abrirFiltros = () => {
+    setFiltrosRascunho(filtrosAplicados)
+    setFiltroAberto((atual) => !atual)
+  }
+
+  const motoristasFiltrados = motoristas.filter((motorista) => {
+    const nome = motorista.full_name || ''
+    const cpf = motorista.cpf || ''
+    const rg = motorista.rg || ''
+    const horarios = motorista.schedules || ''
+    const transporte = motorista.transport_identification || ''
+    const contato = motorista.contact || ''
+    const unidade = motorista.unit || ''
+    const termo = busca.trim().toLowerCase()
+
+    const passouBusca =
+      !termo ||
+      [nome, cpf, rg, horarios, transporte, contato, unidade].some((valor) => valor.toLowerCase().includes(termo))
+
+    const passouUnidade = filtrosAplicados.unidade.length === 0 || filtrosAplicados.unidade.includes(unidade)
+    const passouHorarios = filtrosAplicados.horarios.length === 0 || filtrosAplicados.horarios.includes(horarios)
+    const passouTransporte = filtrosAplicados.transporte.length === 0 || filtrosAplicados.transporte.includes(transporte)
+
+    return passouBusca && passouUnidade && passouHorarios && passouTransporte
+  })
+
   return (
-    <main className="admin-page admin-page--motoristas">
-      {/* Header principal */}
+    <main className={`${styles['admin-page']} ${styles['admin-page--motoristas']}`}>
       <div className="ui-header">
-        <div className="logo"></div>
+        <div className={styles['logo']}></div>
         <UserMenu />
         <div className="ui-header-extra">
           <a className="ui-back" href="/app" aria-label="Voltar para o painel">
             <ArrowLeft />
           </a>
           <div className="ui-header-extra-title">
-            {/* Icone do titulo */}
-            <img src={motorista3} alt={motorista3} className="ui-header-extra-icon" />
+            <img src={motorista3} alt="" className={styles['ui-header-extra-icon']} />
             <span>Motoristas</span>
           </div>
         </div>
       </div>
-      {/* Acoes principais */}
+
       <ActionNotification notification={notification} onClose={clearNotification} />
 
-      <div className="adicionar">
-        <button type="button" className="adicionar-botao" onClick={abrirAdicionar}>
-          <CirclePlus id='icone-botao'/>
+      <div className={styles['adicionar']}>
+        <button type="button" className={styles['adicionar-botao']} onClick={abrirAdicionar}>
+          <CirclePlus id="icone-botao" />
           Cadastrar Motorista
         </button>
       </div>
 
-      {/* Formulario pop-up */}
       {formularioAberto && (
-        <div className="boadd-overlay" onClick={fecharAdicionar}>
-          <div
-            className="boadd-card"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className={styles['boadd-overlay']} onClick={fecharAdicionar}>
+          <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
             {passoCadastro === 1 && (
-              <div className="boadd-top">
-                <div className="boadd-avatar">
+              <div className={styles['boadd-top']}>
+                <div className={styles['boadd-avatar']}>
                   <img src={motorista2} alt="" />
                 </div>
               </div>
             )}
 
-            <form className="boadd-form" onSubmit={enviarNovoMotorista}>
+            <form className={styles['boadd-form']} onSubmit={enviarNovoMotorista}>
               {passoCadastro === 1 ? (
                 <>
-                  <input
-                    type="text"
-                    placeholder="Digite o nome do motorista"
-                    value={novoMotorista.nome}
-                    onChange={atualizarCampo('nome')}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Insira o CPF"
-                    value={novoMotorista.cpf}
-                    onChange={atualizarCampo('cpf')}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Insira o RG"
-                    value={novoMotorista.rg}
-                    onChange={atualizarCampo('rg')}
-                  />
-                  <select
-                    value={novoMotorista.categoriaCnh}
-                    onChange={atualizarCampo('categoriaCnh')}
-                  >
+                  <input type="text" placeholder="Digite o nome do motorista" value={novoMotorista.nome} onChange={atualizarCampo('nome')} />
+                  <input type="text" placeholder="Insira o CPF" value={novoMotorista.cpf} onChange={atualizarCampo('cpf')} required />
+                  <input type="text" placeholder="Insira o RG" value={novoMotorista.rg} onChange={atualizarCampo('rg')} />
+
+                  <select value={novoMotorista.categoriaCnh} onChange={atualizarCampo('categoriaCnh')}>
                     <option value="">Categoria da CNH</option>
                     <option value="A">A</option>
                     <option value="B">B</option>
@@ -232,106 +343,62 @@ function GerenciarMotoristas() {
                     <option value="D">D</option>
                     <option value="E">E</option>
                   </select>
+
                   <input
                     type="text"
-                    placeholder="Veículo / identificação do transporte"
+                    placeholder="Veiculo / identificacao do transporte"
                     value={novoMotorista.identificacaoTransporte}
                     onChange={atualizarCampo('identificacaoTransporte')}
                   />
-                  <input
-                    type="text"
-                    placeholder="Contato"
-                    value={novoMotorista.contato}
-                    onChange={atualizarCampo('contato')}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Horários"
-                    value={novoMotorista.horarios}
-                    onChange={atualizarCampo('horarios')}
-                  />
+                  <input type="text" placeholder="Contato" value={novoMotorista.contato} onChange={atualizarCampo('contato')} />
+                  <input type="text" placeholder="Horarios" value={novoMotorista.horarios} onChange={atualizarCampo('horarios')} />
 
-                  <div className="boadd-unidade">
+                  <div className={styles['boadd-unidade']}>
                     <p>Unidade:</p>
                     <label>
-                      <input
-                        type="radio"
-                        name="unidade"
-                        value="Garcia"
-                        checked={novoMotorista.unidade === 'Garcia'}
-                        onChange={atualizarCampo('unidade')}
-                      />
+                      <input type="radio" name="unidade" value="Garcia" checked={novoMotorista.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} />
                       Garcia
                     </label>
                     <label>
-                      <input
-                        type="radio"
-                        name="unidade"
-                        value="Vila Mimosa"
-                        checked={novoMotorista.unidade === 'Vila Mimosa'}
-                        onChange={atualizarCampo('unidade')}
-                      />
+                      <input type="radio" name="unidade" value="Vila Mimosa" checked={novoMotorista.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} />
                       Mimosa
                     </label>
                     <label>
-                      <input
-                        type="radio"
-                        name="unidade"
-                        value="Swiss Park"
-                        checked={novoMotorista.unidade === 'Swiss Park'}
-                        onChange={atualizarCampo('unidade')}
-                      />
+                      <input type="radio" name="unidade" value="Swiss Park" checked={novoMotorista.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} />
                       Swiss Park
                     </label>
                   </div>
 
-                  <button type="button" className="boadd-confirmar" onClick={irParaAcesso}>
+                  <button type="button" className={styles['boadd-confirmar']} onClick={irParaAcesso}>
                     Continuar
                   </button>
-                  <button type="button" className="boadd-cancelar" onClick={fecharAdicionar}>
+                  <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
                     Cancelar
                   </button>
                 </>
               ) : (
-
-                // Apos apertar em continuar
                 <>
-                  <h2 className="boadd-titulo">Acesso do Motorista</h2>
-                  <label className="boadd-label">
+                  <h2 className={styles['boadd-titulo']}>Acesso do Motorista</h2>
+                  <label className={styles['boadd-label']}>
                     Informe o e-mail do motorista:
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      value={acessoMotorista.email}
-                      onChange={atualizarAcesso('email')}
-                    />
+                    <input type="email" placeholder="Email" value={acessoMotorista.email} onChange={atualizarAcesso('email')} />
                   </label>
-                  <label className="boadd-label">
+                  <label className={styles['boadd-label']}>
                     Crie uma senha:
-                    <input
-                      type="password"
-                      placeholder="Senha"
-                      value={acessoMotorista.senha}
-                      onChange={atualizarAcesso('senha')}
-                    />
+                    <input type="password" placeholder="Senha" value={acessoMotorista.senha} onChange={atualizarAcesso('senha')} />
                   </label>
-                  <label className="boadd-label">
+                  <label className={styles['boadd-label']}>
                     Confirme a senha:
-                    <input
-                      type="password"
-                      placeholder="Senha"
-                      value={acessoMotorista.confirmarSenha}
-                      onChange={atualizarAcesso('confirmarSenha')}
-                    />
+                    <input type="password" placeholder="Senha" value={acessoMotorista.confirmarSenha} onChange={atualizarAcesso('confirmarSenha')} />
                   </label>
 
-                  <button type="submit" className="boadd-confirmar">
+                  <button type="submit" className={styles['boadd-confirmar']}>
                     Criar Cadastro
                   </button>
-                  <button type="button" className="boadd-voltar" onClick={voltarParaDados}>
+                  <button type="button" className={styles['boadd-voltar']} onClick={voltarParaDados}>
                     Voltar
                   </button>
-                  <button type="button" className="boadd-cancelar" onClick={fecharAdicionar}>
+                  <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
                     Cancelar
                   </button>
                 </>
@@ -341,23 +408,118 @@ function GerenciarMotoristas() {
         </div>
       )}
 
+      {editorAberto && (
+        <div className={styles['boadd-overlay']} onClick={fecharEditor}>
+          <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
+            {passoEdicao === 1 && (
+              <div className={styles['boadd-top']}>
+                <div className={styles['boadd-avatar']}>
+                  <img src={motorista2} alt="" />
+                </div>
+              </div>
+            )}
 
-      {/* Lista de motoristas */}
-      <div className="cadastros">
-        <div className="filtro">
-          <div className="filtro-input-wrap">
-            <Search className="filtro-icon" />
-            <input type="text" placeholder="Buscar motorista" className="filtro-input" />
+            <form className={styles['boadd-form']} onSubmit={salvarEdicaoMotorista}>
+              {passoEdicao === 1 ? (
+                <>
+                  <input type="text" placeholder="Digite o nome do motorista" value={novoMotorista.nome} onChange={atualizarCampo('nome')} />
+                  <input type="text" placeholder="Insira o CPF" value={novoMotorista.cpf} onChange={atualizarCampo('cpf')} required />
+                  <input type="text" placeholder="Insira o RG" value={novoMotorista.rg} onChange={atualizarCampo('rg')} />
+
+                  <select value={novoMotorista.categoriaCnh} onChange={atualizarCampo('categoriaCnh')}>
+                    <option value="">Categoria da CNH</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                  </select>
+
+                  <input type="text" placeholder="Veiculo / identificacao do transporte" value={novoMotorista.identificacaoTransporte} onChange={atualizarCampo('identificacaoTransporte')} />
+                  <input type="text" placeholder="Contato" value={novoMotorista.contato} onChange={atualizarCampo('contato')} />
+                  <input type="text" placeholder="Horarios" value={novoMotorista.horarios} onChange={atualizarCampo('horarios')} />
+
+                  <div className={styles['boadd-unidade']}>
+                    <p>Unidade:</p>
+                    <label>
+                      <input type="radio" name="unidade-edicao" value="Garcia" checked={novoMotorista.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} />
+                      Garcia
+                    </label>
+                    <label>
+                      <input type="radio" name="unidade-edicao" value="Vila Mimosa" checked={novoMotorista.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} />
+                      Mimosa
+                    </label>
+                    <label>
+                      <input type="radio" name="unidade-edicao" value="Swiss Park" checked={novoMotorista.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} />
+                      Swiss Park
+                    </label>
+                  </div>
+
+                  <button type="button" className={styles['boadd-confirmar']} onClick={() => setPassoEdicao(2)}>Continuar</button>
+                  <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
+                </>
+              ) : (
+                <>
+                  <h2 className={styles['boadd-titulo']}>Acesso do Motorista</h2>
+                  <label className={styles['boadd-label']}>
+                    Informe o e-mail do motorista:
+                    <input type="email" placeholder="Email" value={acessoMotorista.email} onChange={atualizarAcesso('email')} />
+                  </label>
+                  <label className={styles['boadd-label']}>
+                    Nova senha:
+                    <input type="password" placeholder="Deixe em branco para manter a atual" value={acessoMotorista.senha} onChange={atualizarAcesso('senha')} />
+                  </label>
+                  <label className={styles['boadd-label']}>
+                    Confirme a nova senha:
+                    <input type="password" placeholder="Senha" value={acessoMotorista.confirmarSenha} onChange={atualizarAcesso('confirmarSenha')} />
+                  </label>
+
+                  <button type="submit" className={styles['boadd-confirmar']}>Salvar Alteracoes</button>
+                  <button type="button" className={styles['boadd-voltar']} onClick={() => setPassoEdicao(1)}>Voltar</button>
+                  <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
+                </>
+              )}
+            </form>
           </div>
-          <ArrowDownNarrowWide className="icone-filtro" /><p className='busca-filtro'>Filtrar Por</p>
         </div>
-        
+      )}
 
-        <div className="motoristas-grid">
-          {motoristas.map((motorista) => (
-            <div key={motorista.id} className="motorista-item">
+      <div className={styles['cadastros']}>
+        <div className={styles['filtro-area']}>
+          <div className={styles['filtro']}>
+            <div className={styles['filtro-input-wrap']}>
+              <Search className={styles['filtro-icon']} />
+              <input
+                type="text"
+                placeholder="Buscar motorista"
+                className={styles['filtro-input']}
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+              />
+            </div>
+            <button type="button" className={styles['filtro-botao']} onClick={abrirFiltros}>
+              <ArrowDownNarrowWide className={styles['icone-filtro']} />
+              <span className={styles['busca-filtro']}>Filtrar Por...</span>
+            </button>
+          </div>
+
+          <FilterPanel
+            open={filtroAberto}
+            title="Filtre por..."
+            sections={secoesFiltro}
+            draftFilters={filtrosRascunho}
+            onToggle={alternarFiltro}
+            onApply={aplicarFiltros}
+            onClear={limparFiltros}
+            onClose={() => setFiltroAberto(false)}
+          />
+        </div>
+
+        <div className={styles['motoristas-grid']}>
+          {motoristasFiltrados.map((motorista) => (
+            <div key={motorista.id} className={styles['motorista-item']}>
               <div
-                className={`motorista motorista${motorista.id} ${motoristaAberto === motorista.id ? 'aberto' : ''}`}
+                className={`${styles.motorista} ${styles[`motorista${motorista.id}`]} ${motoristaAberto === motorista.id ? 'aberto' : ''}`}
                 onClick={() => alternarMotorista(motorista.id)}
                 role="button"
                 tabIndex={0}
@@ -368,30 +530,51 @@ function GerenciarMotoristas() {
                   }
                 }}
               >
-                {motoristaAberto === motorista.id ? (
-                  <ChevronDown className="setinha" />
-                ) : (
-                  <ChevronRight className="setinha" />
-                )}
-                <h1>{motorista.nome}</h1>
-                <p className="pontinhos">&#8801;</p>
+                {motoristaAberto === motorista.id ? <ChevronDown className={styles['setinha']} /> : <ChevronRight className={styles['setinha']} />}
+                <h1>{motorista.full_name}</h1>
+                <div className={styles['item-acoes']} ref={menuAberto === motorista.id ? menuRef : null}>
+                  <button
+                    type="button"
+                    className={styles['item-acoes-trigger']}
+                    aria-haspopup="menu"
+                    aria-expanded={menuAberto === motorista.id}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setMenuAberto((atual) => (atual === motorista.id ? null : motorista.id))
+                    }}
+                  >
+                    &#8801;
+                  </button>
+
+                  {menuAberto === motorista.id && (
+                    <div className={styles['item-acoes-popover']} role="menu">
+                      <button type="button" onClick={() => abrirEditor(motorista)}>
+                        Editar
+                      </button>
+                      <button type="button" onClick={() => excluirMotorista(motorista)}>
+                        Excluir
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {motoristaAberto === motorista.id && (
-                <div className="motorista-detalhes">
-                  <div className="motorista-card-top">
-                    <div className="motorista-foto" />
-                    <div className="motorista-info">
-                      <p><strong>CPF:</strong> {motorista.cpf}</p>
-                      <p><strong>RG:</strong> {motorista.rg}</p>
-                      <p><strong>CNH:</strong> {motorista.cnh}</p>
-                      <p><strong>Veiculo:</strong> {motorista.identificacaoTransporte}</p>
+                <div className={styles['motorista-detalhes']}>
+                  <div className={styles['motorista-card-top']}>
+                    <div className={styles['motorista-foto']} />
+                    <div className={styles['motorista-info']}>
+                      <p><strong>CPF:</strong> {motorista.cpf || 'Nao informado'}</p>
+                      <p><strong>RG:</strong> {motorista.rg || 'Nao informado'}</p>
+                      <p><strong>CNH:</strong> {motorista.cnh_category || 'Nao informada'}</p>
+                      <p><strong>Veiculo:</strong> {motorista.transport_identification || 'Nao informado'}</p>
                     </div>
                   </div>
-                  <div className="motorista-info-extra">
-                    <p><strong>Contato:</strong> {motorista.contato}</p>
-                    <p><strong>Horarios:</strong> {motorista.horarios}</p>
-                    <p><strong>Unidade:</strong> {motorista.unidade}</p>
+                  <div className={styles['motorista-info-extra']}>
+                    <p><strong>Contato:</strong> {motorista.contact || 'Nao informado'}</p>
+                    <p><strong>Horarios:</strong> {motorista.schedules || 'Nao informado'}</p>
+                    <p><strong>Unidade:</strong> {motorista.unit || 'Nao informada'}</p>
                   </div>
                 </div>
               )}

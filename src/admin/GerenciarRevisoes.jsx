@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import './css/GerenciarRevisoes.css'
+import styles from './css/GerenciarRevisoes.module.css'
 import {
   ArrowLeft,
   ArrowDownNarrowWide,
@@ -93,9 +93,9 @@ function GerenciarRevisoes() {
   }
 
   return (
-    <div className="admin-page admin-page--revisoes">
+    <div className={`${styles['admin-page']} ${styles['admin-page--revisoes']}`}>
       <div className="ui-header">
-        <div className="logo"></div>
+        <div className={styles['logo']}></div>
         <UserMenu />
 
         <div className="ui-header-extra">
@@ -111,22 +111,22 @@ function GerenciarRevisoes() {
 
       <ActionNotification notification={notification} onClose={clearNotification} />
 
-      <main className="revisoes-pagina" onClick={() => setMenuAberto(null)}>
-        <section className="cadastros revisoes-cadastros">
-          <div className="filtro revisoes-filtro">
-            <div className="filtro-input-wrap">
-              <Search className="filtro-icon" />
-              <input type="text" placeholder="Buscar veiculo..." className="filtro-input" />
+      <main className={styles['revisoes-pagina']} onClick={() => setMenuAberto(null)}>
+        <section className={`${styles['cadastros']} ${styles['revisoes-cadastros']}`}>
+          <div className={`${styles['filtro']} ${styles['revisoes-filtro']}`}>
+            <div className={styles['filtro-input-wrap']}>
+              <Search className={styles['filtro-icon']} />
+              <input type="text" placeholder="Buscar veiculo..." className={styles['filtro-input']} />
             </div>
-            <ArrowDownNarrowWide className="icone-filtro" />
-            <p className="busca-filtro">Filtrar por...</p>
+            <ArrowDownNarrowWide className={styles['icone-filtro']} />
+            <p className={styles['busca-filtro']}>Filtrar por...</p>
           </div>
         </section>
 
-        <section className="revisoes-tabela">
-          <div className="revisoes-cabecalho">
-            <div className="revisoes-coluna revisoes-coluna--veiculo">Veiculo</div>
-            <div className="revisoes-coluna revisoes-coluna--data">Ultima Revisao</div>
+        <section className={styles['revisoes-tabela']}>
+          <div className={styles['revisoes-cabecalho']}>
+            <div className={`${styles['revisoes-coluna']} ${styles['revisoes-coluna--veiculo']}`}>Veiculo</div>
+            <div className={`${styles['revisoes-coluna']} ${styles['revisoes-coluna--data']}`}>Ultima Revisao</div>
           </div>
 
           {revisoes.map((veiculo) => {
@@ -134,28 +134,28 @@ function GerenciarRevisoes() {
             const menuDoVeiculoAberto = menuAberto === veiculo.id
 
             return (
-              <div key={veiculo.id} className="revisoes-bloco">
-                <div className="revisoes-linha">
+              <div key={veiculo.id} className={styles['revisoes-bloco']}>
+                <div className={styles['revisoes-linha']}>
                   <button
                     type="button"
-                    className="revisoes-celula revisoes-celula--veiculo"
+                    className={`${styles['revisoes-celula']} ${styles['revisoes-celula--veiculo']}`}
                     onClick={() => alternarVeiculo(veiculo.id)}
                   >
                     {aberto ? (
-                      <ChevronDown className="revisoes-seta" />
+                      <ChevronDown className={styles['revisoes-seta']} />
                     ) : (
-                      <ChevronRight className="revisoes-seta" />
+                      <ChevronRight className={styles['revisoes-seta']} />
                     )}
-                    <span className="revisoes-nome-veiculo">{veiculo.nome}</span>
+                    <span className={styles['revisoes-nome-veiculo']}>{veiculo.nome}</span>
                   </button>
 
-                  <div className="revisoes-celula revisoes-celula--data">
+                  <div className={`${styles['revisoes-celula']} ${styles['revisoes-celula--data']}`}>
                     <span>{veiculo.ultimaRevisao}</span>
 
-                    <div className="revisoes-menu-wrap" onClick={(event) => event.stopPropagation()}>
+                    <div className={styles['revisoes-menu-wrap']} onClick={(event) => event.stopPropagation()}>
                       <button
                         type="button"
-                        className="revisoes-menu-trigger"
+                        className={styles['revisoes-menu-trigger']}
                         aria-label={`Abrir menu de ${veiculo.nome}`}
                         onClick={() => alternarMenu(veiculo.id)}
                       >
@@ -163,7 +163,7 @@ function GerenciarRevisoes() {
                       </button>
 
                       {menuDoVeiculoAberto && (
-                        <div className="revisoes-menu">
+                        <div className={styles['revisoes-menu']}>
                           <button type="button" onClick={() => notificarErro('Erro ao editar cadastro.')}>Editar</button>
                           <button type="button" onClick={() => notificarErro('Erro ao excluir cadastro.')}>Excluir</button>
                         </div>
@@ -173,7 +173,7 @@ function GerenciarRevisoes() {
                 </div>
 
                 {aberto && (
-                  <div className="revisoes-detalhe">
+                  <div className={styles['revisoes-detalhe']}>
                     <p>Observacao:</p>
                     <span>{veiculo.observacao || 'Sem observacoes adicionais.'}</span>
                   </div>

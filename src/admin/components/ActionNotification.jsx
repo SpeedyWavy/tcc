@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import './ActionNotification.css'
+import styles from './ActionNotification.module.css'
 
 function ActionNotification({ notification, onClose }) {
   useEffect(() => {
@@ -21,9 +21,9 @@ function ActionNotification({ notification, onClose }) {
   }
 
   return (
-    <div className={`action-notification action-notification--${notification.variant}`} role="status" aria-live="polite">
-      <span className="action-notification-text">{notification.message}</span>
-      <button type="button" className="action-notification-close" onClick={onClose} aria-label="Fechar notificacao">
+    <div className={`${styles['action-notification']} ${styles[`action-notification--${notification.variant}`]}`} role="status" aria-live="polite">
+      <span className={styles['action-notification-text']}>{notification.message}</span>
+      <button type="button" className={styles['action-notification-close']} onClick={onClose} aria-label="Fechar notificacao">
         x
       </button>
     </div>
