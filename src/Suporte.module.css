@@ -26,6 +26,15 @@
 
 }
 
+.suporte-page .ui-header1{
+    height: 75px;
+    width: 100%;
+    background: #001355;
+    box-shadow: 0px 5px 20px 1px #0B0C1161;
+    display: flex;
+    align-items: center;
+    padding: 0 5%;
+}
 .suporte-page .ui-header2{
     height: 48px;
     width: 100%;
