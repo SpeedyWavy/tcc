@@ -1,0 +1,153 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+.motorista-rotas-page {
+  min-height: 100vh;
+  background: #dfe1fa;
+  font-family: 'Inter', sans-serif;
+}
+
+.logo {
+  width: 180px;
+  height: 90px;
+  background-image: url('../../assets/logo-rds.png');
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: contain;
+}
+
+.ui-header-extra-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.conteudo {
+  padding: 12px 0 24px;
+}
+
+.barra-pesquisa {
+  margin: 10px 0 14px;
+  padding: 0 16px;
+  position: relative;
+}
+
+.barra-pesquisa input {
+  width: 100%;
+  height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: #b8bce1;
+  color: #35439a;
+  padding: 0 14px 0 38px;
+  box-sizing: border-box;
+  font-size: 0.98rem;
+  outline: none;
+}
+
+.icone-pesquisa {
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  color: #7080c7;
+}
+
+.cabecalho {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  margin: 0 0 2px;
+  background: #c2c6ea;
+  border-bottom: 1px solid #8a93cd;
+  border-top: 1px solid #8a93cd;
+  color: #4960b0;
+  font-weight: 700;
+}
+
+.coluna-rota,
+.coluna-horario {
+  padding: 10px 16px;
+  box-sizing: border-box;
+}
+
+.coluna-horario {
+  text-align: center;
+  border-left: 1px solid #8a93cd;
+}
+
+.lista {
+  display: grid;
+}
+
+.estado {
+  margin: 12px 16px 0;
+  color: #3f4d95;
+}
+
+.bloco {
+  border-bottom: 1px solid #8a93cd;
+}
+
+.linha {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  border: 0;
+  background: #c8ccef;
+  color: #4050a0;
+  padding: 0;
+  text-align: left;
+  align-items: stretch;
+}
+
+.linha:hover {
+  background: #bfc4ea;
+}
+
+.linha .coluna-rota {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.seta {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.detalhes {
+  background: #d2d4ef;
+  padding: 4px 0 6px;
+}
+
+.aluno {
+  display: grid;
+  grid-template-columns: 1fr 30px;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px 0 34px;
+  color: #35439a;
+  border-bottom: 1px solid rgba(138, 147, 205, 0.4);
+  box-sizing: border-box;
+}
+
+.aluno:last-child {
+  border-bottom: 0;
+}
+
+.info {
+  border: 0;
+  background: transparent;
+  color: #5060a8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sem-alunos {
+  margin: 0;
+  padding: 8px 16px 8px 34px;
+  color: #5460a5;
+}

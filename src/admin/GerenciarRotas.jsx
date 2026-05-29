@@ -1,229 +1,202 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import styles from './css/GerenciarRotas.module.css'
 import {
   ArrowLeft,
   ArrowDownNarrowWide,
-  CircleCheckBig,
   ChevronDown,
   ChevronRight,
+  CirclePlus,
   EllipsisVertical,
-  Map,
+  Map as MapIcon,
   Search,
   TriangleAlert,
+  CircleCheckBig,
 } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
+import { apiRequest } from '../api.js'
+
+function normalizarVeiculo(veiculo) {
+  return {
+    id: veiculo.id,
+    placa: veiculo.license_plate || '',
+    identificacao: veiculo.identification || veiculo.model || veiculo.license_plate || 'Veiculo',
+    motorista: veiculo.driver_name || 'Motorista nao informado',
+    motoristaId: veiculo.driver_id || null,
+    unidade: veiculo.unit || '',
+  }
+}
+
+function normalizarRota(rota) {
+  return {
+    id: rota.id,
+    vehicleId: rota.vehicle_id,
+    driverId: rota.driver_id,
+    horario: rota.horario || 'Sem horario',
+    status: rota.status || 'Aguardando Saida',
+    createdAt: rota.created_at || rota.updated_at || null,
+    alunos: Array.isArray(rota.students) ? rota.students : [],
+  }
+}
+
+function obterStatusVeiculo(rotasDoVeiculo) {
+  if (!rotasDoVeiculo.length) {
+    return 'Aguardando Saida'
+  }
+
+  return rotasDoVeiculo[rotasDoVeiculo.length - 1].status || 'Aguardando Saida'
+}
+
+function formatarData(valor) {
+  if (!valor) {
+    return 'Sem data'
+  }
+
+  const data = new Date(valor)
+  if (Number.isNaN(data.getTime())) {
+    return 'Sem data'
+  }
+
+  return data.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function obterClasseStatus(status) {
+  return `rotas-status--${(status || 'Aguardando Saida').toLowerCase().replace(/\s+/g, '-')}`
+}
+
+function renderizarStatus(status, styles, textoOverride = null) {
+  const classeStatus = textoOverride && textoOverride.toLowerCase().startsWith('horario')
+    ? 'rotas-status--horario'
+    : obterClasseStatus(status)
+  const statusTexto = textoOverride || status || 'Aguardando Saida'
+
+  return (
+    <span className={`${styles['rotas-status']} ${styles[classeStatus] || ''}`}>
+      {statusTexto === 'Atrasado' ? <TriangleAlert className={styles['rotas-status-icone']} /> : null}
+      {statusTexto === 'Concluido' ? <CircleCheckBig className={styles['rotas-status-icone']} /> : null}
+      <span>{statusTexto}</span>
+    </span>
+  )
+}
 
 function GerenciarRotas() {
-  // Informações do banco de dados (linkar o banco de dados aq)
+  const [veiculos, setVeiculos] = useState([])
+  const [rotas, setRotas] = useState([])
+  const [busca, setBusca] = useState('')
   const [veiculoAberto, setVeiculoAberto] = useState(null)
-  const [rotaAberta, setRotaAberta] = useState(null)
-  const [menuAberto, setMenuAberto] = useState(null)
-  const { notification, showError, clearNotification } = useActionNotification()
+  const [carregando, setCarregando] = useState(true)
+  const [criandoPorVeiculoId, setCriandoPorVeiculoId] = useState(null)
+  const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
-  // Constantes identificando cada veiculo e sua devida rota
-  const veiculos = [
-    {
-      id: 1,
-      nome: 'Veiculo 1',
-      rotas: [
-        {
-          id: '1-rota-1',
-          nome: 'Rota 1',
-          status: 'Atrasado',
-          alunos: ['Aluno 1', 'Aluno 2', 'Aluno 3'],
-        },
-        {
-          id: '1-rota-2',
-          nome: 'Rota 2',
-          status: 'Aguardando Saida',
-          alunos: ['Aluno 4', 'Aluno 5'],
-        },
-      ],
-    },
-    {
-      id: 2,
-      nome: 'Veiculo 2',
-      rotas: [
-        {
-          id: '2-rota-1',
-          nome: 'Rota 1',
-          status: 'Em Transito',
-          alunos: ['Aluno 6', 'Aluno 7'],
-        },
-        {
-          id: '2-rota-2',
-          nome: 'Rota 2',
-          status: 'Aguardando Saida',
-          alunos: ['Aluno 8', 'Aluno 9'],
-        },
-      ],
-    },
-    {
-      id: 3,
-      nome: 'Veiculo 3',
-      rotas: [
-        {
-          id: '3-rota-1',
-          nome: 'Rota 1',
-          status: 'Aguardando Saida',
-          alunos: ['Aluno 10', 'Aluno 11'],
-        },
-      ],
-    },
-    {
-      id: 4,
-      nome: 'Veiculo 4',
-      rotas: [
-        {
-          id: '4-rota-1',
-          nome: 'Rota 1',
-          status: 'Concluido',
-          alunos: ['Aluno 12', 'Aluno 13'],
-        },
-        {
-          id: '4-rota-2',
-          nome: 'Rota 2',
-          status: 'Em Transito',
-          alunos: ['Aluno 14', 'Aluno 15'],
-        },
-      ],
-    },
-    {
-      id: 5,
-      nome: 'Veiculo 5',
-      rotas: [
-        {
-          id: '5-rota-1',
-          nome: 'Rota 1',
-          status: 'Concluido',
-          alunos: ['Aluno 16', 'Aluno 17'],
-        },
-        {
-          id: '5-rota-2',
-          nome: 'Rota 2',
-          status: 'Concluido',
-          alunos: ['Aluno 18', 'Aluno 19'],
-        },
-      ],
-    },
-    {
-      id: 6,
-      nome: 'Veiculo 6',
-      rotas: [
-        {
-          id: '6-rota-1',
-          nome: 'Rota 1',
-          status: 'Em Transito',
-          alunos: ['Aluno 20', 'Aluno 21'],
-        },
-      ],
-    },
-    {
-      id: 7,
-      nome: 'Veiculo 7',
-      rotas: [
-        {
-          id: '7-rota-1',
-          nome: 'Rota 1',
-          status: 'Aguardando Saida',
-          alunos: ['Aluno 22', 'Aluno 23'],
-        },
-      ],
-    },
-    {
-      id: 8,
-      nome: 'Veiculo 8',
-      rotas: [
-        {
-          id: '8-rota-1',
-          nome: 'Rota 1',
-          status: 'Concluido',
-          alunos: ['Aluno 24', 'Aluno 25'],
-        },
-        {
-          id: '8-rota-2',
-          nome: 'Rota 2',
-          status: 'Aguardando Saida',
-          alunos: ['Aluno 26', 'Aluno 27'],
-        },
-      ],
-    },
-    {
-      id: 9,
-      nome: 'Veiculo 9',
-      rotas: [
-        {
-          id: '9-rota-1',
-          nome: 'Rota 1',
-          status: 'Atrasado',
-          alunos: ['Aluno 28', 'Aluno 29'],
-        },
-      ],
-    },
-  ]
+  const carregarDados = async () => {
+    setCarregando(true)
 
-  // Abre e fecha o veiculo, garantindo que ao abrir um novo, o outro seja fechado
-  const alternarVeiculo = (id) => {
-    setVeiculoAberto((atual) => {
-      const proximo = atual === id ? null : id
+    try {
+      const [veiculosData, rotasData] = await Promise.all([
+        apiRequest('/api/vehicles'),
+        apiRequest('/api/routes'),
+      ])
 
-      if (proximo !== id) {
-        setRotaAberta(null)
-      }
+      setVeiculos(Array.isArray(veiculosData) ? veiculosData.map(normalizarVeiculo) : [])
+      setRotas(Array.isArray(rotasData) ? rotasData.map(normalizarRota) : [])
+    } catch (error) {
+      showError(error.message || 'Erro ao carregar rotas.')
+    } finally {
+      setCarregando(false)
+    }
+  }
 
-      return proximo
+  useEffect(() => {
+    carregarDados()
+  }, [])
+
+  const rotasPorVeiculo = useMemo(() => {
+    const mapa = new Map()
+
+    for (const rota of [...rotas].sort((a, b) => {
+      const dataA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const dataB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return dataA - dataB
+    })) {
+      const lista = mapa.get(rota.vehicleId) || []
+      lista.push(rota)
+      mapa.set(rota.vehicleId, lista)
+    }
+
+    return mapa
+  }, [rotas])
+
+  const veiculosFiltrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase()
+
+    return veiculos.filter((veiculo) => {
+      const rotasDoVeiculo = rotasPorVeiculo.get(veiculo.id) || []
+      const textoRotas = rotasDoVeiculo
+        .flatMap((rota) => [
+          rota.horario,
+          ...rota.alunos.map((aluno) => aluno.nome || aluno.name || ''),
+        ])
+        .join(' ')
+        .toLowerCase()
+
+      const textoVeiculo = [
+        veiculo.identificacao,
+        veiculo.placa,
+        veiculo.motorista,
+        veiculo.unidade,
+      ]
+        .join(' ')
+        .toLowerCase()
+
+      return !termo || textoVeiculo.includes(termo) || textoRotas.includes(termo)
     })
+  }, [busca, rotasPorVeiculo, veiculos])
+
+  const alternarVeiculo = (id) => {
+    setVeiculoAberto((atual) => (atual === id ? null : id))
   }
 
-  // Abre e fecha a rota
-  const alternarRota = (id) => {
-    setRotaAberta((atual) => (atual === id ? null : id))
+  const criarNovaRota = async (veiculo) => {
+    setCriandoPorVeiculoId(veiculo.id)
+
+    try {
+      await apiRequest('/api/routes', {
+        method: 'POST',
+        body: JSON.stringify({
+          vehicle_id: veiculo.id,
+          driver_id: veiculo.motoristaId,
+          stops: [],
+        }),
+      })
+
+      await carregarDados()
+      setVeiculoAberto(veiculo.id)
+      showSuccess('Nova rota criada com sucesso.')
+    } catch (error) {
+      showError(error.message || 'Nao foi possivel criar a rota.')
+    } finally {
+      setCriandoPorVeiculoId(null)
+    }
   }
 
-  // Abre e fecha o menu de opções
-  const alternarMenu = (id) => {
-    setMenuAberto((atual) => (atual === id ? null : id))
-  }
-
-  // Obtem o Status do Veiculo, verificando o status de suas rotas e retornando o mais crítico
-  const obterStatusGeral = (rotas) => {
-    const primeiraRotaPendente = rotas.find((rota) => rota.status !== 'Concluido')
-    return primeiraRotaPendente ? primeiraRotaPendente.status : 'Concluido'
-  }
-
-  // mostra o Status do veiculo com a cor correspondente
-  const renderizarStatus = (status) => {
-    const classeStatus = status.toLowerCase().replace(/\s+/g, '-')
-
-    return (
-      <span className={`rotas-status rotas-status--${classeStatus}`}>
-        {status === 'Atrasado' && <TriangleAlert className={styles['rotas-status-alerta']} />}
-        {status === 'Concluido' && <CircleCheckBig className={styles['rotas-status-check']} />}
-        {status}
-      </span>
-    )
-  }
-
-  const notificarErro = (mensagem) => {
-    showError(mensagem)
-    setMenuAberto(null)
-  }
+  const filtrarPlaceholder = 'Filtrar por...'
 
   return (
     <div className={`${styles['admin-page']} ${styles['admin-page--rotas']}`}>
-      {/* Header da pagina */}
       <div className="ui-header">
-        <div className={styles['logo']}></div>
+        <div className={styles.logo} />
         <UserMenu />
-
-        {/* Botão para voltar para app.jsx */}
         <div className="ui-header-extra">
           <a className="ui-back" href="/app" aria-label="Voltar para o painel">
             <ArrowLeft />
           </a>
           <div className="ui-header-extra-title">
-            <Map />
+            <MapIcon />
             <span>Rotas</span>
           </div>
         </div>
@@ -231,131 +204,125 @@ function GerenciarRotas() {
 
       <ActionNotification notification={notification} onClose={clearNotification} />
 
-      {/* Parte principal com cada veiculo listado e a Const para abrir cada veiculo e ver sua rota */}
-      <main className={styles['rotas-pagina']} onClick={() => setMenuAberto(null)}>
+      <main className={styles['rotas-pagina']}>
         <section className={`${styles['cadastros']} ${styles['rotas-cadastros']}`}>
-          {/* Barra de pesquisa e filtro */}
-          <div className={`${styles['filtro']} ${styles['rotas-filtro']}`}>
-            <div className={styles['filtro-input-wrap']}>
-              <Search className={styles['filtro-icon']} />
-              <input type="text" placeholder="Buscar rota" className={styles['filtro-input']} />
+          <div className={styles['filtro-linha']}>
+            <div className={`${styles['filtro']} ${styles['rotas-filtro']}`}>
+              <div className={styles['filtro-input-wrap']}>
+                <Search className={styles['filtro-icon']} />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  className={styles['filtro-input']}
+                  value={busca}
+                  onChange={(event) => setBusca(event.target.value)}
+                />
+              </div>
+
+              <button type="button" className={styles['filtro-botao']} aria-label={filtrarPlaceholder}>
+                <ArrowDownNarrowWide className={styles['filtro-botao-icone']} />
+                <span>{filtrarPlaceholder}</span>
+              </button>
             </div>
-            <ArrowDownNarrowWide className={styles['icone-filtro']} />
-            <p className={styles['busca-filtro']}>Filtrar Por</p>
           </div>
         </section>
 
-        {/* Tabela com rotas dos veiculos */}
-        <section className={styles['rotas-tabela']}>
-          <div className={styles['rotas-cabecalho']}>
-            <div className={`${styles['rotas-coluna']} ${styles['rotas-coluna--veiculo']}`}>Veiculo</div>
-            <div className={`${styles['rotas-coluna']} ${styles['rotas-coluna--status']}`}>Status</div>
-          </div>
+        {carregando ? <p className={styles['estado']}>Carregando rotas...</p> : null}
 
-          {/* Utilização da constante para abrir cada informação dos veiculos */}
-          {veiculos.map((veiculo) => {
-            const aberto = veiculoAberto === veiculo.id
-            const menuVeiculoAberto = menuAberto === veiculo.id
-            const statusGeral = obterStatusGeral(veiculo.rotas)
+        {!carregando ? (
+          <section className={styles['rotas-tabela']}>
+            <div className={styles['rotas-cabecalho']}>
+              <div className={styles['rotas-coluna']}>Veiculo</div>
+              <div className={`${styles['rotas-coluna']} ${styles['rotas-coluna--status']}`}>Status</div>
+            </div>
 
-            // Cada rota de veiculo mostrado aq juntamente do status
-            return (
-              <div key={veiculo.id} className={styles['rotas-bloco']}>
-                <div className={styles['rotas-linha']}>
-                  <button
-                    type="button"
-                    className={`${styles['rotas-celula']} ${styles['rotas-celula--veiculo']}`}
-                    onClick={() => alternarVeiculo(veiculo.id)}
-                  >
-                    {aberto ? (
-                      <ChevronDown className={styles['rotas-seta']} />
-                    ) : (
-                      <ChevronRight className={styles['rotas-seta']} />
-                    )}
-                    <span className={styles['rotas-nome-veiculo']}>{veiculo.nome}</span>
-                  </button>
+            {veiculosFiltrados.length === 0 ? (
+              <p className={styles['estado']}>Nenhum veiculo encontrado.</p>
+            ) : (
+              veiculosFiltrados.map((veiculo) => {
+                const aberto = veiculoAberto === veiculo.id
+                const rotasDoVeiculo = rotasPorVeiculo.get(veiculo.id) || []
+                const statusVeiculo = obterStatusVeiculo(rotasDoVeiculo)
 
-                  <div className={`${styles['rotas-celula']} ${styles['rotas-celula--status']}`}>
-                    {renderizarStatus(statusGeral)}
-
-                    <div className={styles['rotas-menu-wrap']} onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        className={styles['rotas-menu-trigger']}
-                        aria-label={`Abrir menu de ${veiculo.nome}`}
-                        onClick={() => alternarMenu(veiculo.id)}
-                      >
-                        <EllipsisVertical />
-                      </button>
-
-                      {/* Menu para editar ou excluir a rota ao apertar nos 3 pontinhos */}
-                      {menuVeiculoAberto && (
-                        <div className={styles['rotas-menu']}>
-                          <button type="button" onClick={() => notificarErro('Erro ao editar cadastro.')}>Editar</button>
-                          <button type="button" onClick={() => notificarErro('Erro ao excluir cadastro.')}>Excluir</button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {aberto && veiculo.rotas.map((rota) => {
-                  const menuRotaAberto = menuAberto === rota.id
-                  const rotaExpandida = rotaAberta === rota.id
-
-                  return (
-                    <div key={rota.id} className={styles['rotas-subgrupo']}>
-                      <div className={`${styles['rotas-linha']} ${styles['rotas-linha--filha']}`}>
-                        <button
-                          type="button"
-                          className={`${styles['rotas-celula']} ${styles['rotas-celula--veiculo']} ${styles['rotas-celula--rota']}`}
-                          onClick={() => alternarRota(rota.id)}
-                        >
-                          {rotaExpandida ? (
-                            <ChevronDown className={styles['rotas-seta']} />
-                          ) : (
-                            <ChevronRight className={styles['rotas-seta']} />
-                          )}
-                          <span className={styles['rotas-nome-veiculo']}>{rota.nome}</span>
-                        </button>
-
-                        <div className={`${styles['rotas-celula']} ${styles['rotas-celula--status']}`}>
-                          {renderizarStatus(rota.status)}
-
-                          <div className={styles['rotas-menu-wrap']} onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              className={styles['rotas-menu-trigger']}
-                              aria-label={`Abrir menu de ${rota.nome}`}
-                              onClick={() => alternarMenu(rota.id)}
-                            >
-                              <EllipsisVertical />
-                            </button>
-
-                            {menuRotaAberto && (
-                              <div className={styles['rotas-menu']}>
-                                <button type="button" onClick={() => notificarErro('Erro ao editar cadastro.')}>Editar</button>
-                                <button type="button" onClick={() => notificarErro('Erro ao excluir cadastro.')}>Excluir</button>
-                              </div>
-                            )}
-                          </div>
+                return (
+                  <article key={veiculo.id} className={styles['rotas-bloco']}>
+                    <button type="button" className={styles['veiculo-linha']} onClick={() => alternarVeiculo(veiculo.id)}>
+                      <div className={styles['rotas-celula--veiculo']}>
+                        {aberto ? (
+                          <ChevronDown className={styles['rotas-seta']} />
+                        ) : (
+                          <ChevronRight className={styles['rotas-seta']} />
+                        )}
+                        <div className={styles['rotas-veiculo-texto']}>
+                          <span className={styles['rotas-nome-veiculo']}>{veiculo.identificacao}</span>
+                          <span className={styles['rotas-subtexto']}>
+                            {veiculo.placa || 'Sem placa'} - {veiculo.motorista}
+                          </span>
                         </div>
                       </div>
 
-                      {rotaExpandida && (
-                        <div className={styles['rotas-alunos']}>
-                          {rota.alunos.map((aluno) => (
-                            <p key={aluno}>{aluno}</p>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )
-          })}
-        </section>
+                      <div className={styles['rotas-celula--status']}>
+                        {renderizarStatus(statusVeiculo, styles)}
+                      </div>
+                    </button>
+
+                    {aberto ? (
+                      <div className={styles['rotas-conteudo']}>
+                        {rotasDoVeiculo.length === 0 ? (
+                          <p className={styles['vazio']}>Nenhuma rota anterior para este veiculo.</p>
+                        ) : (
+                          rotasDoVeiculo.map((rota, indice) => (
+                            <article key={rota.id} className={styles['rota-card']}>
+                              <div className={styles['rota-linha']}>
+                                <div className={styles['rotas-celula--veiculo']}>
+                                  <ChevronRight className={styles['rotas-seta']} />
+                                  <span className={styles['rotas-nome-veiculo']}>{`Rota ${indice + 1}`}</span>
+                                  <button
+                                    type="button"
+                                    className={styles['rota-menu']}
+                                    aria-label={`Opcoes de Rota ${indice + 1}`}
+                                  >
+                                    <EllipsisVertical />
+                                  </button>
+                                </div>
+
+                                <div className={styles['rotas-celula--status']}>
+                                  {renderizarStatus(rota.status, styles, `Horario ${indice + 1}`)}
+                                </div>
+                              </div>
+
+                              <div className={styles['rotas-alunos']}>
+                                {rota.alunos.length === 0 ? (
+                                  <p className={styles['vazio']}>Sem alunos vinculados.</p>
+                                ) : (
+                                  rota.alunos.map((aluno) => (
+                                    <p key={aluno.id || aluno.nome || aluno.name}>
+                                      {aluno.nome || aluno.name || 'Aluno sem nome'}
+                                    </p>
+                                  ))
+                                )}
+                              </div>
+                            </article>
+                          ))
+                        )}
+
+                        <button
+                          type="button"
+                          className={styles['nova-rota']}
+                          onClick={() => criarNovaRota(veiculo)}
+                          disabled={criandoPorVeiculoId === veiculo.id}
+                        >
+                          <CirclePlus />
+                          <span>{criandoPorVeiculoId === veiculo.id ? 'Criando...' : 'Nova Rota'}</span>
+                        </button>
+                      </div>
+                    ) : null}
+                  </article>
+                )
+              })
+            )}
+          </section>
+        ) : null}
       </main>
     </div>
   )

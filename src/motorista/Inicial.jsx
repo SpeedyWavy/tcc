@@ -23,7 +23,7 @@ function Inicial() {
           <span>Veiculo</span>
         </a>
 
-        <a href="#" className={styles['motorista-card']}>
+        <a href="/motorista-rotas" className={styles['motorista-card']}>
           <MapPinned />
           <span>Rotas</span>
         </a>
@@ -33,7 +33,7 @@ function Inicial() {
           <span>Alunos</span>
         </a>
 
-        <a href="#" className={styles['motorista-card']}>
+        <a href="/motorista-contatos" className={styles['motorista-card']}>
           <Phone />
           <span>Contatos</span>
         </a>

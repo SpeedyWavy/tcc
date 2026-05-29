@@ -1,0 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+.motorista-contatos-page {
+  min-height: 100vh;
+  background: #001355;
+  font-family: 'Inter', sans-serif;
+}
+
+.logo {
+  width: 180px;
+  height: 90px;
+  background-image: url('../../assets/logo-rds.png');
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: contain;
+}
+
+.ui-header-extra-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.conteudo {
+  background: #d8d9ea;
+  min-height: calc(100vh - 142px);
+  padding: 16px 14px 24px;
+  box-sizing: border-box;
+}
+
+.barra-pesquisa {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.barra-pesquisa input {
+  width: 100%;
+  height: 46px;
+  border: 0;
+  border-radius: 12px;
+  background: #b6bad5;
+  padding: 0 14px 0 42px;
+  font-size: 1rem;
+  outline: none;
+  color: #001355;
+  box-sizing: border-box;
+}
+
+.icone-pesquisa {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #6270a8;
+}
+
+.filtros {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filtro-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #35406f;
+  font-size: 0.98rem;
+}
+
+.filtro-item input {
+  accent-color: #35406f;
+}
+
+.estado {
+  margin: 10px 2px 0;
+  color: #35406f;
+}
+
+.lista {
+  display: grid;
+  gap: 14px;
+}
+
+.grupo {
+  display: grid;
+  gap: 8px;
+}
+
+.grupo h2 {
+  margin: 0;
+  color: #35406f;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.vazio {
+  margin: 0;
+  color: #5a6597;
+}
+
+.contato {
+  background: #adb5d6;
+  border-radius: 10px;
+  min-height: 54px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.contato-info {
+  display: grid;
+  gap: 2px;
+  color: #001355;
+}
+
+.contato-info strong {
+  font-size: 1rem;
+}
+
+.contato-info span {
+  font-size: 0.88rem;
+  color: #2c3565;
+}
+
+.acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.acao {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: #7a82b4;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.acao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .topo-superior {
+    padding-inline: 14px;
+  }
+
+}

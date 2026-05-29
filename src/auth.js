@@ -54,7 +54,7 @@ export function requireAuth(pathname) {
     '/gerenciar-rotas',
     '/gerenciar-administradores',
   ])
-  const driverRoutes = new Set(['/inicial', '/motorista-alunos'])
+  const driverRoutes = new Set(['/inicial', '/motorista-alunos', '/motorista-contatos', '/motorista-rotas'])
 
   if (publicRoutes.has(pathname)) {
     return { allowed: true, redirectTo: user ? getHomePathByRole(user.role) : null }

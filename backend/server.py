@@ -2,9 +2,9 @@ from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+from supabase_db import SupabaseDatabase
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -14,14 +14,21 @@ from jose import JWTError, jwt
 from bson import ObjectId
 import math
 import httpx
+import unicodedata
+from supabase import create_client
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+DATABASE_BACKEND = "supabase"
+
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+if not supabase_url or not supabase_key:
+    raise RuntimeError("SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY sao obrigatorios quando DATABASE_BACKEND=supabase")
+
+db = SupabaseDatabase(supabase_url, supabase_key)
+supabase_client = create_client(supabase_url, supabase_key)
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -48,10 +55,15 @@ logger = logging.getLogger(__name__)
 # ==================== HELPERS ====================
 
 def serialize_doc(doc: dict) -> dict:
-    """Convert MongoDB document to JSON-serializable dict"""
+    """Convert a DB document to a JSON-serializable dict."""
     if doc is None:
         return None
-    doc["id"] = str(doc.pop("_id"))
+
+    doc = dict(doc)
+    if "_id" in doc:
+        doc["id"] = str(doc.pop("_id"))
+    elif "id" not in doc:
+        doc["id"] = None
     # Remove password from responses
     doc.pop("password", None)
 
@@ -73,6 +85,55 @@ def serialize_doc(doc: dict) -> dict:
 
 def serialize_docs(docs: list) -> list:
     return [serialize_doc(doc) for doc in docs]
+
+
+ObjectId.is_valid = staticmethod(lambda value: isinstance(value, str) and bool(value.strip()))
+
+
+def make_id_filter(value: str) -> Dict[str, Any]:
+    return {"id": value}
+
+
+def make_id_list(values: List[str]) -> List[Any]:
+    return list(values)
+
+
+def normalize_auth_email(full_name: str) -> str:
+    normalized = unicodedata.normalize('NFKD', full_name)
+    normalized = ''.join(char for char in normalized if not unicodedata.combining(char))
+    return f"{normalized.lower().replace(' ', '.')}@local.tcc"
+
+
+def ensure_supabase_auth_user(full_name: str, password: str, role: str, email: Optional[str] = None) -> None:
+    """Create a real Supabase Auth user so it appears in the Authentication panel."""
+    if not supabase_client:
+        return
+
+    auth_email = (email or '').strip() or normalize_auth_email(full_name)
+    try:
+        users_response = supabase_client.auth.admin.list_users()
+        existing_users = getattr(users_response, "users", []) or []
+        if any(user.email == auth_email for user in existing_users):
+            logger.info("Supabase Auth user already exists: %s", auth_email)
+            return
+    except Exception as exc:
+        logger.warning("Unable to list Supabase Auth users before creation: %s", exc)
+
+    try:
+        result = supabase_client.auth.admin.create_user({
+            "email": auth_email,
+            "password": password,
+            "email_confirm": True,
+            "user_metadata": {"full_name": full_name},
+            "app_metadata": {"full_name": full_name, "role": role},
+        })
+        user = getattr(result, "user", None)
+        if user is not None:
+            logger.info("Supabase Auth user created: %s (%s)", user.email, role)
+        else:
+            logger.warning("Supabase Auth user creation returned no user for %s", auth_email)
+    except Exception as exc:
+        logger.warning("Unable to create Supabase Auth user %s: %s", auth_email, exc)
 
 # ==================== CONSTANTS ====================
 
@@ -170,7 +231,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except JWTError:
         raise credentials_exception
     
-    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    user = await db.users.find_one(make_id_filter(user_id))
     if user is None:
         raise credentials_exception
     
@@ -232,40 +293,96 @@ def haversine_distance(lat1, lon1, lat2, lon2):
 # ==================== SEED DATA ====================
 
 @app.on_event("startup")
-async def seed_admin():
-    """Create initial admin user if not exists"""
-    admin_exists = await db.users.find_one({"full_name": "Debora", "role": UserRole.ADMIN})
-    if not admin_exists:
-        admin_data = {
+async def seed_default_users():
+    """Create the default admin and driver users expected by the app."""
+    default_users = [
+        {
             "full_name": "Debora",
-            "password": hash_password("12345"),
+            "plain_password": "12345",
             "role": UserRole.ADMIN,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.users.insert_one(admin_data)
-        logger.info("Admin user created: Debora")
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        },
+        {
+            "full_name": "João Silva",
+            "plain_password": "driver123",
+            "role": UserRole.DRIVER,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        },
+    ]
+
+    for user_data in default_users:
+        existing = await db.users.find_one({"full_name": user_data["full_name"]})
+        if not existing:
+            await db.users.insert_one({
+                "full_name": user_data["full_name"],
+                "password": hash_password(user_data["plain_password"]),
+                "role": user_data["role"],
+                "created_at": user_data["created_at"],
+            })
+            logger.info("Seed user created: %s (%s)", user_data["full_name"], user_data["role"])
+
+        ensure_supabase_auth_user(
+            user_data["full_name"],
+            user_data["plain_password"],
+            user_data["role"],
+            user_data.get("email"),
+        )
 
 # ==================== AUTH ENDPOINTS ====================
 
 @api_router.post("/auth/login")
 async def login(request: LoginRequest):
     user = await db.users.find_one({"full_name": request.full_name})
-    
+    email = (user or {}).get("email") or normalize_auth_email(request.full_name)
+    try:
+        auth_response = supabase_client.auth.sign_in_with_password({
+            "email": email,
+            "password": request.password,
+        })
+        auth_user = getattr(auth_response, "user", None)
+        if auth_user is None:
+            raise HTTPException(status_code=401, detail="Nome ou senha incorretos")
+    except Exception:
+        auth_user = None
+
+        if auth_user is not None:
+            if user is None:
+                user = {
+                    "id": str(auth_user.id),
+                    "full_name": request.full_name,
+                    "role": (auth_user.app_metadata or {}).get("role")
+                    or (auth_user.user_metadata or {}).get("role", UserRole.DRIVER),
+                }
+
+        user_id = str(user.get("id") or auth_user.id)
+        access_token = create_access_token(data={"sub": user_id})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+                "user": {
+                    "id": user_id,
+                    "full_name": user.get("full_name") or request.full_name,
+                    "role": user.get("role")
+                    or (auth_user.app_metadata or {}).get("role")
+                    or (auth_user.user_metadata or {}).get("role", UserRole.DRIVER),
+                },
+            }
+
     if not user or not verify_password(request.password, user["password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Nome ou senha incorretos"
         )
-    
-    user_id = str(user["_id"])
+
+    user_id = str(user.get("id") or user.get("_id"))
     access_token = create_access_token(data={"sub": user_id})
-    
+
     user_data = {
         "id": user_id,
         "full_name": user["full_name"],
         "role": user["role"]
     }
-    
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -280,22 +397,29 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/admins")
 async def create_admin(admin: UserCreate, current_user: dict = Depends(get_admin_user)):
-    existing = await db.users.find_one({"full_name": admin.full_name})
-    if existing:
-        raise HTTPException(status_code=400, detail="Usuário com este nome já existe")
-    
-    admin_data = {
-        "full_name": admin.full_name,
-        "password": hash_password(admin.password),
-        "role": UserRole.ADMIN,
-        "cpf": admin.cpf,
-        "email": admin.email,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    result = await db.users.insert_one(admin_data)
-    created = await db.users.find_one({"_id": result.inserted_id})
-    return serialize_doc(created)
+    try:
+        existing = await db.users.find_one({"full_name": admin.full_name})
+        if existing:
+            raise HTTPException(status_code=400, detail="Usuário com este nome já existe")
+
+        admin_data = {
+            "full_name": admin.full_name,
+            "password": hash_password(admin.password),
+            "role": UserRole.ADMIN,
+            "cpf": admin.cpf,
+            "email": admin.email,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+
+        result = await db.users.insert_one(admin_data)
+        ensure_supabase_auth_user(admin.full_name, admin.password, UserRole.ADMIN, admin.email)
+        created = result.record or await db.users.find_one({"id": result.inserted_id})
+        return serialize_doc(created)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Erro ao cadastrar administrador: %s", exc)
+        raise HTTPException(status_code=500, detail="Nao foi possivel cadastrar o administrador")
 
 @api_router.get("/admins")
 async def get_admins(current_user: dict = Depends(get_admin_user)):
@@ -316,14 +440,14 @@ async def update_admin(admin_id: str, admin: UserUpdate, current_user: dict = De
         update_data["password"] = hash_password(admin.password)
     
     result = await db.users.update_one(
-        {"_id": ObjectId(admin_id), "role": UserRole.ADMIN},
+        {**make_id_filter(admin_id), "role": UserRole.ADMIN},
         {"$set": update_data}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Administrador não encontrado")
     
-    updated = await db.users.find_one({"_id": ObjectId(admin_id)})
+    updated = await db.users.find_one(make_id_filter(admin_id))
     return serialize_doc(updated)
 
 @api_router.delete("/admins/{admin_id}")
@@ -339,7 +463,7 @@ async def delete_admin(admin_id: str, current_user: dict = Depends(get_admin_use
     if admin_count <= 1:
         raise HTTPException(status_code=400, detail="Deve existir pelo menos um administrador")
     
-    result = await db.users.delete_one({"_id": ObjectId(admin_id), "role": UserRole.ADMIN})
+    result = await db.users.delete_one({**make_id_filter(admin_id), "role": UserRole.ADMIN})
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Administrador não encontrado")
@@ -350,28 +474,35 @@ async def delete_admin(admin_id: str, current_user: dict = Depends(get_admin_use
 
 @api_router.post("/drivers")
 async def create_driver(driver: UserCreate, current_user: dict = Depends(get_admin_user)):
-    existing = await db.users.find_one({"full_name": driver.full_name})
-    if existing:
-        raise HTTPException(status_code=400, detail="Motorista com este nome já existe")
-    
-    driver_data = {
-        "full_name": driver.full_name,
-        "password": hash_password(driver.password),
-        "role": UserRole.DRIVER,
-        "cpf": driver.cpf,
-        "email": driver.email,
-        "rg": driver.rg,
-        "cnh_category": driver.cnh_category,
-        "transport_identification": driver.transport_identification,
-        "contact": driver.contact,
-        "schedules": driver.schedules,
-        "unit": driver.unit,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    result = await db.users.insert_one(driver_data)
-    created = await db.users.find_one({"_id": result.inserted_id})
-    return serialize_doc(created)
+    try:
+        existing = await db.users.find_one({"full_name": driver.full_name})
+        if existing:
+            raise HTTPException(status_code=400, detail="Motorista com este nome já existe")
+
+        driver_data = {
+            "full_name": driver.full_name,
+            "password": hash_password(driver.password),
+            "role": UserRole.DRIVER,
+            "cpf": driver.cpf,
+            "email": driver.email,
+            "rg": driver.rg,
+            "cnh_category": driver.cnh_category,
+            "transport_identification": driver.transport_identification,
+            "contact": driver.contact,
+            "schedules": driver.schedules,
+            "unit": driver.unit,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+
+        result = await db.users.insert_one(driver_data)
+        ensure_supabase_auth_user(driver.full_name, driver.password, UserRole.DRIVER, driver.email)
+        created = result.record or await db.users.find_one({"id": result.inserted_id})
+        return serialize_doc(created)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Erro ao cadastrar motorista: %s", exc)
+        raise HTTPException(status_code=500, detail="Nao foi possivel cadastrar o motorista")
 
 @api_router.get("/drivers")
 async def get_drivers(current_user: dict = Depends(get_current_user)):
@@ -383,7 +514,7 @@ async def get_driver(driver_id: str, current_user: dict = Depends(get_current_us
     if not ObjectId.is_valid(driver_id):
         raise HTTPException(status_code=400, detail="ID inválido")
     
-    driver = await db.users.find_one({"_id": ObjectId(driver_id), "role": UserRole.DRIVER})
+    driver = await db.users.find_one({**make_id_filter(driver_id), "role": UserRole.DRIVER})
     if not driver:
         raise HTTPException(status_code=404, detail="Motorista não encontrado")
     
@@ -409,14 +540,14 @@ async def update_driver(driver_id: str, driver: UserUpdate, current_user: dict =
         update_data["password"] = hash_password(driver.password)
     
     result = await db.users.update_one(
-        {"_id": ObjectId(driver_id), "role": UserRole.DRIVER},
+        {**make_id_filter(driver_id), "role": UserRole.DRIVER},
         {"$set": update_data}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Motorista não encontrado")
     
-    updated = await db.users.find_one({"_id": ObjectId(driver_id)})
+    updated = await db.users.find_one(make_id_filter(driver_id))
     return serialize_doc(updated)
 
 @api_router.delete("/drivers/{driver_id}")
@@ -433,7 +564,7 @@ async def delete_driver(driver_id: str, current_user: dict = Depends(get_admin_u
     # Delete routes associated with driver
     await db.routes.delete_many({"driver_id": driver_id})
     
-    result = await db.users.delete_one({"_id": ObjectId(driver_id), "role": UserRole.DRIVER})
+    result = await db.users.delete_one({**make_id_filter(driver_id), "role": UserRole.DRIVER})
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Motorista não encontrado")
@@ -444,31 +575,37 @@ async def delete_driver(driver_id: str, current_user: dict = Depends(get_admin_u
 
 @api_router.post("/students")
 async def create_student(student: StudentCreate, current_user: dict = Depends(get_admin_user)):
-    lat, lon = await geocode_address(student.address)
-    
-    student_data = {
-        "name": student.name,
-        "nome": student.name,
-        "rm": student.rm,
-        "address": student.address,
-        "endereco": student.address,
-        "latitude": lat,
-        "longitude": lon,
-        "parent_contact": student.parent_contact,
-        "contato_responsavel": student.parent_contact,
-        "responsible_name": student.responsible_name,
-        "responsavel": student.responsible_name,
-        "transport_identification": student.transport_identification,
-        "transporte": student.transport_identification,
-        "unit": student.unit,
-        "unidade": student.unit,
-        "route_id": None,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    result = await db.students.insert_one(student_data)
-    created = await db.students.find_one({"_id": result.inserted_id})
-    return serialize_doc(created)
+    try:
+        lat, lon = await geocode_address(student.address)
+
+        student_data = {
+            "name": student.name,
+            "nome": student.name,
+            "rm": student.rm,
+            "address": student.address,
+            "endereco": student.address,
+            "latitude": lat,
+            "longitude": lon,
+            "parent_contact": student.parent_contact,
+            "contato_responsavel": student.parent_contact,
+            "responsible_name": student.responsible_name,
+            "responsavel": student.responsible_name,
+            "transport_identification": student.transport_identification,
+            "transporte": student.transport_identification,
+            "unit": student.unit,
+            "unidade": student.unit,
+            "route_id": None,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+
+        result = await db.students.insert_one(student_data)
+        created = result.record or await db.students.find_one({"id": result.inserted_id})
+        return serialize_doc(created)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Erro ao cadastrar aluno: %s", exc)
+        raise HTTPException(status_code=500, detail="Nao foi possivel cadastrar o aluno")
 
 @api_router.get("/students")
 async def get_students(current_user: dict = Depends(get_current_user)):
@@ -480,7 +617,7 @@ async def get_student(student_id: str, current_user: dict = Depends(get_current_
     if not ObjectId.is_valid(student_id):
         raise HTTPException(status_code=400, detail="ID inválido")
     
-    student = await db.students.find_one({"_id": ObjectId(student_id)})
+    student = await db.students.find_one(make_id_filter(student_id))
     if not student:
         raise HTTPException(status_code=404, detail="Aluno não encontrado")
     
@@ -512,14 +649,14 @@ async def update_student(student_id: str, student: StudentCreate, current_user: 
     }
     
     result = await db.students.update_one(
-        {"_id": ObjectId(student_id)},
+        {**make_id_filter(student_id)},
         {"$set": update_data}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Aluno não encontrado")
     
-    updated = await db.students.find_one({"_id": ObjectId(student_id)})
+    updated = await db.students.find_one(make_id_filter(student_id))
     return serialize_doc(updated)
 
 @api_router.delete("/students/{student_id}")
@@ -533,7 +670,7 @@ async def delete_student(student_id: str, current_user: dict = Depends(get_admin
         {"$pull": {"stops": {"student_id": student_id}}}
     )
     
-    result = await db.students.delete_one({"_id": ObjectId(student_id)})
+    result = await db.students.delete_one(make_id_filter(student_id))
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Aluno não encontrado")
@@ -555,7 +692,7 @@ async def create_vehicle(vehicle: VehicleCreate, current_user: dict = Depends(ge
             "role": UserRole.DRIVER,
         })
         if driver:
-            resolved_driver_id = str(driver["_id"])
+            resolved_driver_id = str(driver.get("id") or driver.get("_id"))
 
     vehicle_data = {
         "license_plate": vehicle.license_plate,
@@ -570,7 +707,7 @@ async def create_vehicle(vehicle: VehicleCreate, current_user: dict = Depends(ge
     }
     
     result = await db.vehicles.insert_one(vehicle_data)
-    created = await db.vehicles.find_one({"_id": result.inserted_id})
+    created = result.record or await db.vehicles.find_one({"id": result.inserted_id})
     return serialize_doc(created)
 
 @api_router.get("/vehicles")
@@ -583,7 +720,7 @@ async def get_vehicle(vehicle_id: str, current_user: dict = Depends(get_current_
     if not ObjectId.is_valid(vehicle_id):
         raise HTTPException(status_code=400, detail="ID inválido")
     
-    vehicle = await db.vehicles.find_one({"_id": ObjectId(vehicle_id)})
+    vehicle = await db.vehicles.find_one(make_id_filter(vehicle_id))
     if not vehicle:
         raise HTTPException(status_code=404, detail="Veículo não encontrado")
     
@@ -601,7 +738,7 @@ async def update_vehicle(vehicle_id: str, vehicle: VehicleCreate, current_user: 
             "role": UserRole.DRIVER,
         })
         if driver:
-            resolved_driver_id = str(driver["_id"])
+            resolved_driver_id = str(driver.get("id") or driver.get("_id"))
 
     update_data = {
         "license_plate": vehicle.license_plate,
@@ -614,14 +751,14 @@ async def update_vehicle(vehicle_id: str, vehicle: VehicleCreate, current_user: 
     }
     
     result = await db.vehicles.update_one(
-        {"_id": ObjectId(vehicle_id)},
+        make_id_filter(vehicle_id),
         {"$set": update_data}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Veículo não encontrado")
     
-    updated = await db.vehicles.find_one({"_id": ObjectId(vehicle_id)})
+    updated = await db.vehicles.find_one(make_id_filter(vehicle_id))
     return serialize_doc(updated)
 
 @api_router.patch("/vehicles/{vehicle_id}/status")
@@ -633,7 +770,7 @@ async def update_vehicle_status(vehicle_id: str, body: VehicleStatusUpdate, curr
         raise HTTPException(status_code=400, detail="Status inválido. Use 'garage' ou 'transit'")
     
     result = await db.vehicles.update_one(
-        {"_id": ObjectId(vehicle_id)},
+        make_id_filter(vehicle_id),
         {"$set": {"status": body.status}}
     )
     
@@ -650,7 +787,7 @@ async def delete_vehicle(vehicle_id: str, current_user: dict = Depends(get_admin
     # Delete associated routes
     await db.routes.delete_many({"vehicle_id": vehicle_id})
     
-    result = await db.vehicles.delete_one({"_id": ObjectId(vehicle_id)})
+    result = await db.vehicles.delete_one(make_id_filter(vehicle_id))
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Veículo não encontrado")
@@ -684,7 +821,7 @@ async def generate_routes(current_user: dict = Depends(get_admin_user)):
         if not unassigned:
             break
         
-        vehicle_id = str(vehicle["_id"])
+        vehicle_id = str(vehicle.get("id") or vehicle.get("_id"))
         capacity = vehicle["capacity"]
         route_students = []
         
@@ -720,7 +857,7 @@ async def generate_routes(current_user: dict = Depends(get_admin_user)):
         stops = []
         for idx, student in enumerate(route_students):
             stops.append({
-                "student_id": str(student["_id"]),
+                "student_id": str(student.get("id") or student.get("_id")),
                 "student_name": student["name"],
                 "address": student["address"],
                 "latitude": student["latitude"],
@@ -737,12 +874,12 @@ async def generate_routes(current_user: dict = Depends(get_admin_user)):
         }
         
         result = await db.routes.insert_one(route_data)
-        route_id = str(result.inserted_id)
+        route_id = str((result.record or {}).get("id") or result.inserted_id)
         
         # Update students with route_id
-        student_ids = [ObjectId(stop["student_id"]) for stop in stops]
+        student_ids = [stop["student_id"] for stop in stops]
         await db.students.update_many(
-            {"_id": {"$in": student_ids}},
+            {"id": {"$in": student_ids}},
             {"$set": {"route_id": route_id}}
         )
         
@@ -765,7 +902,7 @@ async def get_route(route_id: str, current_user: dict = Depends(get_current_user
     if not ObjectId.is_valid(route_id):
         raise HTTPException(status_code=400, detail="ID inválido")
     
-    route = await db.routes.find_one({"_id": ObjectId(route_id)})
+    route = await db.routes.find_one(make_id_filter(route_id))
     if not route:
         raise HTTPException(status_code=404, detail="Rota não encontrada")
     
@@ -782,7 +919,7 @@ async def delete_route(route_id: str, current_user: dict = Depends(get_admin_use
         {"$set": {"route_id": None}}
     )
     
-    result = await db.routes.delete_one({"_id": ObjectId(route_id)})
+    result = await db.routes.delete_one(make_id_filter(route_id))
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Rota não encontrada")
@@ -844,4 +981,5 @@ app.add_middleware(
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    return None
+

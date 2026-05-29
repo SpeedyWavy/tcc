@@ -11,6 +11,8 @@ import GerenciarVeiculos from './admin/GerenciarVeiculos.jsx'
 import Login from './Login.jsx'
 import Suporte from './Suporte.jsx'
 import AlunosMotorista from './motorista/Alunos.jsx'
+import ContatosMotorista from './motorista/Contatos.jsx'
+import RotasMotorista from './motorista/Rotas.jsx'
 import Inicial from './motorista/Inicial.jsx'
 import { requireAuth } from './auth.js'
 import Mais from './admin/Mais.jsx'
@@ -39,6 +41,10 @@ const CurrentPage = pathname === '/gerenciar-alunos'
       ? Suporte
     : pathname === '/motorista-alunos'
       ? AlunosMotorista
+    : pathname === '/motorista-contatos'
+      ? ContatosMotorista
+    : pathname === '/motorista-rotas'
+      ? RotasMotorista
     : pathname === '/mais'
       ? Mais
     : pathname === '/inicial'

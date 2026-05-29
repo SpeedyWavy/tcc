@@ -102,26 +102,43 @@ function GerenciarAlunos() {
     setNovoAluno((atual) => ({ ...atual, [campo]: e.target.value }))
   }
 
+  const validarAluno = () => {
+    const nome = novoAluno.nome.trim()
+    const rm = novoAluno.rm.trim()
+    const responsavel = novoAluno.responsavel.trim()
+    const contatoResponsavel = novoAluno.contatoResponsavel.trim()
+    const endereco = novoAluno.endereco.trim()
+    const transporte = novoAluno.transporte.trim()
+    const unidade = novoAluno.unidade.trim()
+
+    if (!nome || !rm || !responsavel || !contatoResponsavel || !endereco || !transporte || !unidade) {
+      showError('Preencha todos os campos do cadastro do aluno.')
+      return null
+    }
+
+    return {
+      name: nome,
+      rm,
+      responsible_name: responsavel,
+      parent_contact: contatoResponsavel,
+      address: endereco,
+      transport_identification: transporte,
+      unit: unidade,
+    }
+  }
+
   const enviarNovoAluno = async (e) => {
     e.preventDefault()
 
-    if (!novoAluno.rm.trim()) {
-      showError('Informe o RM do aluno para criar o cadastro.')
+    const payload = validarAluno()
+    if (!payload) {
       return
     }
 
     try {
       await apiRequest('/api/students', {
         method: 'POST',
-        body: JSON.stringify({
-          name: novoAluno.nome.trim(),
-          rm: novoAluno.rm.trim(),
-          responsible_name: novoAluno.responsavel.trim(),
-          parent_contact: novoAluno.contatoResponsavel.trim(),
-          address: novoAluno.endereco.trim(),
-          transport_identification: novoAluno.transporte,
-          unit: novoAluno.unidade,
-        }),
+        body: JSON.stringify(payload),
       })
 
       await carregarAlunos()
@@ -139,23 +156,15 @@ function GerenciarAlunos() {
       return
     }
 
-    if (!novoAluno.rm.trim()) {
-      showError('O RM do aluno e obrigatorio.')
+    const payload = validarAluno()
+    if (!payload) {
       return
     }
 
     try {
       await apiRequest(`/api/students/${alunoEmEdicao.id}`, {
         method: 'PUT',
-        body: JSON.stringify({
-          name: novoAluno.nome.trim(),
-          rm: novoAluno.rm.trim(),
-          responsible_name: novoAluno.responsavel.trim(),
-          parent_contact: novoAluno.contatoResponsavel.trim(),
-          address: novoAluno.endereco.trim(),
-          transport_identification: novoAluno.transporte,
-          unit: novoAluno.unidade,
-        }),
+        body: JSON.stringify(payload),
       })
 
       await carregarAlunos()
@@ -279,13 +288,13 @@ function GerenciarAlunos() {
             </div>
 
             <form className={styles['boadd-form']} onSubmit={enviarNovoAluno}>
-              <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} />
+              <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
               <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} required />
-              <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} />
-              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} />
-              <input type="text" placeholder="Endereco do aluno" value={novoAluno.endereco} onChange={atualizarCampo('endereco')} />
+              <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
+              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} required />
+              <input type="text" placeholder="Endereco do aluno" value={novoAluno.endereco} onChange={atualizarCampo('endereco')} required />
 
-              <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')}>
+              <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
                 <option value="">Identificacao do transporte</option>
                 <option value="Linha 01 - Van 3">Linha 01 - Van 3</option>
                 <option value="Linha 02 - Onibus 2">Linha 02 - Onibus 2</option>
@@ -297,19 +306,19 @@ function GerenciarAlunos() {
               <div className={styles['boadd-unidade']}>
                 <p>Unidade:</p>
                 <label>
-                  <input type="radio" name="unidade" value="Garcia" checked={novoAluno.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} />
+                  <input type="radio" name="unidade" value="Garcia" checked={novoAluno.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} required />
                   Garcia
                 </label>
                 <label>
-                  <input type="radio" name="unidade" value="Vila Mimosa" checked={novoAluno.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} />
+                  <input type="radio" name="unidade" value="Vila Mimosa" checked={novoAluno.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} required />
                   Mimosa
                 </label>
                 <label>
-                  <input type="radio" name="unidade" value="Swiss Park" checked={novoAluno.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} />
+                  <input type="radio" name="unidade" value="Swiss Park" checked={novoAluno.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} required />
                   Swiss Park
                 </label>
                 <label>
-                  <input type="radio" name="unidade" value="Vivendo e Aprendendo" checked={novoAluno.unidade === 'Vivendo e Aprendendo'} onChange={atualizarCampo('unidade')} />
+                  <input type="radio" name="unidade" value="Vivendo e Aprendendo" checked={novoAluno.unidade === 'Vivendo e Aprendendo'} onChange={atualizarCampo('unidade')} required />
                   Vivendo e Aprendendo
                 </label>
               </div>
@@ -335,13 +344,13 @@ function GerenciarAlunos() {
             </div>
 
             <form className={styles['boadd-form']} onSubmit={salvarEdicaoAluno}>
-              <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} />
+              <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
               <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} required />
-              <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} />
-              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} />
-              <input type="text" placeholder="Endereco do aluno" value={novoAluno.endereco} onChange={atualizarCampo('endereco')} />
+              <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
+              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} required />
+              <input type="text" placeholder="Endereco do aluno" value={novoAluno.endereco} onChange={atualizarCampo('endereco')} required />
 
-              <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')}>
+              <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
                 <option value="">Identificacao do transporte</option>
                 <option value="Linha 01 - Van 3">Linha 01 - Van 3</option>
                 <option value="Linha 02 - Onibus 2">Linha 02 - Onibus 2</option>
@@ -353,19 +362,19 @@ function GerenciarAlunos() {
               <div className={styles['boadd-unidade']}>
                 <p>Unidade:</p>
                 <label>
-                  <input type="radio" name="unidade-edicao" value="Garcia" checked={novoAluno.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} />
+                  <input type="radio" name="unidade-edicao" value="Garcia" checked={novoAluno.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} required />
                   Garcia
                 </label>
                 <label>
-                  <input type="radio" name="unidade-edicao" value="Vila Mimosa" checked={novoAluno.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} />
+                  <input type="radio" name="unidade-edicao" value="Vila Mimosa" checked={novoAluno.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} required />
                   Mimosa
                 </label>
                 <label>
-                  <input type="radio" name="unidade-edicao" value="Swiss Park" checked={novoAluno.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} />
+                  <input type="radio" name="unidade-edicao" value="Swiss Park" checked={novoAluno.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} required />
                   Swiss Park
                 </label>
                 <label>
-                  <input type="radio" name="unidade-edicao" value="Vivendo e Aprendendo" checked={novoAluno.unidade === 'Vivendo e Aprendendo'} onChange={atualizarCampo('unidade')} />
+                  <input type="radio" name="unidade-edicao" value="Vivendo e Aprendendo" checked={novoAluno.unidade === 'Vivendo e Aprendendo'} onChange={atualizarCampo('unidade')} required />
                   Vivendo e Aprendendo
                 </label>
               </div>

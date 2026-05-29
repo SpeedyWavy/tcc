@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react'
 import styles from './Login.module.css'
 import { getHomePathByRole, getStoredUser, saveSession } from './auth.js'
-import { API_URL } from './api.js'
+import { supabase } from './supabase.js'
+
+function normalizeAuthEmail(fullName) {
+  const normalized = fullName
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+
+  return `${normalized.replace(/\s+/g, '.')}@local.tcc`
+}
 
 function Login() {
   const [fullName, setFullName] = useState('')
@@ -18,7 +27,7 @@ function Login() {
 
   const handleLogin = async () => {
     if (!fullName.trim() || !password.trim()) {
-      setErrorMessage('Preencha nome e senha para entrar.')
+      setErrorMessage('Email ou Senha Incorretos.')
       return
     }
 
@@ -26,38 +35,36 @@ function Login() {
     setErrorMessage('')
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          full_name: fullName.trim(),
-          password,
-        }),
+      const email = normalizeAuthEmail(fullName.trim())
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      const rawBody = await response.text()
-      const data = rawBody ? JSON.parse(rawBody) : null
-
-      if (!response.ok) {
-        throw new Error(data?.detail || 'Nao foi possivel fazer login.')
+      if (error) {
+        throw error
       }
 
-      if (!data?.access_token || !data?.user) {
-        throw new Error('A API respondeu sem os dados de autenticacao esperados.')
+      const sessionUser = data?.user
+      const sessionToken = data?.session?.access_token
+
+      if (!sessionToken || !sessionUser) {
+        throw new Error('A autenticacao do Supabase nao retornou uma sessao valida.')
       }
 
-      saveSession(data.access_token, data.user)
-      window.location.replace(getHomePathByRole(data.user.role))
+      const role = sessionUser.app_metadata?.role || sessionUser.user_metadata?.role || 'driver'
+      const displayName =
+        sessionUser.app_metadata?.full_name || sessionUser.user_metadata?.full_name || fullName.trim()
+
+      saveSession(sessionToken, {
+        id: sessionUser.id,
+        full_name: displayName,
+        role,
+      })
+
+      window.location.replace(getHomePathByRole(role))
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        setErrorMessage('A resposta do backend veio vazia ou em formato invalido. Verifique se a API esta rodando em ' + API_URL + '.')
-      } else if (error instanceof TypeError) {
-        setErrorMessage('Nao foi possivel conectar ao backend em ' + API_URL + '.')
-      } else {
-        setErrorMessage(error.message || 'Nao foi possivel fazer login.')
-      }
+      setErrorMessage(error.message || 'Nao foi possivel fazer login.')
     } finally {
       setLoading(false)
     }
@@ -71,18 +78,15 @@ function Login() {
   return (
     <>
       <main className={styles['login-page']}>
-        {/* Barras superiores */}
         <div className={styles['ui-header1']}></div>
         <div className={styles['ui-header2']}></div>
-        {/* Marca do sistema */}
         <div className={styles['login-logo']}></div>
         <h1>Bem Vindo</h1>
-        {/* Campos de acesso */}
         <form className={styles['opcoes']} onSubmit={handleSubmit}>
           <p>Insira seu nome completo</p>
           <input
             type="text"
-            placeholder='Nome completo'
+            placeholder="Nome completo"
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
             disabled={loading}
@@ -91,7 +95,7 @@ function Login() {
             <p>Insira sua Senha</p>
             <input
               type="password"
-              placeholder='Senha'
+              placeholder="Senha"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               disabled={loading}
@@ -100,22 +104,22 @@ function Login() {
               <a href="/suporte">Esqueceu a Senha?</a>
             </div>
           </div>
-          {errorMessage ? <p role="alert">{errorMessage}</p> : null}
+          {errorMessage ? (
+            <p className={styles['login-error']} role="alert" aria-live="assertive">
+              {errorMessage}
+            </p>
+          ) : null}
         </form>
-        
 
-        {/* Botao principal */}
         <button className={styles['entrar']} type="button" onClick={handleLogin} disabled={loading}>
           <span>{loading ? 'Entrando...' : 'Entrar'}</span>
         </button>
 
-        {/* Rodape visual */}
         <div className={styles['page-footer']}>
           <div className={styles['ui-footer']}></div>
           <div className={styles['ui-footer1']}></div>
         </div>
-
-    </main>
+      </main>
     </>
   )
 }

@@ -67,6 +67,20 @@ h1{
     margin-bottom: 0.5dvh;
 }
 
+.login-error{
+    margin: 0.75rem 0 0;
+    padding: 0.75rem 0.9rem;
+    border-radius: 10px;
+    background: #fff3f3;
+    border: 1px solid #ffb4b4;
+    color: #b42318;
+    font-family: "Inter", sans-serif;
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.35;
+    box-shadow: 0 8px 18px rgba(180, 35, 24, 0.12);
+}
+
 .campo-senha{
     display: grid;
     gap: 0.5rem;
