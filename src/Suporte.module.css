@@ -4,11 +4,12 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 .suporte-back-link span{
     font-family: "Inter", sans-serif;
-    font-size: 25px;
+    font-size: clamp(1rem, 5vw, 25px);
     font-weight: 900;
 }
 
@@ -18,7 +19,7 @@
     font-family: "Inter", sans-serif;
     font-weight: 900;
     font-style: Black;
-    font-size: 45px;
+    font-size: clamp(2rem, 7vw, 45px);
     line-height: 100%;
     letter-spacing: 0%;
     animation: fallIn 870ms ease-out forwards;
@@ -68,29 +69,28 @@
 }
 
 .suporte-page .login-logo{
-    width: 160px;
-    height: 143px;
+    width: clamp(118px, 38vw, 160px);
+    height: clamp(106px, 34vw, 143px);
     opacity: 1;
     background-image: url('./assets/logo-rds.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
     display: block;
-    margin-left: 32%;
-    margin-top: 10%;
+    margin: clamp(30px, 8vh, 76px) auto 0;
     animation: fallIn 890ms ease-out forwards;
 }
 
 .suporte-formulario{
-    width: 80%;
-    margin-left: 10%;
-    margin-top: 14%;
+    width: min(86%, 440px);
+    margin: clamp(34px, 9vh, 82px) auto 0;
     font-family: "Inter", sans-serif;
     animation: fallIn 1000ms ease-out forwards;
 }
 
 .suporte-formulario input{
-    height: 53px;
+    min-height: 50px;
+    height: auto;
     width: 100%;
     border: none;
     background: #BAC0DC;
@@ -109,7 +109,7 @@
     line-height: 100%;
     letter-spacing: 0%;
     margin-left: 1dvh;
-    margin-top: 8%;
+    margin-top: 20px;
     margin-bottom: 0.5dvh;
     color: #4A599C;
 }
@@ -124,21 +124,55 @@
 }
 
 .suporte-botao{
-    width: 60%;
-    height: 85px;
+    width: min(72%, 320px);
+    min-height: 62px;
+    height: auto;
     border: none;
     text-align: center;
     box-shadow: 0px 0px 10px 1px #0B0C11A6;
     border-radius: 25px;
     background: #001355;
     color: #FFD400;
-    margin-left: 20%;
-    margin-top: 20%;
+    margin: clamp(36px, 10vh, 96px) auto 0;
     font-family: "Inter", sans-serif;
-    font-size: 30px;
+    font-size: clamp(1.25rem, 6vw, 30px);
     font-weight: 800;
     cursor: pointer;
     animation: fallIn 1320ms ease-out forwards;
+}
+
+@media (max-width: 480px){
+    .suporte-page .ui-header1,
+    .suporte-page .ui-header2{
+        padding-inline: 16px;
+    }
+
+    .suporte-formulario{
+        width: calc(100% - 32px);
+    }
+
+    .suporte-botao{
+        width: calc(100% - 72px);
+        border-radius: 18px;
+    }
+
+    .ui-footer1{
+        height: 56px;
+    }
+}
+
+@media (max-height: 700px){
+    .suporte-page .login-logo{
+        margin-top: 22px;
+    }
+
+    .suporte-formulario{
+        margin-top: 24px;
+    }
+
+    .suporte-botao{
+        margin-top: 28px;
+    }
 }
 
 .page-footer{

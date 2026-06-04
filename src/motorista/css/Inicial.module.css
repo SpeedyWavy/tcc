@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
 
 .logo {
-  width: 180px;
-  height: 90px;
+  width: clamp(128px, 28vw, 180px);
+  height: clamp(64px, 14vw, 90px);
   background-image: url('../../assets/logo-rds.png');
   background-repeat: no-repeat;
   background-position: left center;
@@ -15,7 +15,7 @@
 }
 
 .motorista-home__actions{
-  width: min(76%, 320px);
+  width: min(86%, 360px);
   margin: 54px auto 0;
   display: grid;
   gap: 20px;
@@ -55,7 +55,7 @@
 
 .motorista-card span{
   font-family: "Inter", sans-serif;
-  font-size: 25px;
+  font-size: clamp(1.1rem, 5vw, 25px);
   font-weight: 900;
 
 }
@@ -73,7 +73,7 @@
 
 @media (max-width: 640px){
   .motorista-home__actions{
-    width: min(86%, 320px);
+    width: calc(100% - 40px);
     margin-top: 42px;
     gap: 18px;
   }
@@ -89,5 +89,15 @@
   .motorista-card__image{
     width: 28px;
     height: 28px;
+  }
+}
+
+@media (max-width: 360px){
+  .motorista-home__actions{
+    width: calc(100% - 24px);
+  }
+
+  .motorista-card{
+    padding-inline: 14px;
   }
 }

@@ -479,11 +479,19 @@
 
   .admin-page--veiculos .filtro{
     gap: 0.6rem;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .admin-page--veiculos .filtro-input-wrap{
-    flex-basis: 100%;
+    flex: 1 1 auto;
+    width: auto;
     min-width: 0;
+  }
+
+  .admin-page--veiculos .filtro-botao{
+    flex: 0 0 auto;
   }
 
   .admin-page--veiculos .busca-filtro,

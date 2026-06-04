@@ -7,8 +7,8 @@
 }
 
 .logo {
-  width: 180px;
-  height: 90px;
+  width: clamp(128px, 28vw, 180px);
+  height: clamp(64px, 14vw, 90px);
   background-image: url('../../assets/logo-rds.png');
   background-repeat: no-repeat;
   background-position: left center;
@@ -55,7 +55,7 @@
 
 .cabecalho {
   display: grid;
-  grid-template-columns: 1fr 120px;
+  grid-template-columns: minmax(0, 1fr) 120px;
   margin: 0 0 2px;
   background: #c2c6ea;
   border-bottom: 1px solid #8a93cd;
@@ -91,7 +91,7 @@
 .linha {
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr 120px;
+  grid-template-columns: minmax(0, 1fr) 120px;
   border: 0;
   background: #c8ccef;
   color: #4050a0;
@@ -150,4 +150,38 @@
   margin: 0;
   padding: 8px 16px 8px 34px;
   color: #5460a5;
+}
+
+@media (max-width: 520px){
+  .barra-pesquisa{
+    padding-inline: 12px;
+  }
+
+  .icone-pesquisa{
+    left: 24px;
+  }
+
+  .cabecalho,
+  .linha{
+    grid-template-columns: minmax(0, 1fr) 86px;
+  }
+
+  .coluna-rota,
+  .coluna-horario{
+    padding: 10px 10px;
+  }
+
+  .coluna-horario{
+    font-size: 0.88rem;
+  }
+
+  .linha .coluna-rota{
+    gap: 6px;
+    overflow-wrap: anywhere;
+  }
+
+  .aluno{
+    grid-template-columns: minmax(0, 1fr) 30px;
+    padding-left: 24px;
+  }
 }
