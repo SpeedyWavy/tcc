@@ -22,6 +22,7 @@ function GerenciarAdministradores() {
   const [administradores, setAdministradores] = useState([])
   const [busca, setBusca] = useState('')
   const [menuAberto, setMenuAberto] = useState(null)
+  const [formSubmitting, setFormSubmitting] = useState(false)
   const menuRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
@@ -99,6 +100,7 @@ function GerenciarAdministradores() {
       return
     }
 
+    setFormSubmitting(true)
     try {
       await apiRequest('/api/admins', {
         method: 'POST',
@@ -115,6 +117,8 @@ function GerenciarAdministradores() {
       fecharAdicionar()
     } catch (error) {
       showError(error.message || 'Erro ao cadastrar administrador.')
+    } finally {
+      setFormSubmitting(false)
     }
   }
 
@@ -130,6 +134,7 @@ function GerenciarAdministradores() {
       return
     }
 
+    setFormSubmitting(true)
     try {
       await apiRequest(`/api/admins/${administradorEmEdicao.id}`, {
         method: 'PUT',
@@ -146,6 +151,8 @@ function GerenciarAdministradores() {
       fecharEditor()
     } catch (error) {
       showError(error.message || 'Erro ao atualizar administrador.')
+    } finally {
+      setFormSubmitting(false)
     }
   }
 
@@ -253,8 +260,8 @@ function GerenciarAdministradores() {
                 onChange={atualizarCampo('confirmarSenha')}
               />
 
-              <button type="submit" className={styles['boadd-confirmar']}>
-                Criar Cadastro
+              <button type="submit" className={styles['boadd-confirmar']} disabled={formSubmitting}>
+                {formSubmitting ? 'Criando...' : 'Criar Cadastro'}
               </button>
               <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
                 Cancelar
@@ -285,7 +292,9 @@ function GerenciarAdministradores() {
               <p className={styles['boadd-label']}>Confirmar nova senha</p>
               <input type="password" placeholder="Repita a nova senha" value={novoAdministrador.confirmarSenha} onChange={atualizarCampo('confirmarSenha')} />
 
-              <button type="submit" className={styles['boadd-confirmar']}>Salvar Alteracoes</button>
+              <button type="submit" className={styles['boadd-confirmar']} disabled={formSubmitting}>
+                {formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
+              </button>
               <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
             </form>
           </div>

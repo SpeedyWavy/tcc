@@ -2,8 +2,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
 
 .logo {
-  width: 180px;
-  height: 90px;
+  width: clamp(128px, 28vw, 180px);
+  height: clamp(64px, 14vw, 90px);
   background-image: url('../../assets/logo-rds.png');
   background-repeat: no-repeat;
   background-position: left center;
@@ -13,7 +13,7 @@
 /* Botões Menores redondos */
 .ui-round{
   display: grid;
-  grid-template-columns: repeat(3, minmax(100px, 1fr));
+  grid-template-columns: repeat(3, minmax(86px, 1fr));
   gap: 24px;
   justify-items: center;
   align-items: center;
@@ -85,7 +85,9 @@
 .ui-round-link{
   text-decoration: none;
   color: inherit;
-  display: block;
+  display: grid;
+  place-items: center;
+  width: 100%;
 }
 
 /* Botão de Veiculos */
@@ -118,7 +120,7 @@
 
 .ui-rounds{
   display: grid;
-  grid-template-columns: repeat(3, minmax(1px, 1fr));
+  grid-template-columns: repeat(3, minmax(86px, 1fr));
   gap: 24px;
   justify-items: center;
   align-items: center;
@@ -216,10 +218,12 @@
 
 /* Botões Maiores*/
 .ui-button1{
-  width: 70%;
-  height: 9dvh;
+  width: min(70%, 520px);
+  min-height: 64px;
+  height: auto;
   background: #001355;
-  margin-left: 15%;
+  margin-left: auto;
+  margin-right: auto;
   margin-top: 7dvh;
   justify-content: center;
   display: flex;
@@ -240,10 +244,12 @@
 }
 
 .ui-button2{
-  width: 70%;
-  height: 9dvh;
+  width: min(70%, 520px);
+  min-height: 64px;
+  height: auto;
   background: #001355;
-  margin-left: 15%;
+  margin-left: auto;
+  margin-right: auto;
   margin-top: 3dvh;
   border-radius: 25px;
   opacity: 0;
@@ -255,7 +261,8 @@
   button{
     text-align: center;
     width: 100%;
-    height: 9dvh;
+    min-height: 64px;
+    height: 100%;
     border-radius: 150px;
     background: none;
     border: none;
@@ -275,10 +282,12 @@
 }
 
 .ui-button3{
-  width: 70%;
-  height: 9dvh;
+  width: min(70%, 520px);
+  min-height: 64px;
+  height: auto;
   background: #001355;
-  margin-left: 15%;
+  margin-left: auto;
+  margin-right: auto;
   margin-top: 3dvh;
   border-radius: 25px;
   opacity: 0;
@@ -291,7 +300,8 @@
   button{
     text-align: center;
     width: 100%;
-    height: 9dvh;
+    min-height: 64px;
+    height: 100%;
     border-radius: 150px;
     background: none;
     border: none;
@@ -307,10 +317,12 @@
   }
 }
 .ui-button4{
-  width: 70%;
-  height: 9dvh;
+  width: min(70%, 520px);
+  min-height: 64px;
+  height: auto;
   background: #001355;
-  margin-left: 15%;
+  margin-left: auto;
+  margin-right: auto;
   margin-top: 3dvh;
   border-radius: 25px;
   opacity: 0;
@@ -324,7 +336,8 @@
   button{
     text-align: center;
     width: 100%;
-    height: 9dvh;
+    min-height: 64px;
+    height: 100%;
     border-radius: 150px;
     background: none;
     border: none;
@@ -345,20 +358,112 @@
 .ui-button3 a,
 .ui-button4 a{
   width: 100%;
-  height: 100%;
+  min-height: inherit;
+  height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
+  padding: 0 1rem;
+  text-align: center;
 }
 
 .ui-button4 a{
-  justify-content: flex-start;
-  padding: 0 1.6rem;
+  justify-content: center;
 }
 
 .ui-button4 a svg{
-  margin-right: auto;
+  margin-right: 0;
+  flex-shrink: 0;
+}
+
+@media (max-width: 760px){
+  .ui-round,
+  .ui-rounds{
+    width: calc(100% - 32px);
+    max-width: 380px;
+    gap: 14px;
+  }
+
+  .ui-round .ui-round1,
+  .ui-round .ui-round2,
+  .ui-round3,
+  .ui-round4,
+  .ui-round5,
+  .ui-round6{
+    width: clamp(82px, 27vw, 100px);
+    height: clamp(82px, 27vw, 100px);
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    padding: 10px 6px;
+    font-size: clamp(0.72rem, 2.7vw, 1rem);
+  }
+
+  .ui-round .ui-round1 img,
+  .ui-round .ui-round2 img,
+  .ui-round3 img,
+  .ui-round4 img,
+  .ui-round5 img,
+  .ui-round6 img{
+    width: clamp(32px, 10vw, 45px);
+    height: clamp(32px, 10vw, 45px);
+    margin: 0;
+  }
+
+  .ui-round .ui-round1 p,
+  .ui-round .ui-round2 p,
+  .ui-round3 p,
+  .ui-round4 p,
+  .ui-round5 p,
+  .ui-round6 p{
+    margin: 0;
+    overflow-wrap: anywhere;
+    line-height: 1.1;
+  }
+
+  .ui-button1,
+  .ui-button2,
+  .ui-button3,
+  .ui-button4{
+    width: calc(100% - 48px);
+    max-width: 440px;
+    min-height: 58px;
+    margin-top: 18px;
+    border-radius: 18px;
+  }
+
+  .ui-button1 a,
+  .ui-button2 a,
+  .ui-button3 a,
+  .ui-button4 a{
+    padding: 0 16px;
+    font-size: clamp(0.95rem, 4.4vw, 1.1rem);
+    text-align: center;
+  }
+
+  .ui-button4 a{
+    justify-content: center;
+  }
+
+  .ui-button4 a svg{
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 360px){
+  .ui-round,
+  .ui-rounds{
+    gap: 8px;
+    width: calc(100% - 20px);
+  }
+
+  .ui-button1,
+  .ui-button2,
+  .ui-button3,
+  .ui-button4{
+    width: calc(100% - 28px);
+  }
 }
 
 @keyframes fallIn {

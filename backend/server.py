@@ -168,6 +168,7 @@ class UserCreate(BaseModel):
     contact: Optional[str] = None
     schedules: Optional[str] = None
     unit: Optional[str] = None
+    photo_url: Optional[str] = None
 
 class UserUpdate(BaseModel):
     full_name: str
@@ -180,6 +181,7 @@ class UserUpdate(BaseModel):
     contact: Optional[str] = None
     schedules: Optional[str] = None
     unit: Optional[str] = None
+    photo_url: Optional[str] = None
 
 class StudentCreate(BaseModel):
     name: str
@@ -189,6 +191,7 @@ class StudentCreate(BaseModel):
     responsible_name: Optional[str] = None
     transport_identification: Optional[str] = None
     unit: Optional[str] = None
+    photo_url: Optional[str] = None
 
 class VehicleCreate(BaseModel):
     license_plate: str
@@ -491,6 +494,7 @@ async def create_driver(driver: UserCreate, current_user: dict = Depends(get_adm
             "contact": driver.contact,
             "schedules": driver.schedules,
             "unit": driver.unit,
+            "photo_url": driver.photo_url,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
 
@@ -535,6 +539,7 @@ async def update_driver(driver_id: str, driver: UserUpdate, current_user: dict =
         "contact": driver.contact,
         "schedules": driver.schedules,
         "unit": driver.unit,
+        "photo_url": driver.photo_url,
     }
     if driver.password:
         update_data["password"] = hash_password(driver.password)
@@ -594,6 +599,7 @@ async def create_student(student: StudentCreate, current_user: dict = Depends(ge
             "transporte": student.transport_identification,
             "unit": student.unit,
             "unidade": student.unit,
+            "photo_url": student.photo_url,
             "route_id": None,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
@@ -646,6 +652,7 @@ async def update_student(student_id: str, student: StudentCreate, current_user: 
         "transporte": student.transport_identification,
         "unit": student.unit,
         "unidade": student.unit,
+        "photo_url": student.photo_url,
     }
     
     result = await db.students.update_one(

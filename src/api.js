@@ -75,6 +75,7 @@ function buildStudentRecord(student, isUpdate = false) {
   const parentContact = normalizeText(student.parent_contact)
   const transportIdentification = normalizeText(student.transport_identification)
   const unit = normalizeText(student.unit)
+  const photoUrl = normalizeText(student.photo_url)
 
   const record = {
     name,
@@ -90,6 +91,7 @@ function buildStudentRecord(student, isUpdate = false) {
     transporte: transportIdentification,
     unit,
     unidade: unit,
+    photo_url: photoUrl || null,
     updated_at: new Date().toISOString(),
   }
 

@@ -7,6 +7,8 @@
 body{
   background: #E3E7FF;
   min-height: 100vh;
+  overflow-x: hidden;
+  font-family: "Inter", Arial, "Helvetica Neue", Helvetica, sans-serif;
 }
 
 #root{
@@ -15,13 +17,14 @@ body{
 
 /* Header de todas as paginas do site */
 .ui-header{
-  height: calc(140px + 2.5dvh);
+  min-height: clamp(96px, 17vh, 164px);
   width: 100%;
   background: #001355;
   position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  gap: 16px;
   padding: 0 5% calc(2.5dvh + 14px);
   margin-bottom: 48px;
 }
@@ -89,6 +92,7 @@ body{
   font-size: 1.4rem;
   color: #001355;
   letter-spacing: 0.2px;
+  min-width: 0;
 }
 
 .ui-header-extra-title svg{
@@ -110,13 +114,83 @@ body{
 /* Header apenas da pagina de login */
 .ui-header1{
   height: 8dvh;
+  min-height: 56px;
   width: 100%;
   background: #001355;
 }
 
 .ui-header2{
   height: 1.5dvh;
+  min-height: 10px;
   width: 100%;
   background: #FFD400;
   box-shadow: 0px 5px 20px 1px #0B0C1161;
+}
+
+@media (max-width: 760px){
+  .ui-header{
+    min-height: 136px;
+    padding-inline: 20px;
+    padding-bottom: 26px;
+    margin-bottom: 44px;
+  }
+
+  .ui-header-extra{
+    height: 44px;
+    bottom: -44px;
+    padding-inline: 20px;
+  }
+
+  .ui-header--compact{
+    min-height: 128px;
+    margin-bottom: 12px;
+  }
+
+  .ui-header-extra--compact{
+    height: 12px;
+    bottom: -12px;
+    padding: 0;
+  }
+
+  .ui-header-extra-title{
+    font-size: 1.08rem;
+    gap: 8px;
+    overflow-wrap: anywhere;
+  }
+
+  .ui-header-extra-title svg,
+  .ui-header-extra-title img{
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (max-width: 420px){
+  .ui-header{
+    min-height: 126px;
+    padding-inline: 14px;
+    padding-bottom: 22px;
+  }
+
+  .ui-header--compact{
+    min-height: 118px;
+  }
+
+  .ui-header-extra{
+    padding-inline: 14px;
+  }
+
+  .ui-header-extra--compact{
+    padding: 0;
+  }
+
+  .ui-back{
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .ui-header-extra-title{
+    font-size: 0.98rem;
+  }
 }

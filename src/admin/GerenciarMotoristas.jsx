@@ -6,7 +6,9 @@ import { ArrowLeft, ArrowDownNarrowWide, CirclePlus, Search, ChevronDown, Chevro
 import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import FilterPanel from './components/FilterPanel.jsx'
+import PhotoUpload from './components/PhotoUpload.jsx'
 import { apiRequest } from '../api.js'
+import { supabase } from '../supabase.js'
 
 const motoristaInicial = {
   nome: '',
@@ -17,6 +19,7 @@ const motoristaInicial = {
   contato: '',
   horarios: '',
   unidade: 'Garcia',
+  fotoUrl: null,
 }
 
 const acessoInicial = {
@@ -40,6 +43,9 @@ function GerenciarMotoristas() {
   const [filtroAberto, setFiltroAberto] = useState(false)
   const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], horarios: [], transporte: [] })
   const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], horarios: [], transporte: [] })
+  const [formSubmitting, setFormSubmitting] = useState(false)
+  const [fotoUrlArmazenado, setFotoUrlArmazenado] = useState(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
   const menuRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
@@ -87,6 +93,8 @@ function GerenciarMotoristas() {
     setPassoCadastro(1)
     setNovoMotorista(motoristaInicial)
     setAcessoMotorista(acessoInicial)
+    setFotoUrlArmazenado(null)
+    setPhotoUploading(false)
   }
 
   const abrirEditor = (motorista) => {
@@ -101,7 +109,9 @@ function GerenciarMotoristas() {
       contato: motorista.contact || '',
       horarios: motorista.schedules || '',
       unidade: motorista.unit || 'Garcia',
+      fotoUrl: motorista.photo_url || null,
     })
+    setFotoUrlArmazenado(motorista.photo_url || null)
     setAcessoMotorista({
       email: motorista.email || '',
       senha: '',
@@ -117,6 +127,8 @@ function GerenciarMotoristas() {
     setPassoEdicao(1)
     setNovoMotorista(motoristaInicial)
     setAcessoMotorista(acessoInicial)
+    setFotoUrlArmazenado(null)
+    setPhotoUploading(false)
   }
 
   const atualizarCampo = (campo) => (e) => {
@@ -125,6 +137,30 @@ function GerenciarMotoristas() {
 
   const atualizarAcesso = (campo) => (e) => {
     setAcessoMotorista((atual) => ({ ...atual, [campo]: e.target.value }))
+  }
+
+  const handlePhotoChange = async (photoUrl, filePath) => {
+    setNovoMotorista((atual) => ({ ...atual, fotoUrl: photoUrl ?? null }))
+    setFotoUrlArmazenado(filePath)
+
+    // If editing an existing driver, persist the photo_url immediately
+    if (photoUrl && motoristaEmEdicao?.id) {
+      try {
+        const { error } = await supabase
+          .from('users')
+          .update({ photo_url: photoUrl })
+          .eq('id', motoristaEmEdicao.id)
+
+        if (error) {
+          showError(error.message || 'Erro ao atualizar foto do motorista.')
+        } else {
+          await carregarMotoristas()
+          showSuccess('Foto do motorista atualizada.')
+        }
+      } catch (err) {
+        showError(err.message || 'Erro ao atualizar foto do motorista.')
+      }
+    }
   }
 
   const irParaAcesso = () => {
@@ -148,6 +184,7 @@ function GerenciarMotoristas() {
       return
     }
 
+    setFormSubmitting(true)
     try {
       await apiRequest('/api/drivers', {
         method: 'POST',
@@ -162,6 +199,8 @@ function GerenciarMotoristas() {
           contact: novoMotorista.contato.trim(),
           schedules: novoMotorista.horarios.trim(),
           unit: novoMotorista.unidade,
+          photo_url: novoMotorista.fotoUrl || null,
+          photo_path: fotoUrlArmazenado || null,
         }),
       })
 
@@ -170,6 +209,8 @@ function GerenciarMotoristas() {
       fecharAdicionar()
     } catch (error) {
       showError(error.message || 'Erro ao cadastrar motorista.')
+    } finally {
+      setFormSubmitting(false)
     }
   }
 
@@ -190,6 +231,7 @@ function GerenciarMotoristas() {
       return
     }
 
+    setFormSubmitting(true)
     try {
       await apiRequest(`/api/drivers/${motoristaEmEdicao.id}`, {
         method: 'PUT',
@@ -204,6 +246,8 @@ function GerenciarMotoristas() {
           contact: novoMotorista.contato.trim(),
           schedules: novoMotorista.horarios.trim(),
           unit: novoMotorista.unidade,
+          photo_url: novoMotorista.fotoUrl || null,
+          photo_path: fotoUrlArmazenado || null,
         }),
       })
 
@@ -212,6 +256,8 @@ function GerenciarMotoristas() {
       fecharEditor()
     } catch (error) {
       showError(error.message || 'Erro ao atualizar motorista.')
+    } finally {
+      setFormSubmitting(false)
     }
   }
 
@@ -322,9 +368,14 @@ function GerenciarMotoristas() {
           <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
             {passoCadastro === 1 && (
               <div className={styles['boadd-top']}>
-                <div className={styles['boadd-avatar']}>
-                  <img src={motorista2} alt="" />
-                </div>
+                <PhotoUpload
+                  photoUrl={novoMotorista.fotoUrl}
+                  onPhotoChange={handlePhotoChange}
+                  onUploadingChange={setPhotoUploading}
+                  entityType="driver"
+                  entityId={motoristaEmEdicao?.id}
+                  userName={novoMotorista.nome}
+                />
               </div>
             )}
 
@@ -369,8 +420,8 @@ function GerenciarMotoristas() {
                     </label>
                   </div>
 
-                  <button type="button" className={styles['boadd-confirmar']} onClick={irParaAcesso}>
-                    Continuar
+                  <button type="button" className={styles['boadd-confirmar']} onClick={irParaAcesso} disabled={photoUploading}>
+                    {photoUploading ? 'Aguardando upload...' : 'Continuar'}
                   </button>
                   <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
                     Cancelar
@@ -392,8 +443,8 @@ function GerenciarMotoristas() {
                     <input type="password" placeholder="Senha" value={acessoMotorista.confirmarSenha} onChange={atualizarAcesso('confirmarSenha')} />
                   </label>
 
-                  <button type="submit" className={styles['boadd-confirmar']}>
-                    Criar Cadastro
+                  <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
+                    {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Criando...' : 'Criar Cadastro'}
                   </button>
                   <button type="button" className={styles['boadd-voltar']} onClick={voltarParaDados}>
                     Voltar
@@ -413,9 +464,14 @@ function GerenciarMotoristas() {
           <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
             {passoEdicao === 1 && (
               <div className={styles['boadd-top']}>
-                <div className={styles['boadd-avatar']}>
-                  <img src={motorista2} alt="" />
-                </div>
+                <PhotoUpload
+                  photoUrl={novoMotorista.fotoUrl}
+                  onPhotoChange={handlePhotoChange}
+                  onUploadingChange={setPhotoUploading}
+                  entityType="driver"
+                  entityId={motoristaEmEdicao?.id}
+                  userName={novoMotorista.nome}
+                />
               </div>
             )}
 
@@ -474,7 +530,9 @@ function GerenciarMotoristas() {
                     <input type="password" placeholder="Senha" value={acessoMotorista.confirmarSenha} onChange={atualizarAcesso('confirmarSenha')} />
                   </label>
 
-                  <button type="submit" className={styles['boadd-confirmar']}>Salvar Alteracoes</button>
+                  <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
+                    {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
+                  </button>
                   <button type="button" className={styles['boadd-voltar']} onClick={() => setPassoEdicao(1)}>Voltar</button>
                   <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
                 </>
@@ -563,7 +621,13 @@ function GerenciarMotoristas() {
               {motoristaAberto === motorista.id && (
                 <div className={styles['motorista-detalhes']}>
                   <div className={styles['motorista-card-top']}>
-                    <div className={styles['motorista-foto']} />
+                    <div className={styles['motorista-foto']}>
+                      {motorista.photo_url ? (
+                        <img src={motorista.photo_url} alt={motorista.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ color: '#999', fontSize: '24px' }}>📷</span>
+                      )}
+                    </div>
                     <div className={styles['motorista-info']}>
                       <p><strong>CPF:</strong> {motorista.cpf || 'Nao informado'}</p>
                       <p><strong>RG:</strong> {motorista.rg || 'Nao informado'}</p>

@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowDownNarrowWide, Bus, CirclePlus, Search, ChevronRight, 
 import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import FilterPanel from './components/FilterPanel.jsx'
+import MotoristaSelect from './components/MotoristaSelect.jsx'
 import { apiRequest } from '../api.js'
 
 const veiculoInicial = {
@@ -21,11 +22,13 @@ function GerenciarVeiculos() {
   const [novoVeiculo, setNovoVeiculo] = useState(veiculoInicial)
   const [veiculoEmEdicao, setVeiculoEmEdicao] = useState(null)
   const [veiculos, setVeiculos] = useState([])
+  const [motoristas, setMotoristas] = useState([])
   const [busca, setBusca] = useState('')
   const [menuAberto, setMenuAberto] = useState(null)
   const [filtroAberto, setFiltroAberto] = useState(false)
   const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], capacidade: [], status: [], motorista: [] })
   const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], capacidade: [], status: [], motorista: [] })
+  const [formSubmitting, setFormSubmitting] = useState(false)
   const menuRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
@@ -38,8 +41,18 @@ function GerenciarVeiculos() {
     }
   }
 
+  const carregarMotoristas = async () => {
+    try {
+      const data = await apiRequest('/api/drivers')
+      setMotoristas(Array.isArray(data) ? data : [])
+    } catch (error) {
+      showError(error.message || 'Erro ao carregar motoristas.')
+    }
+  }
+
   useEffect(() => {
     carregarVeiculos()
+    carregarMotoristas()
   }, [])
 
   useEffect(() => {
@@ -103,6 +116,7 @@ function GerenciarVeiculos() {
       return
     }
 
+    setFormSubmitting(true)
     try {
       await apiRequest('/api/vehicles', {
         method: 'POST',
@@ -121,6 +135,8 @@ function GerenciarVeiculos() {
       fecharAdicionar()
     } catch (error) {
       showError(error.message || 'Erro ao cadastrar veiculo.')
+    } finally {
+      setFormSubmitting(false)
     }
   }
 
@@ -136,6 +152,7 @@ function GerenciarVeiculos() {
       return
     }
 
+    setFormSubmitting(true)
     try {
       await apiRequest(`/api/vehicles/${veiculoEmEdicao.id}`, {
         method: 'PUT',
@@ -154,6 +171,8 @@ function GerenciarVeiculos() {
       fecharEditor()
     } catch (error) {
       showError(error.message || 'Erro ao atualizar veiculo.')
+    } finally {
+      setFormSubmitting(false)
     }
   }
 
@@ -275,7 +294,12 @@ function GerenciarVeiculos() {
               <input type="text" placeholder="Numero de identificacao do veiculo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} required />
 
               <p className={styles['boadd-label']}>Motorista</p>
-              <input type="text" placeholder="Motorista responsavel" value={novoVeiculo.motoristaResp} onChange={atualizarCampo('motoristaResp')} />
+              <MotoristaSelect
+                motoristas={motoristas}
+                valor={novoVeiculo.motoristaResp}
+                onChange={atualizarCampo('motoristaResp')}
+                placeholder="Selecione um motorista"
+              />
 
               <p className={styles['boadd-label']}>Capacidade</p>
               <input type="number" placeholder="Capacidade total" value={novoVeiculo.capacidadeTotal} onChange={atualizarCampo('capacidadeTotal')} />
@@ -301,8 +325,8 @@ function GerenciarVeiculos() {
                 </label>
               </div>
 
-              <button type="submit" className={styles['boadd-confirmar']}>
-                Criar Cadastro
+              <button type="submit" className={styles['boadd-confirmar']} disabled={formSubmitting}>
+                {formSubmitting ? 'Criando...' : 'Criar Cadastro'}
               </button>
               <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
                 Cancelar
@@ -325,7 +349,12 @@ function GerenciarVeiculos() {
               <input type="text" placeholder="Numero de identificacao do veiculo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} required />
 
               <p className={styles['boadd-label']}>Motorista</p>
-              <input type="text" placeholder="Motorista responsavel" value={novoVeiculo.motoristaResp} onChange={atualizarCampo('motoristaResp')} />
+              <MotoristaSelect
+                motoristas={motoristas}
+                valor={novoVeiculo.motoristaResp}
+                onChange={atualizarCampo('motoristaResp')}
+                placeholder="Selecione um motorista"
+              />
 
               <p className={styles['boadd-label']}>Capacidade</p>
               <input type="number" placeholder="Capacidade total" value={novoVeiculo.capacidadeTotal} onChange={atualizarCampo('capacidadeTotal')} />
@@ -351,7 +380,9 @@ function GerenciarVeiculos() {
                 </label>
               </div>
 
-              <button type="submit" className={styles['boadd-confirmar']}>Salvar Alteracoes</button>
+              <button type="submit" className={styles['boadd-confirmar']} disabled={formSubmitting}>
+                {formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
+              </button>
               <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
             </form>
           </div>

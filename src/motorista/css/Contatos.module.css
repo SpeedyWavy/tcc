@@ -7,8 +7,8 @@
 }
 
 .logo {
-  width: 180px;
-  height: 90px;
+  width: clamp(128px, 28vw, 180px);
+  height: clamp(64px, 14vw, 90px);
   background-image: url('../../assets/logo-rds.png');
   background-repeat: no-repeat;
   background-position: left center;
@@ -116,15 +116,18 @@
   display: grid;
   gap: 2px;
   color: #001355;
+  min-width: 0;
 }
 
 .contato-info strong {
   font-size: 1rem;
+  overflow-wrap: anywhere;
 }
 
 .contato-info span {
   font-size: 0.88rem;
   color: #2c3565;
+  overflow-wrap: anywhere;
 }
 
 .acoes {
@@ -155,4 +158,22 @@
     padding-inline: 14px;
   }
 
+  .conteudo{
+    padding-inline: 12px;
+  }
+
+  .contato{
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .acoes{
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .acao{
+    width: 32px;
+    height: 32px;
+  }
 }

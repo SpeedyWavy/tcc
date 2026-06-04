@@ -1,0 +1,134 @@
+.motorista-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.motorista-select-trigger {
+  display: flex;
+  align-items: center;
+  background-color: #b8bddc;
+  border: none;
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.motorista-select-trigger:hover {
+  background-color: #adb3cf;
+}
+
+.motorista-select-trigger:focus-within {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(25, 118, 210, 0.5);
+}
+
+.motorista-select-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  font-size: 1rem;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  color: #465aa0;
+}
+
+.motorista-select-input::placeholder {
+  color: #465aa0;
+}
+
+.motorista-select-icon {
+  margin-left: 8px;
+  color: #465aa0;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.motorista-select-icon.aberto {
+  transform: rotate(180deg);
+}
+
+.motorista-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: none;
+  border-radius: 12px;
+  margin-top: 0.3rem;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.motorista-select-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.motorista-select-item {
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  color: #465aa0;
+  font-size: 1rem;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  border-bottom: 1px solid #e8eaf6;
+}
+
+.motorista-select-item:last-child {
+  border-bottom: none;
+}
+
+.motorista-select-item:hover {
+  background-color: #f0f2f9;
+}
+
+.motorista-select-item.destaque {
+  background-color: #d9e0f1;
+  color: #1c2350;
+  font-weight: 500;
+}
+
+.motorista-select-item.selecionado {
+  background-color: #b8bddc;
+  color: #001a63;
+  font-weight: 600;
+}
+
+.motorista-select-item.destaque.selecionado {
+  background-color: #adb3cf;
+  color: #001a63;
+}
+
+.motorista-select-vazio {
+  padding: 1rem 0.9rem;
+  text-align: center;
+  color: #465aa0;
+  font-size: 1rem;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+}
+
+/* Scroll customizado */
+.motorista-select-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.motorista-select-dropdown::-webkit-scrollbar-track {
+  background: #f1f3f8;
+}
+
+.motorista-select-dropdown::-webkit-scrollbar-thumb {
+  background: #b8bddc;
+  border-radius: 3px;
+}
+
+.motorista-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #adb3cf;
+}
+

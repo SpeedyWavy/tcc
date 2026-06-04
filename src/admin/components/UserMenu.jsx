@@ -125,7 +125,7 @@ function UserMenu() {
                 />
               </label>
 
-              <label className="user-edit-label">
+              <label className={styles['user-edit-label']}>
                 Informe o CPF o administrador:
                 <input
                   type="text"
@@ -135,7 +135,7 @@ function UserMenu() {
                 />
               </label>
 
-              <label className="user-edit-label">
+              <label className={styles['user-edit-label']}>
                 Informe o e-mail do administrador:
                 <input
                   type="email"
@@ -145,7 +145,7 @@ function UserMenu() {
                 />
               </label>
 
-              <label className="user-edit-label">
+              <label className={styles['user-edit-label']}>
                 Crie uma nova senha:
                 <input
                   type="password"

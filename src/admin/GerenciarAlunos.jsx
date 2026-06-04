@@ -7,7 +7,9 @@ import { ArrowDownNarrowWide } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import FilterPanel from './components/FilterPanel.jsx'
+import PhotoUpload from './components/PhotoUpload.jsx'
 import { apiRequest } from '../api.js'
+import { supabase } from '../supabase.js'
 
 const alunoInicial = {
   nome: '',
@@ -17,6 +19,7 @@ const alunoInicial = {
   endereco: '',
   transporte: '',
   unidade: 'Garcia',
+  fotoUrl: null,
 }
 
 function GerenciarAlunos() {
@@ -31,6 +34,9 @@ function GerenciarAlunos() {
   const [filtroAberto, setFiltroAberto] = useState(false)
   const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], responsavel: [], transporte: [] })
   const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], responsavel: [], transporte: [] })
+  const [formSubmitting, setFormSubmitting] = useState(false)
+  const [fotoUrlArmazenado, setFotoUrlArmazenado] = useState(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
   const menuRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
@@ -75,6 +81,8 @@ function GerenciarAlunos() {
   const fecharAdicionar = () => {
     setFormularioAberto(false)
     setNovoAluno(alunoInicial)
+    setFotoUrlArmazenado(null)
+    setPhotoUploading(false)
   }
 
   const abrirEditor = (aluno) => {
@@ -88,7 +96,9 @@ function GerenciarAlunos() {
       endereco: aluno.address || aluno.endereco || '',
       transporte: aluno.transport_identification || aluno.transporte || '',
       unidade: aluno.unit || aluno.unidade || 'Garcia',
+      fotoUrl: aluno.photo_url || null,
     })
+    setFotoUrlArmazenado(aluno.photo_url || null)
     setEditorAberto(true)
   }
 
@@ -96,10 +106,36 @@ function GerenciarAlunos() {
     setEditorAberto(false)
     setAlunoEmEdicao(null)
     setNovoAluno(alunoInicial)
+    setFotoUrlArmazenado(null)
+    setPhotoUploading(false)
   }
 
   const atualizarCampo = (campo) => (e) => {
     setNovoAluno((atual) => ({ ...atual, [campo]: e.target.value }))
+  }
+
+  const handlePhotoChange = async (photoUrl, filePath) => {
+    setNovoAluno((atual) => ({ ...atual, fotoUrl: photoUrl ?? null }))
+    setFotoUrlArmazenado(filePath)
+
+    // If editing an existing student, persist the photo_url immediately
+    if (photoUrl && alunoEmEdicao?.id) {
+      try {
+        const { error } = await supabase
+          .from('students')
+          .update({ photo_url: photoUrl })
+          .eq('id', alunoEmEdicao.id)
+
+        if (error) {
+          showError(error.message || 'Erro ao atualizar foto do aluno.')
+        } else {
+          await carregarAlunos()
+          showSuccess('Foto do aluno atualizada.')
+        }
+      } catch (err) {
+        showError(err.message || 'Erro ao atualizar foto do aluno.')
+      }
+    }
   }
 
   const validarAluno = () => {
@@ -124,6 +160,8 @@ function GerenciarAlunos() {
       address: endereco,
       transport_identification: transporte,
       unit: unidade,
+      photo_url: novoAluno.fotoUrl || null,
+      photo_path: fotoUrlArmazenado || null,
     }
   }
 
@@ -135,6 +173,7 @@ function GerenciarAlunos() {
       return
     }
 
+    setFormSubmitting(true)
     try {
       await apiRequest('/api/students', {
         method: 'POST',
@@ -146,6 +185,8 @@ function GerenciarAlunos() {
       fecharAdicionar()
     } catch (error) {
       showError(error.message || 'Erro ao cadastrar aluno.')
+    } finally {
+      setFormSubmitting(false)
     }
   }
 
@@ -161,6 +202,7 @@ function GerenciarAlunos() {
       return
     }
 
+    setFormSubmitting(true)
     try {
       await apiRequest(`/api/students/${alunoEmEdicao.id}`, {
         method: 'PUT',
@@ -172,6 +214,8 @@ function GerenciarAlunos() {
       fecharEditor()
     } catch (error) {
       showError(error.message || 'Erro ao atualizar aluno.')
+    } finally {
+      setFormSubmitting(false)
     }
   }
 
@@ -282,9 +326,14 @@ function GerenciarAlunos() {
         <div className={styles['boadd-overlay']} onClick={fecharAdicionar}>
           <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
             <div className={styles['boadd-top']}>
-              <div className={styles['boadd-avatar']}>
-                <img src={student2} alt="" />
-              </div>
+              <PhotoUpload
+                photoUrl={novoAluno.fotoUrl}
+                onPhotoChange={handlePhotoChange}
+                onUploadingChange={setPhotoUploading}
+                entityType="student"
+                entityId={alunoEmEdicao?.id}
+                userName={novoAluno.nome}
+              />
             </div>
 
             <form className={styles['boadd-form']} onSubmit={enviarNovoAluno}>
@@ -323,8 +372,8 @@ function GerenciarAlunos() {
                 </label>
               </div>
 
-              <button type="submit" className={styles['boadd-confirmar']}>
-                Criar Cadastro
+              <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
+                {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Criando...' : 'Criar Cadastro'}
               </button>
               <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
                 Cancelar
@@ -338,9 +387,14 @@ function GerenciarAlunos() {
         <div className={styles['boadd-overlay']} onClick={fecharEditor}>
           <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
             <div className={styles['boadd-top']}>
-              <div className={styles['boadd-avatar']}>
-                <img src={student2} alt="" />
-              </div>
+              <PhotoUpload
+                photoUrl={novoAluno.fotoUrl}
+                onPhotoChange={handlePhotoChange}
+                onUploadingChange={setPhotoUploading}
+                entityType="student"
+                entityId={alunoEmEdicao?.id}
+                userName={novoAluno.nome}
+              />
             </div>
 
             <form className={styles['boadd-form']} onSubmit={salvarEdicaoAluno}>
@@ -379,7 +433,9 @@ function GerenciarAlunos() {
                 </label>
               </div>
 
-              <button type="submit" className={styles['boadd-confirmar']}>Salvar Alteracoes</button>
+              <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
+                {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
+              </button>
               <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
             </form>
           </div>
@@ -465,7 +521,13 @@ function GerenciarAlunos() {
               {alunoAberto === aluno.id && (
                 <div className={styles['aluno-detalhes']}>
                   <div className={styles['aluno-card-top']}>
-                    <div className={styles['aluno-foto']} />
+                    <div className={styles['aluno-foto']}>
+                      {aluno.photo_url ? (
+                        <img src={aluno.photo_url} alt={aluno.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ color: '#999', fontSize: '24px' }}>📷</span>
+                      )}
+                    </div>
                     <div className={styles['aluno-info']}>
                       <p><strong>RM:</strong> {aluno.rm || 'Nao informado'}</p>
                       <p><strong>Unidade:</strong> {aluno.unit || aluno.unidade || 'Nao informada'}</p>

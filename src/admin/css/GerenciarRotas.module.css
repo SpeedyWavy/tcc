@@ -5,8 +5,8 @@
 
 
 .logo {
-  width: 180px;
-  height: 90px;
+  width: clamp(128px, 28vw, 180px);
+  height: clamp(64px, 14vw, 90px);
   background-image: url('../../assets/logo-rds.png');
   background-repeat: no-repeat;
   background-position: left center;
@@ -62,7 +62,7 @@
 
 .admin-page--rotas .filtro-input {
   width: 100%;
-  height: 5dvh;
+  height: auto;
   min-height: 46px;
   border-radius: 10px;
   border: none;
@@ -331,7 +331,7 @@
 
 @media (max-width: 680px) {
   .rotas-pagina {
-    width: calc(100% - 10px);
+    width: calc(100% - 16px);
   }
 
   .rotas-nome-veiculo {
@@ -349,7 +349,7 @@
   }
 
   .rotas-tabela {
-    --rotas-col-right: 160px;
+    --rotas-col-right: clamp(112px, 36vw, 150px);
   }
 
   .filtro-botao {
@@ -357,6 +357,56 @@
   }
 
   .admin-page--rotas .filtro-input {
-    font-size: 18px;
+    font-size: 1rem;
+  }
+
+  .filtro-linha,
+  .admin-page--rotas .filtro{
+    align-items: stretch;
+  }
+
+  .admin-page--rotas .filtro-input-wrap,
+  .nova-rota{
+    width: 100%;
+  }
+
+  .rotas-coluna,
+  .rotas-celula--veiculo,
+  .rotas-celula--status,
+  .rota-direita{
+    padding-inline: 10px;
+  }
+
+  .rotas-status{
+    min-width: 0;
+    width: 100%;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.15;
+  }
+}
+
+@media (max-width: 420px) {
+  .rotas-pagina {
+    width: calc(100% - 8px);
+  }
+
+  .rotas-cabecalho{
+    font-size: 0.84rem;
+  }
+
+  .rotas-tabela {
+    --rotas-col-right: 104px;
+  }
+
+  .rotas-coluna,
+  .rotas-celula--veiculo,
+  .rotas-celula--status,
+  .rota-direita{
+    padding-inline: 8px;
+  }
+
+  .rotas-status-icone{
+    display: none;
   }
 }

@@ -73,3 +73,26 @@
 .usuario-popover button:hover {
   background: #d9def8;
 }
+
+@media (max-width: 520px){
+  .usuario-trigger{
+    gap: 6px;
+  }
+
+  .usuario img{
+    width: 44px;
+    height: 44px;
+  }
+
+  .usuario-nome{
+    max-width: 28vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.95rem;
+  }
+
+  .usuario-popover{
+    right: 0;
+    min-width: min(200px, calc(100vw - 28px));
+  }
+}

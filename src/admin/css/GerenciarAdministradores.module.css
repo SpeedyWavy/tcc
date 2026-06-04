@@ -3,8 +3,8 @@
 
 
 .logo {
-  width: 180px;
-  height: 90px;
+  width: clamp(128px, 28vw, 180px);
+  height: clamp(64px, 14vw, 90px);
   background-image: url('../../assets/logo-rds.png');
   background-repeat: no-repeat;
   background-position: left center;
@@ -144,7 +144,8 @@
 
 .admin-page--administradores .filtro-input{
     width: 100%;
-    height: 5dvh;
+    min-height: 46px;
+    height: auto;
     border-radius: 15px;
     border: none;
     box-shadow: 5px 3px 0px #000000a9;
@@ -160,7 +161,7 @@
 .alunos-grid{
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
     gap: 1rem;
 }
 
@@ -173,7 +174,7 @@
 }
 
 .aluno{
-    min-height: 7.5dvh;
+    min-height: 58px;
     width: 100%;
     background: #bfc3d6;
     color: #000;
@@ -343,6 +344,8 @@
     display: grid;
     gap: 0.4rem;
     animation: popIn 180ms ease-out forwards;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
 }
 
 .boadd-top{
@@ -414,5 +417,54 @@
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 560px){
+  .adicionar{
+    padding-inline: 16px;
+  }
+
+  .adicionar-botao{
+    font-size: 1rem;
+    margin-top: 16px;
+  }
+
+  .cadastros{
+    padding: 28px 16px;
+  }
+
+  .admin-page--administradores .filtro{
+    gap: 0.6rem;
+  }
+
+  .admin-page--administradores .filtro-input-wrap{
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .admin-page--administradores .busca-filtro,
+  .admin-page--administradores .filtro-input{
+    font-size: 1rem;
+  }
+
+  .aluno{
+    padding: 0.85rem;
+    gap: 0.55rem;
+  }
+
+  .aluno h1{
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  .boadd-overlay{
+    align-items: end;
+    padding: 1rem;
+  }
+
+  .boadd-card{
+    width: 100%;
+    border-radius: 16px;
   }
 }

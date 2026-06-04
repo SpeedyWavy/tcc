@@ -1,7 +1,7 @@
 
 .logo {
-  width: 180px;
-  height: 90px;
+  width: clamp(128px, 28vw, 180px);
+  height: clamp(64px, 14vw, 90px);
   background-image: url('../../assets/logo-rds.png');
   background-repeat: no-repeat;
   background-position: left center;
@@ -164,6 +164,7 @@
 
   .mais-card{
     padding: 22px 18px;
+    border-radius: 18px;
   }
 
   .mais-card-header h2{
@@ -182,5 +183,15 @@
 
   .mais-button{
     width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .mais-grid{
+    padding-inline: 12px;
+  }
+
+  .mais-card{
+    padding-inline: 14px;
   }
 }

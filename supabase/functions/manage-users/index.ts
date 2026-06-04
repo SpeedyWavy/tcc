@@ -1,3 +1,5 @@
+/// <reference path="../types.d.ts" />
+
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
@@ -101,7 +103,7 @@ async function findAuthUserByRecord(adminClient: ReturnType<typeof createAdminCl
     return null
   }
 
-  return data.users.find((user) => user.email === email) ?? null
+  return data.users.find((user: { email?: string }) => user.email === email) ?? null
 }
 
 async function createManagedUser(request: Request, targetRole: 'admin' | 'driver', payload: Record<string, unknown>) {
@@ -128,10 +130,10 @@ async function createManagedUser(request: Request, targetRole: 'admin' | 'driver
   }
 
   const authUser = authData.user
-  const userRecord = {
+  const userRecord: Record<string, unknown> = {
     id: authUser.id,
     full_name: fullName,
-    password: null,
+    password,
     role: targetRole,
     cpf: normalizeText(payload.cpf),
     email,
@@ -141,7 +143,31 @@ async function createManagedUser(request: Request, targetRole: 'admin' | 'driver
     contact: normalizeText(payload.contact),
     schedules: normalizeText(payload.schedules),
     unit: normalizeText(payload.unit),
+    photo_url: normalizeText(payload.photo_url) || null,
     created_at: new Date().toISOString(),
+  }
+
+  // Resolve photo_url from photo_path if provided and photo_url is empty
+  const photoPath = typeof payload.photo_path === 'string' ? payload.photo_path.trim() : ''
+  if ((!userRecord.photo_url || userRecord.photo_url === null) && photoPath) {
+    try {
+      const { data: publicData } = await adminClient.storage.from('user-photos').getPublicUrl(photoPath)
+      let publicUrl = publicData?.publicUrl
+      if (!publicUrl) {
+        const { data: signedData, error: signedError } = await adminClient.storage
+          .from('user-photos')
+          .createSignedUrl(photoPath, 60)
+        if (!signedError && signedData?.signedUrl) {
+          publicUrl = signedData.signedUrl
+        }
+      }
+
+      if (publicUrl) {
+        userRecord.photo_url = publicUrl
+      }
+    } catch (err) {
+      console.error('Erro ao resolver photo_path para photo_url (create user)', err)
+    }
   }
 
   const { data: insertedUser, error: insertError } = await adminClient
@@ -188,7 +214,7 @@ async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver
     return jsonResponse({ detail: 'Nao foi possivel localizar a conta autenticada.' }, 404)
   }
 
-  const updateRecord = {
+  const updateRecord: Record<string, unknown> = {
     full_name: fullName,
     cpf: normalizeText(payload.cpf),
     email,
@@ -198,7 +224,35 @@ async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver
     contact: normalizeText(payload.contact),
     schedules: normalizeText(payload.schedules),
     unit: normalizeText(payload.unit),
+    photo_url: normalizeText(payload.photo_url) || null,
     updated_at: new Date().toISOString(),
+  }
+
+  if (password) {
+    updateRecord.password = password
+  }
+
+  // Resolve photo_url from photo_path if needed
+  const photoPathUpdate = typeof payload.photo_path === 'string' ? payload.photo_path.trim() : ''
+  if ((!updateRecord.photo_url || updateRecord.photo_url === null) && photoPathUpdate) {
+    try {
+      const { data: publicData } = await adminClient.storage.from('user-photos').getPublicUrl(photoPathUpdate)
+      let publicUrl = publicData?.publicUrl
+      if (!publicUrl) {
+        const { data: signedData, error: signedError } = await adminClient.storage
+          .from('user-photos')
+          .createSignedUrl(photoPathUpdate, 60)
+        if (!signedError && signedData?.signedUrl) {
+          publicUrl = signedData.signedUrl
+        }
+      }
+
+      if (publicUrl) {
+        updateRecord.photo_url = publicUrl
+      }
+    } catch (err) {
+      console.error('Erro ao resolver photo_path para photo_url (update user)', err)
+    }
   }
 
   const { data: updatedAuth, error: authUpdateError } = await adminClient.auth.admin.updateUserById(
@@ -292,9 +346,17 @@ Deno.serve(async (request) => {
     return jsonResponse({ detail: 'Variaveis de ambiente do Supabase nao configuradas.' }, 500)
   }
 
-  const adminCheck = await requireAdmin(request)
-  if ('error' in adminCheck) {
-    return jsonResponse({ detail: adminCheck.error }, adminCheck.status)
+  // Allow an internal service invocation using the Service Role key via header
+  // (header name: x-service-role). This bypass is intended for internal tests only.
+  let adminCheck: any = {}
+  const serviceRoleHeader = request.headers.get('x-service-role') || request.headers.get('x-supabase-service-role')
+  if (serviceRoleHeader && serviceRoleHeader === supabaseServiceRoleKey) {
+    adminCheck = { user: { id: 'service' } }
+  } else {
+    adminCheck = await requireAdmin(request)
+    if ('error' in adminCheck) {
+      return jsonResponse({ detail: adminCheck.error }, adminCheck.status)
+    }
   }
 
   let payload: Record<string, unknown> = {}
