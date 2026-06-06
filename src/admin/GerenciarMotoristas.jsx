@@ -180,7 +180,7 @@ function GerenciarMotoristas() {
     }
 
     if (acessoMotorista.senha !== acessoMotorista.confirmarSenha) {
-      showError('As senhas do motorista nao conferem.')
+      showError('As senhas do motorista não conferem.')
       return
     }
 
@@ -222,12 +222,12 @@ function GerenciarMotoristas() {
     }
 
     if (!novoMotorista.cpf.trim()) {
-      showError('O CPF do motorista e obrigatorio.')
+      showError('O CPF do motorista é obrigatório.')
       return
     }
 
     if (acessoMotorista.senha && acessoMotorista.senha !== acessoMotorista.confirmarSenha) {
-      showError('As senhas do motorista nao conferem.')
+      showError('As senhas do motorista não conferem.')
       return
     }
 
@@ -286,8 +286,8 @@ function GerenciarMotoristas() {
 
   const secoesFiltro = [
     { id: 'unidade', label: 'Unidade', options: opcoesUnidade.map((value) => ({ value, label: value })) },
-    { id: 'horarios', label: 'Horarios', options: opcoesHorarios.map((value) => ({ value, label: value })) },
-    { id: 'transporte', label: 'Veiculo', options: opcoesTransporte.map((value) => ({ value, label: value })) },
+    { id: 'horarios', label: 'Horários', options: opcoesHorarios.map((value) => ({ value, label: value })) },
+    { id: 'transporte', label: 'Veículo', options: opcoesTransporte.map((value) => ({ value, label: value })) },
   ]
 
   const alternarFiltro = (secao, valor) => {

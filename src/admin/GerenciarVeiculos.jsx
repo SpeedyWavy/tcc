@@ -112,7 +112,7 @@ function GerenciarVeiculos() {
     e.preventDefault()
 
     if (!novoVeiculo.identificacao.trim()) {
-      showError('Informe a identificacao do veiculo para criar o cadastro.')
+      showError('Informe a identificação do veículo para criar o cadastro.')
       return
     }
 
@@ -131,10 +131,10 @@ function GerenciarVeiculos() {
       })
 
       await carregarVeiculos()
-      showSuccess('Veiculo cadastrado com sucesso.')
+      showSuccess('Veículo cadastrado com sucesso.')
       fecharAdicionar()
     } catch (error) {
-      showError(error.message || 'Erro ao cadastrar veiculo.')
+      showError(error.message || 'Erro ao cadastrar veículo.')
     } finally {
       setFormSubmitting(false)
     }
@@ -148,7 +148,7 @@ function GerenciarVeiculos() {
     }
 
     if (!novoVeiculo.identificacao.trim()) {
-      showError('A identificacao do veiculo e obrigatoria.')
+      showError('A identificação do veículo é obrigatória.')
       return
     }
 
@@ -167,10 +167,10 @@ function GerenciarVeiculos() {
       })
 
       await carregarVeiculos()
-      showSuccess('Veiculo atualizado com sucesso.')
+      showSuccess('Veículo atualizado com sucesso.')
       fecharEditor()
     } catch (error) {
-      showError(error.message || 'Erro ao atualizar veiculo.')
+      showError(error.message || 'Erro ao atualizar veículo.')
     } finally {
       setFormSubmitting(false)
     }
@@ -178,7 +178,7 @@ function GerenciarVeiculos() {
 
   const excluirVeiculo = async (veiculo) => {
     setMenuAberto(null)
-    const confirmou = window.confirm(`Deseja excluir o veiculo "${veiculo.identification || veiculo.model || veiculo.license_plate}"?`)
+    const confirmou = window.confirm(`Deseja excluir o veículo "${veiculo.identification || veiculo.model || veiculo.license_plate}"?`)
     if (!confirmou) {
       return
     }
@@ -186,12 +186,12 @@ function GerenciarVeiculos() {
     try {
       await apiRequest(`/api/vehicles/${veiculo.id}`, { method: 'DELETE' })
       await carregarVeiculos()
-      showSuccess('Veiculo excluido com sucesso.')
+      showSuccess('Veículo excluído com sucesso.')
       if (veiculoEmEdicao?.id === veiculo.id) {
         fecharEditor()
       }
     } catch (error) {
-      showError(error.message || 'Erro ao excluir veiculo.')
+      showError(error.message || 'Erro ao excluir veículo.')
     }
   }
 

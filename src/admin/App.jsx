@@ -36,7 +36,7 @@ function App() {
         <a href="/gerenciar-veiculos" className={styles['ui-round-link']}>
           <div className={styles['ui-round3']}>
             <img src={veiculo} alt={veiculo} />
-            <p>Veiculos</p>
+            <p>Veículos</p>
           </div>
         </a>
       </div>
@@ -70,7 +70,7 @@ function App() {
       </div>
 
       <div className={styles['ui-button2']}>
-        <button><a href="/gerenciar-veiculos"><Bus /> Gerenciar Veiculos</a></button>
+        <button><a href="/gerenciar-veiculos"><Bus /> Gerenciar Veículos</a></button>
       </div>
 
       <div className={styles['ui-button3']}>

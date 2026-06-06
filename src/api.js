@@ -42,7 +42,7 @@ async function invokeManageUsers(action, payload) {
   })
 
   if (error) {
-    handleSupabaseError(error, 'Nao foi possivel concluir a operacao.')
+    handleSupabaseError(error, 'Não foi possível concluir a operação.')
   }
 
   return data
@@ -62,7 +62,7 @@ async function findDriverIdByName(driverName) {
     .maybeSingle()
 
   if (error) {
-    handleSupabaseError(error, 'Nao foi possivel localizar o motorista.')
+      handleSupabaseError(error, 'Não foi possível localizar o motorista.')
   }
 
   return data?.id ?? null
@@ -114,7 +114,7 @@ async function handleStudents(method, studentId, body) {
       .maybeSingle()
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel localizar o aluno.')
+      handleSupabaseError(error, 'Não foi possível localizar o aluno.')
     }
 
     return data
@@ -127,7 +127,7 @@ async function handleStudents(method, studentId, body) {
       .order('created_at', { ascending: false })
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel carregar os alunos.')
+      handleSupabaseError(error, 'Não foi possível carregar os alunos.')
     }
 
     return data ?? []
@@ -142,7 +142,7 @@ async function handleStudents(method, studentId, body) {
     })
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel cadastrar o aluno.')
+      handleSupabaseError(error, 'Não foi possível cadastrar o aluno.')
     }
 
     return data
@@ -158,7 +158,7 @@ async function handleStudents(method, studentId, body) {
     })
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel atualizar o aluno.')
+      handleSupabaseError(error, 'Não foi possível atualizar o aluno.')
     }
 
     return data
@@ -173,13 +173,13 @@ async function handleStudents(method, studentId, body) {
     })
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel excluir o aluno.')
+      handleSupabaseError(error, 'Não foi possível excluir o aluno.')
     }
 
     return data
   }
 
-  throw new Error('Operacao de alunos nao suportada.')
+  throw new Error('Operação de alunos não suportada.')
 }
 
 async function handleUsers(method, userType, userId, body) {
@@ -191,7 +191,7 @@ async function handleUsers(method, userType, userId, body) {
       .maybeSingle()
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel localizar o usuario.')
+      handleSupabaseError(error, 'Não foi possível localizar o usuário.')
     }
 
     return data
@@ -205,7 +205,7 @@ async function handleUsers(method, userType, userId, body) {
       .order('created_at', { ascending: false })
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel carregar os usuarios.')
+      handleSupabaseError(error, 'Não foi possível carregar os usuários.')
     }
 
     return data ?? []
@@ -230,7 +230,7 @@ async function handleUsers(method, userType, userId, body) {
     })
   }
 
-  throw new Error('Operacao de usuarios nao suportada.')
+  throw new Error('Operação de usuários não suportada.')
 }
 
 async function handleContacts(method) {
@@ -241,7 +241,7 @@ async function handleContacts(method) {
   const { data, error } = await supabase.functions.invoke('list-contacts')
 
   if (error) {
-    handleSupabaseError(error, 'Nao foi possivel carregar os contatos.')
+    handleSupabaseError(error, 'Não foi possível carregar os contatos.')
   }
 
   return data ?? []
@@ -268,7 +268,7 @@ async function handleRoutes(method, body) {
     const vehicleId = normalizeText(payload.vehicle_id)
 
     if (!vehicleId) {
-      throw new Error('Informe o veiculo para criar a rota.')
+      throw new Error('Informe o veículo para criar a rota.')
     }
 
     const { data, error } = await supabase
@@ -276,7 +276,7 @@ async function handleRoutes(method, body) {
       .insert({
         vehicle_id: vehicleId,
         driver_id: payload.driver_id || null,
-        status: normalizeText(payload.status) || 'Aguardando Saida',
+        status: normalizeText(payload.status) || 'Aguardando Saída',
         stops: Array.isArray(payload.stops) ? payload.stops : [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -285,7 +285,7 @@ async function handleRoutes(method, body) {
       .single()
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel criar a rota.')
+      handleSupabaseError(error, 'Não foi possível criar a rota.')
     }
 
     return data
@@ -303,19 +303,19 @@ async function handleRoutes(method, body) {
   ])
 
   if (routesResponse.error) {
-    handleSupabaseError(routesResponse.error, 'Nao foi possivel carregar as rotas.')
+    handleSupabaseError(routesResponse.error, 'Não foi possível carregar as rotas.')
   }
 
   if (vehiclesResponse.error) {
-    handleSupabaseError(vehiclesResponse.error, 'Nao foi possivel carregar os veiculos.')
+    handleSupabaseError(vehiclesResponse.error, 'Não foi possível carregar os veículos.')
   }
 
   if (usersResponse.error) {
-    handleSupabaseError(usersResponse.error, 'Nao foi possivel carregar os usuarios.')
+    handleSupabaseError(usersResponse.error, 'Não foi possível carregar os usuários.')
   }
 
   if (studentsResponse.error) {
-    handleSupabaseError(studentsResponse.error, 'Nao foi possivel carregar os alunos.')
+    handleSupabaseError(studentsResponse.error, 'Não foi possível carregar os alunos.')
   }
 
   const vehiclesById = new Map((vehiclesResponse.data ?? []).map((vehicle) => [vehicle.id, vehicle]))
@@ -356,10 +356,10 @@ async function handleRoutes(method, body) {
       horario: formatRouteTime(route.created_at || route.updated_at),
       status: route.status || 'Em andamento',
       vehicle_id: route.vehicle_id,
-      vehicle_name: vehicle?.identification || vehicle?.model || vehicle?.license_plate || 'Veiculo nao informado',
+      vehicle_name: vehicle?.identification || vehicle?.model || vehicle?.license_plate || 'Veículo não informado',
       driver_id: route.driver_id,
-      driver_name: driver?.full_name || vehicle?.driver_name || 'Motorista nao informado',
-      status: route.status || 'Aguardando Saida',
+      driver_name: driver?.full_name || vehicle?.driver_name || 'Motorista não informado',
+      status: route.status || 'Aguardando Saída',
       created_at: route.created_at,
       updated_at: route.updated_at,
       students,
@@ -382,7 +382,7 @@ async function handleVehicles(method, vehicleId, body) {
       .maybeSingle()
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel localizar o veiculo.')
+      handleSupabaseError(error, 'Não foi possível localizar o veículo.')
     }
 
     return data
@@ -395,7 +395,7 @@ async function handleVehicles(method, vehicleId, body) {
       .order('created_at', { ascending: false })
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel carregar os veiculos.')
+      handleSupabaseError(error, 'Não foi possível carregar os veículos.')
     }
 
     return data ?? []
@@ -426,7 +426,7 @@ async function handleVehicles(method, vehicleId, body) {
       .single()
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel cadastrar o veiculo.')
+      handleSupabaseError(error, 'Não foi possível cadastrar o veículo.')
     }
 
     return data
@@ -441,7 +441,7 @@ async function handleVehicles(method, vehicleId, body) {
       .maybeSingle()
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel atualizar o veiculo.')
+      handleSupabaseError(error, 'Não foi possível atualizar o veículo.')
     }
 
     return data
@@ -454,13 +454,13 @@ async function handleVehicles(method, vehicleId, body) {
       .eq('id', vehicleId)
 
     if (error) {
-      handleSupabaseError(error, 'Nao foi possivel excluir o veiculo.')
+      handleSupabaseError(error, 'Não foi possível excluir o veículo.')
     }
 
     return { message: 'Veiculo excluido com sucesso' }
   }
 
-  throw new Error('Operacao de veiculos nao suportada.')
+  throw new Error('Operação de veículos não suportada.')
 }
 
 export async function apiRequest(path, options = {}) {
@@ -471,7 +471,7 @@ export async function apiRequest(path, options = {}) {
 
   try {
     if (segments[0] !== 'api') {
-      throw new Error(`Endpoint nao suportado: ${path}`)
+throw new Error(`Endpoint não suportado: ${path}`)
     }
 
     if (resource === 'auth') {
@@ -504,7 +504,7 @@ export async function apiRequest(path, options = {}) {
 
     throw new Error(`Endpoint nao suportado: ${path}`)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Nao foi possivel concluir a solicitacao.'
+    const message = error instanceof Error ? error.message : 'Não foi possível concluir a solicitação.'
 
     if (message.toLowerCase().includes('jwt') || message.toLowerCase().includes('unauthorized')) {
       clearSession()

@@ -96,7 +96,7 @@ function GerenciarAdministradores() {
     e.preventDefault()
 
     if (novoAdministrador.senha !== novoAdministrador.confirmarSenha) {
-      showError('As senhas do administrador nao conferem.')
+      showError('As senhas do administrador não conferem.')
       return
     }
 
@@ -130,7 +130,7 @@ function GerenciarAdministradores() {
     }
 
     if (novoAdministrador.senha && novoAdministrador.senha !== novoAdministrador.confirmarSenha) {
-      showError('As senhas do administrador nao conferem.')
+      showError('As senhas do administrador não conferem.')
       return
     }
 
@@ -370,8 +370,8 @@ function GerenciarAdministradores() {
                 <div className={styles['aluno-detalhes']}>
                   <div className={styles['aluno-info']}>
                     <p><strong>Nome:</strong> {administrador.full_name}</p>
-                    <p><strong>CPF:</strong> {administrador.cpf || 'Nao informado'}</p>
-                    <p><strong>Email:</strong> {administrador.email || 'Nao informado'}</p>
+                    <p><strong>CPF:</strong> {administrador.cpf || 'Não informado'}</p>
+                    <p><strong>Email:</strong> {administrador.email || 'Não informado'}</p>
                   </div>
                 </div>
               )}

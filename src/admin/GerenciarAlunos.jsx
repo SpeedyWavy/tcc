@@ -529,15 +529,15 @@ function GerenciarAlunos() {
                       )}
                     </div>
                     <div className={styles['aluno-info']}>
-                      <p><strong>RM:</strong> {aluno.rm || 'Nao informado'}</p>
-                      <p><strong>Unidade:</strong> {aluno.unit || aluno.unidade || 'Nao informada'}</p>
-                      <p><strong>Transporte:</strong> {aluno.transport_identification || aluno.transporte || 'Nao informado'}</p>
-                      <p><strong>Responsavel:</strong> {aluno.responsible_name || aluno.responsavel || 'Nao informado'}</p>
+                      <p><strong>RM:</strong> {aluno.rm || 'Não informado'}</p>
+                      <p><strong>Unidade:</strong> {aluno.unit || aluno.unidade || 'Não informada'}</p>
+                      <p><strong>Transporte:</strong> {aluno.transport_identification || aluno.transporte || 'Não informado'}</p>
+                      <p><strong>Responsável:</strong> {aluno.responsible_name || aluno.responsavel || 'Não informado'}</p>
                     </div>
                   </div>
                   <div className={styles['aluno-info-extra']}>
-                    <p><strong>Contato do responsavel:</strong> {aluno.parent_contact || aluno.contato_responsavel || 'Nao informado'}</p>
-                    <p><strong>Endereco:</strong> {aluno.address || aluno.endereco}</p>
+                    <p><strong>Contato do responsável:</strong> {aluno.parent_contact || aluno.contato_responsavel || 'Não informado'}</p>
+                    <p><strong>Endereço:</strong> {aluno.address || aluno.endereco}</p>
                   </div>
                   <div className={styles['aluno-mapa']}>
                     <div className={styles['mapa-placeholder']} />
