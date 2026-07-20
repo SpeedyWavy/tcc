@@ -27,6 +27,16 @@ function normalizarVeiculo(veiculo) {
   }
 }
 
+function normalizarAluno(aluno) {
+  return {
+    id: aluno.id,
+    nome: aluno.nome || aluno.name || 'Aluno sem nome',
+    routeId: aluno.route_id ?? null,
+    rm: aluno.rm || '',
+    unidade: aluno.unit || aluno.unidade || '',
+  }
+}
+
 function normalizarRota(rota) {
   return {
     id: rota.id,
@@ -87,23 +97,34 @@ function renderizarStatus(status, styles, textoOverride = null) {
 function GerenciarRotas() {
   const [veiculos, setVeiculos] = useState([])
   const [rotas, setRotas] = useState([])
+  const [alunos, setAlunos] = useState([])
   const [busca, setBusca] = useState('')
   const [veiculoAberto, setVeiculoAberto] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [criandoPorVeiculoId, setCriandoPorVeiculoId] = useState(null)
+  const [associandoAlunoId, setAssociandoAlunoId] = useState(null)
+  const [alunoSelecionadoPorRota, setAlunoSelecionadoPorRota] = useState({})
+  const [erroAssociacaoPorRota, setErroAssociacaoPorRota] = useState({})
+  const [menuRotaAberto, setMenuRotaAberto] = useState(null)
+  const [rotaEditandoId, setRotaEditandoId] = useState(null)
+  const [alunosEdicaoPorRota, setAlunosEdicaoPorRota] = useState({})
+  const [salvandoEdicaoRotaId, setSalvandoEdicaoRotaId] = useState(null)
+  const [excluindoRotaId, setExcluindoRotaId] = useState(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarDados = async () => {
     setCarregando(true)
 
     try {
-      const [veiculosData, rotasData] = await Promise.all([
+      const [veiculosData, rotasData, alunosData] = await Promise.all([
         apiRequest('/api/vehicles'),
         apiRequest('/api/routes'),
+        apiRequest('/api/students'),
       ])
 
       setVeiculos(Array.isArray(veiculosData) ? veiculosData.map(normalizarVeiculo) : [])
       setRotas(Array.isArray(rotasData) ? rotasData.map(normalizarRota) : [])
+      setAlunos(Array.isArray(alunosData) ? alunosData.map(normalizarAluno) : [])
     } catch (error) {
       showError(error.message || 'Erro ao carregar rotas.')
     } finally {
@@ -181,6 +202,127 @@ function GerenciarRotas() {
       showError(error.message || 'Nao foi possivel criar a rota.')
     } finally {
       setCriandoPorVeiculoId(null)
+    }
+  }
+
+  const associarAlunoARota = async (rota, alunoId) => {
+    if (!alunoId) {
+      showError('Selecione um aluno para vincular à rota.')
+      return
+    }
+
+    const aluno = alunos.find((item) => item.id === alunoId)
+    if (!aluno) {
+      showError('Aluno não encontrado.')
+      return
+    }
+
+    if (aluno.routeId && aluno.routeId !== rota.id) {
+      showError('Este aluno já está vinculado a outra rota.')
+      return
+    }
+
+    setAssociandoAlunoId(rota.id)
+
+    try {
+      await apiRequest(`/api/students/${aluno.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ route_id: rota.id }),
+      })
+
+      await carregarDados()
+      setAlunoSelecionadoPorRota((atual) => ({ ...atual, [rota.id]: '' }))
+      setErroAssociacaoPorRota((atual) => ({ ...atual, [rota.id]: '' }))
+      showSuccess('Aluno vinculado à rota com sucesso.')
+    } catch (error) {
+      showError(error.message || 'Não foi possível vincular o aluno.')
+    } finally {
+      setAssociandoAlunoId(null)
+    }
+  }
+
+  const alternarMenuRota = (rotaId) => {
+    setMenuRotaAberto((atual) => (atual === rotaId ? null : rotaId))
+  }
+
+  const iniciarEdicaoRota = (rota) => {
+    setMenuRotaAberto(null)
+    setRotaEditandoId(rota.id)
+    setAlunosEdicaoPorRota((atual) => ({
+      ...atual,
+      [rota.id]: (rota.alunos || []).map((aluno) => ({
+        ...aluno,
+        nome: aluno.nome || aluno.name || 'Aluno sem nome',
+      })),
+    }))
+  }
+
+  const moverAlunoNaRota = (rotaId, index, direcao) => {
+    setAlunosEdicaoPorRota((atual) => {
+      const lista = [...(atual[rotaId] || [])]
+      const alvo = index + direcao
+      if (alvo < 0 || alvo >= lista.length) {
+        return atual
+      }
+
+      const [item] = lista.splice(index, 1)
+      lista.splice(alvo, 0, item)
+      return { ...atual, [rotaId]: lista }
+    })
+  }
+
+  const removerAlunoDaRota = (rotaId, alunoId) => {
+    setAlunosEdicaoPorRota((atual) => ({
+      ...atual,
+      [rotaId]: (atual[rotaId] || []).filter((aluno) => aluno.id !== alunoId),
+    }))
+  }
+
+  const salvarEdicaoRota = async (rota) => {
+    const alunosParaSalvar = alunosEdicaoPorRota[rota.id] || []
+
+    setSalvandoEdicaoRotaId(rota.id)
+
+    try {
+      await apiRequest(`/api/routes/${rota.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          status: rota.status,
+          stops: alunosParaSalvar.map((aluno, index) => ({
+            student_id: aluno.id,
+            student_name: aluno.nome || aluno.name || 'Aluno sem nome',
+            address: aluno.address || '',
+            order: index + 1,
+          })),
+        }),
+      })
+
+      await carregarDados()
+      setRotaEditandoId(null)
+      setMenuRotaAberto(null)
+      showSuccess('Rota atualizada com sucesso.')
+    } catch (error) {
+      showError(error.message || 'Não foi possível editar a rota.')
+    } finally {
+      setSalvandoEdicaoRotaId(null)
+    }
+  }
+
+  const excluirRota = async (rota) => {
+    setExcluindoRotaId(rota.id)
+
+    try {
+      await apiRequest(`/api/routes/${rota.id}`, {
+        method: 'DELETE',
+      })
+
+      await carregarDados()
+      setMenuRotaAberto(null)
+      showSuccess('Rota excluída com sucesso.')
+    } catch (error) {
+      showError(error.message || 'Não foi possível excluir a rota.')
+    } finally {
+      setExcluindoRotaId(null)
     }
   }
 
@@ -277,13 +419,45 @@ function GerenciarRotas() {
                                 <div className={styles['rotas-celula--veiculo']}>
                                   <ChevronRight className={styles['rotas-seta']} />
                                   <span className={styles['rotas-nome-veiculo']}>{`Rota ${indice + 1}`}</span>
-                                  <button
-                                    type="button"
-                                    className={styles['rota-menu']}
-                                    aria-label={`Opcoes de Rota ${indice + 1}`}
-                                  >
-                                    <EllipsisVertical />
-                                  </button>
+                                  <div className={styles['rota-menu-wrap']}>
+                                    <button
+                                      type="button"
+                                      className={styles['rota-menu']}
+                                      aria-label={`Opcoes de Rota ${indice + 1}`}
+                                      onClick={(event) => {
+                                        event.stopPropagation()
+                                        alternarMenuRota(rota.id)
+                                      }}
+                                    >
+                                      <EllipsisVertical />
+                                    </button>
+
+                                    {menuRotaAberto === rota.id ? (
+                                      <div className={styles['rota-menu-dropdown']}>
+                                        <button
+                                          type="button"
+                                          className={styles['rota-menu-item']}
+                                          onClick={(event) => {
+                                            event.stopPropagation()
+                                            iniciarEdicaoRota(rota)
+                                          }}
+                                        >
+                                          Editar rota
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className={styles['rota-menu-item']}
+                                          onClick={(event) => {
+                                            event.stopPropagation()
+                                            excluirRota(rota)
+                                          }}
+                                          disabled={excluindoRotaId === rota.id}
+                                        >
+                                          {excluindoRotaId === rota.id ? 'Excluindo...' : 'Excluir rota'}
+                                        </button>
+                                      </div>
+                                    ) : null}
+                                  </div>
                                 </div>
 
                                 <div className={styles['rotas-celula--status']}>
@@ -291,17 +465,116 @@ function GerenciarRotas() {
                                 </div>
                               </div>
 
-                              <div className={styles['rotas-alunos']}>
-                                {rota.alunos.length === 0 ? (
-                                  <p className={styles['vazio']}>Sem alunos vinculados.</p>
-                                ) : (
-                                  rota.alunos.map((aluno) => (
-                                    <p key={aluno.id || aluno.nome || aluno.name}>
-                                      {aluno.nome || aluno.name || 'Aluno sem nome'}
-                                    </p>
-                                  ))
-                                )}
-                              </div>
+                              {rotaEditandoId === rota.id ? (
+                                <div className={styles['rota-edicao']}>
+                                  <div className={styles['rota-edicao-lista']}>
+                                    {(alunosEdicaoPorRota[rota.id] || []).length === 0 ? (
+                                      <p className={styles['vazio']}>Nenhum aluno vinculado nesta rota.</p>
+                                    ) : (
+                                      (alunosEdicaoPorRota[rota.id] || []).map((aluno, index) => (
+                                        <div key={aluno.id || `${aluno.nome}-${index}`} className={styles['rota-edicao-item']}>
+                                          <span>{aluno.nome || aluno.name || 'Aluno sem nome'}</span>
+                                          <div className={styles['rota-edicao-acoes-item']}>
+                                            <button
+                                              type="button"
+                                              className={styles['rota-edicao-botao']}
+                                              onClick={() => moverAlunoNaRota(rota.id, index, -1)}
+                                              disabled={index === 0}
+                                            >
+                                              ↑
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className={styles['rota-edicao-botao']}
+                                              onClick={() => moverAlunoNaRota(rota.id, index, 1)}
+                                              disabled={index === (alunosEdicaoPorRota[rota.id] || []).length - 1}
+                                            >
+                                              ↓
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className={styles['rota-edicao-botao']}
+                                              onClick={() => removerAlunoDaRota(rota.id, aluno.id)}
+                                            >
+                                              Remover
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+
+                                  <div className={styles['rota-edicao-acoes']}>
+                                    <button
+                                      type="button"
+                                      className={styles['rota-edicao-cancelar']}
+                                      onClick={() => setRotaEditandoId(null)}
+                                    >
+                                      Cancelar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={styles['rota-edicao-salvar']}
+                                      onClick={() => salvarEdicaoRota(rota)}
+                                      disabled={salvandoEdicaoRotaId === rota.id}
+                                    >
+                                      {salvandoEdicaoRotaId === rota.id ? 'Salvando...' : 'Salvar alterações'}
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className={styles['rotas-alunos']}>
+                                    {rota.alunos.length === 0 ? (
+                                      <p className={styles['vazio']}>Sem alunos vinculados.</p>
+                                    ) : (
+                                      rota.alunos.map((aluno) => (
+                                        <p key={aluno.id || aluno.nome || aluno.name}>
+                                          {aluno.nome || aluno.name || 'Aluno sem nome'}
+                                        </p>
+                                      ))
+                                    )}
+                                  </div>
+
+                                  <div className={styles['rota-associacao']}>
+                                <label className={styles['rota-associacao-label']} htmlFor={`aluno-rota-${rota.id}`}>
+                                  Vincular aluno à rota
+                                </label>
+                                <div className={styles['rota-associacao-controles']}>
+                                  <select
+                                    id={`aluno-rota-${rota.id}`}
+                                    className={styles['rota-associacao-select']}
+                                    value={alunoSelecionadoPorRota[rota.id] || ''}
+                                    onChange={(event) => {
+                                      setAlunoSelecionadoPorRota((atual) => ({ ...atual, [rota.id]: event.target.value }))
+                                      setErroAssociacaoPorRota((atual) => ({ ...atual, [rota.id]: '' }))
+                                    }}
+                                    disabled={associandoAlunoId === rota.id}
+                                  >
+                                    <option value="">Selecione um aluno</option>
+                                    {alunos
+                                      .filter((aluno) => !aluno.routeId || aluno.routeId === rota.id)
+                                      .map((aluno) => (
+                                        <option key={aluno.id} value={aluno.id}>
+                                          {aluno.nome} {aluno.rm ? `- ${aluno.rm}` : ''}
+                                        </option>
+                                      ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    className={styles['rota-associacao-botao']}
+                                    onClick={() => associarAlunoARota(rota, alunoSelecionadoPorRota[rota.id])}
+                                    disabled={associandoAlunoId === rota.id || !alunoSelecionadoPorRota[rota.id]}
+                                  >
+                                    {associandoAlunoId === rota.id ? 'Vinculando...' : 'Vincular'}
+                                  </button>
+                                </div>
+                                    {erroAssociacaoPorRota[rota.id] ? (
+                                      <p className={styles['rota-associacao-erro']}>{erroAssociacaoPorRota[rota.id]}</p>
+                                    ) : null}
+                                  </div>
+                                </>
+                              )}
                             </article>
                           ))
                         )}

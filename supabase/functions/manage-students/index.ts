@@ -15,6 +15,15 @@ function normalizeText(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function shouldSkipStudentValidation(payload: Record<string, unknown>) {
+  const keys = Object.keys(payload)
+  if (!keys.includes('route_id')) {
+    return false
+  }
+
+  return keys.every((key) => ['route_id', 'photo_path', 'photo_url'].includes(key))
+}
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -116,6 +125,10 @@ function buildStudentRecord(payload: Record<string, unknown>, isUpdate = false) 
 }
 
 function validateStudentPayload(payload: Record<string, unknown>) {
+  if (shouldSkipStudentValidation(payload)) {
+    return []
+  }
+
   const requiredFields = [
     'name',
     'rm',
@@ -176,14 +189,29 @@ async function createStudent(payload: Record<string, unknown>) {
 }
 
 async function updateStudent(studentId: string, payload: Record<string, unknown>) {
-  const missingFields = validateStudentPayload(payload)
+  const adminClient = createAdminClient()
+  const { data: existingStudent, error: existingError } = await adminClient
+    .from('students')
+    .select('*')
+    .eq('id', studentId)
+    .maybeSingle()
+
+  if (existingError) {
+    return jsonResponse({ detail: existingError.message || 'Nao foi possivel localizar o aluno.' }, 400)
+  }
+
+  const mergedPayload = { ...(existingStudent || {}), ...payload }
+  if (payload.route_id !== undefined && payload.route_id !== null && existingStudent?.route_id && existingStudent.route_id !== payload.route_id) {
+    return jsonResponse({ detail: 'Este aluno já está vinculado a outra rota.' }, 400)
+  }
+
+  const missingFields = validateStudentPayload(mergedPayload)
   if (missingFields.length > 0) {
     return jsonResponse({ detail: 'Preencha todos os campos do cadastro do aluno.' }, 400)
   }
 
-  const adminClient = createAdminClient()
   // Resolve photo_url from photo_path if needed before update
-  const record = buildStudentRecord(payload, true)
+  const record = buildStudentRecord(mergedPayload, true)
   const photoPath = typeof payload.photo_path === 'string' ? payload.photo_path.trim() : ''
   if ((!record.photo_url || record.photo_url === null) && photoPath) {
     try {

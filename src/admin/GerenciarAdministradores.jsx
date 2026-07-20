@@ -4,6 +4,7 @@ import { ArrowLeft, CirclePlus, Search, ChevronDown, ChevronRight, Users } from 
 import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import { apiRequest } from '../api.js'
+import { formatCpf, isCpfComplete } from './formValidators.js'
 
 const administradorInicial = {
   nome: '',
@@ -74,7 +75,7 @@ function GerenciarAdministradores() {
     setAdministradorEmEdicao(administrador)
     setNovoAdministrador({
       nome: administrador.full_name || '',
-      cpf: administrador.cpf || '',
+      cpf: formatCpf(administrador.cpf || ''),
       email: administrador.email || '',
       senha: '',
       confirmarSenha: '',
@@ -89,11 +90,17 @@ function GerenciarAdministradores() {
   }
 
   const atualizarCampo = (campo) => (e) => {
-    setNovoAdministrador((atual) => ({ ...atual, [campo]: e.target.value }))
+    const value = campo === 'cpf' ? formatCpf(e.target.value) : e.target.value
+    setNovoAdministrador((atual) => ({ ...atual, [campo]: value }))
   }
 
   const enviarNovoAdministrador = async (e) => {
     e.preventDefault()
+
+    if (!isCpfComplete(novoAdministrador.cpf)) {
+      showError('Informe um CPF com 11 numeros.')
+      return
+    }
 
     if (novoAdministrador.senha !== novoAdministrador.confirmarSenha) {
       showError('As senhas do administrador não conferem.')
@@ -126,6 +133,11 @@ function GerenciarAdministradores() {
     e.preventDefault()
 
     if (!administradorEmEdicao) {
+      return
+    }
+
+    if (!isCpfComplete(novoAdministrador.cpf)) {
+      showError('Informe um CPF com 11 numeros.')
       return
     }
 
@@ -234,6 +246,8 @@ function GerenciarAdministradores() {
                 placeholder="Insira o CPF do administrador"
                 value={novoAdministrador.cpf}
                 onChange={atualizarCampo('cpf')}
+                inputMode="numeric"
+                maxLength={14}
               />
 
               <p className={styles['boadd-label']}>Email</p>
@@ -281,7 +295,7 @@ function GerenciarAdministradores() {
               <input type="text" placeholder="Digite o nome do administrador" value={novoAdministrador.nome} onChange={atualizarCampo('nome')} />
 
               <p className={styles['boadd-label']}>Cpf</p>
-              <input type="text" placeholder="Insira o CPF do administrador" value={novoAdministrador.cpf} onChange={atualizarCampo('cpf')} />
+              <input type="text" placeholder="Insira o CPF do administrador" value={novoAdministrador.cpf} onChange={atualizarCampo('cpf')} inputMode="numeric" maxLength={14} />
 
               <p className={styles['boadd-label']}>Email</p>
               <input type="email" placeholder="Informe o email do administrador" value={novoAdministrador.email} onChange={atualizarCampo('email')} />

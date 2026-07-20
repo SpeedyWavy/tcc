@@ -4,6 +4,7 @@ import { Camera, ChevronDown } from 'lucide-react'
 import ActionNotification, { useActionNotification } from './ActionNotification.jsx'
 import { clearSession, getStoredUser } from '../../auth.js'
 import styles from './UserMenu.module.css'
+import { formatCpf } from '../formValidators.js'
 
 const cadastroInicial = {
   nome: '',
@@ -43,7 +44,8 @@ function UserMenu() {
   }, [menuAberto])
 
   const atualizarCampo = (campo) => (event) => {
-    setCadastro((atual) => ({ ...atual, [campo]: event.target.value }))
+    const value = campo === 'cpf' ? formatCpf(event.target.value) : event.target.value
+    setCadastro((atual) => ({ ...atual, [campo]: value }))
   }
 
   const abrirEditor = () => {
@@ -132,6 +134,8 @@ function UserMenu() {
                   placeholder="CPF"
                   value={cadastro.cpf}
                   onChange={atualizarCampo('cpf')}
+                  inputMode="numeric"
+                  maxLength={14}
                 />
               </label>
 

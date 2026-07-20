@@ -9,6 +9,7 @@ import FilterPanel from './components/FilterPanel.jsx'
 import PhotoUpload from './components/PhotoUpload.jsx'
 import { apiRequest } from '../api.js'
 import { supabase } from '../supabase.js'
+import { formatCpf, formatPhone, isCpfComplete, isPhoneComplete, onlyDigits } from './formValidators.js'
 
 const motoristaInicial = {
   nome: '',
@@ -102,11 +103,11 @@ function GerenciarMotoristas() {
     setMotoristaEmEdicao(motorista)
     setNovoMotorista({
       nome: motorista.full_name || '',
-      cpf: motorista.cpf || '',
-      rg: motorista.rg || '',
+      cpf: formatCpf(motorista.cpf || ''),
+      rg: onlyDigits(motorista.rg || '', 12),
       categoriaCnh: motorista.cnh_category || '',
       identificacaoTransporte: motorista.transport_identification || '',
-      contato: motorista.contact || '',
+      contato: formatPhone(motorista.contact || ''),
       horarios: motorista.schedules || '',
       unidade: motorista.unit || 'Garcia',
       fotoUrl: motorista.photo_url || null,
@@ -132,7 +133,13 @@ function GerenciarMotoristas() {
   }
 
   const atualizarCampo = (campo) => (e) => {
-    setNovoMotorista((atual) => ({ ...atual, [campo]: e.target.value }))
+    const formatters = {
+      cpf: formatCpf,
+      rg: (value) => onlyDigits(value, 12),
+      contato: formatPhone,
+    }
+    const value = formatters[campo] ? formatters[campo](e.target.value) : e.target.value
+    setNovoMotorista((atual) => ({ ...atual, [campo]: value }))
   }
 
   const atualizarAcesso = (campo) => (e) => {
@@ -164,6 +171,16 @@ function GerenciarMotoristas() {
   }
 
   const irParaAcesso = () => {
+    if (!isCpfComplete(novoMotorista.cpf)) {
+      showError('Informe um CPF com 11 numeros.')
+      return
+    }
+
+    if (novoMotorista.contato.trim() && !isPhoneComplete(novoMotorista.contato)) {
+      showError('Informe um contato com DDD e 8 ou 9 digitos.')
+      return
+    }
+
     setPassoCadastro(2)
   }
 
@@ -174,8 +191,13 @@ function GerenciarMotoristas() {
   const enviarNovoMotorista = async (e) => {
     e.preventDefault()
 
-    if (!novoMotorista.cpf.trim()) {
-      showError('Informe o CPF do motorista para criar o cadastro.')
+    if (!isCpfComplete(novoMotorista.cpf)) {
+      showError('Informe um CPF com 11 numeros.')
+      return
+    }
+
+    if (novoMotorista.contato.trim() && !isPhoneComplete(novoMotorista.contato)) {
+      showError('Informe um contato com DDD e 8 ou 9 digitos.')
       return
     }
 
@@ -221,8 +243,13 @@ function GerenciarMotoristas() {
       return
     }
 
-    if (!novoMotorista.cpf.trim()) {
-      showError('O CPF do motorista é obrigatório.')
+    if (!isCpfComplete(novoMotorista.cpf)) {
+      showError('Informe um CPF com 11 numeros.')
+      return
+    }
+
+    if (novoMotorista.contato.trim() && !isPhoneComplete(novoMotorista.contato)) {
+      showError('Informe um contato com DDD e 8 ou 9 digitos.')
       return
     }
 
@@ -383,8 +410,8 @@ function GerenciarMotoristas() {
               {passoCadastro === 1 ? (
                 <>
                   <input type="text" placeholder="Digite o nome do motorista" value={novoMotorista.nome} onChange={atualizarCampo('nome')} />
-                  <input type="text" placeholder="Insira o CPF" value={novoMotorista.cpf} onChange={atualizarCampo('cpf')} required />
-                  <input type="text" placeholder="Insira o RG" value={novoMotorista.rg} onChange={atualizarCampo('rg')} />
+                  <input type="text" placeholder="Insira o CPF" value={novoMotorista.cpf} onChange={atualizarCampo('cpf')} inputMode="numeric" maxLength={14} required />
+                  <input type="text" placeholder="Insira o RG" value={novoMotorista.rg} onChange={atualizarCampo('rg')} inputMode="numeric" maxLength={12} />
 
                   <select value={novoMotorista.categoriaCnh} onChange={atualizarCampo('categoriaCnh')}>
                     <option value="">Categoria da CNH</option>
@@ -401,7 +428,7 @@ function GerenciarMotoristas() {
                     value={novoMotorista.identificacaoTransporte}
                     onChange={atualizarCampo('identificacaoTransporte')}
                   />
-                  <input type="text" placeholder="Contato" value={novoMotorista.contato} onChange={atualizarCampo('contato')} />
+                  <input type="text" placeholder="Contato" value={novoMotorista.contato} onChange={atualizarCampo('contato')} inputMode="tel" maxLength={15} />
                   <input type="text" placeholder="Horarios" value={novoMotorista.horarios} onChange={atualizarCampo('horarios')} />
 
                   <div className={styles['boadd-unidade']}>
@@ -479,8 +506,8 @@ function GerenciarMotoristas() {
               {passoEdicao === 1 ? (
                 <>
                   <input type="text" placeholder="Digite o nome do motorista" value={novoMotorista.nome} onChange={atualizarCampo('nome')} />
-                  <input type="text" placeholder="Insira o CPF" value={novoMotorista.cpf} onChange={atualizarCampo('cpf')} required />
-                  <input type="text" placeholder="Insira o RG" value={novoMotorista.rg} onChange={atualizarCampo('rg')} />
+                  <input type="text" placeholder="Insira o CPF" value={novoMotorista.cpf} onChange={atualizarCampo('cpf')} inputMode="numeric" maxLength={14} required />
+                  <input type="text" placeholder="Insira o RG" value={novoMotorista.rg} onChange={atualizarCampo('rg')} inputMode="numeric" maxLength={12} />
 
                   <select value={novoMotorista.categoriaCnh} onChange={atualizarCampo('categoriaCnh')}>
                     <option value="">Categoria da CNH</option>
@@ -492,7 +519,7 @@ function GerenciarMotoristas() {
                   </select>
 
                   <input type="text" placeholder="Veiculo / identificacao do transporte" value={novoMotorista.identificacaoTransporte} onChange={atualizarCampo('identificacaoTransporte')} />
-                  <input type="text" placeholder="Contato" value={novoMotorista.contato} onChange={atualizarCampo('contato')} />
+                  <input type="text" placeholder="Contato" value={novoMotorista.contato} onChange={atualizarCampo('contato')} inputMode="tel" maxLength={15} />
                   <input type="text" placeholder="Horarios" value={novoMotorista.horarios} onChange={atualizarCampo('horarios')} />
 
                   <div className={styles['boadd-unidade']}>

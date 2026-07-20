@@ -1,8 +1,13 @@
 const TOKEN_KEY = 'token'
+const REFRESH_TOKEN_KEY = 'refreshToken'
 const USER_KEY = 'user'
 
 export function getStoredToken() {
   return window.localStorage.getItem(TOKEN_KEY)
+}
+
+export function getStoredRefreshToken() {
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY)
 }
 
 export function getStoredUser() {
@@ -20,13 +25,24 @@ export function getStoredUser() {
   }
 }
 
-export function saveSession(token, user) {
-  window.localStorage.setItem(TOKEN_KEY, token)
+export function saveSession(session, user) {
+  if (typeof session === 'string') {
+    window.localStorage.setItem(TOKEN_KEY, session)
+  } else if (session && typeof session === 'object') {
+    if (session.access_token) {
+      window.localStorage.setItem(TOKEN_KEY, session.access_token)
+    }
+    if (session.refresh_token) {
+      window.localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token)
+    }
+  }
+
   window.localStorage.setItem(USER_KEY, JSON.stringify(user))
 }
 
 export function clearSession() {
   window.localStorage.removeItem(TOKEN_KEY)
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY)
   window.localStorage.removeItem(USER_KEY)
 }
 
@@ -54,7 +70,7 @@ export function requireAuth(pathname) {
     '/gerenciar-rotas',
     '/gerenciar-administradores',
   ])
-  const driverRoutes = new Set(['/inicial', '/motorista-alunos', '/motorista-contatos', '/motorista-rotas'])
+  const driverRoutes = new Set(['/inicial', '/motorista-alunos', '/motorista-contatos', '/motorista-rotas', '/motorista-trajeto', '/motorista-veiculo'])
 
   if (publicRoutes.has(pathname)) {
     return { allowed: true, redirectTo: user ? getHomePathByRole(user.role) : null }

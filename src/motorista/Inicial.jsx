@@ -13,12 +13,12 @@ function Inicial() {
       </div>
 
       <section className={styles['motorista-home__actions']}>
-        <a href="#" className={`${styles['motorista-card']} ${styles['motorista-card--principal']}`}>
+        <a href="/motorista-trajeto" className={`${styles['motorista-card']} ${styles['motorista-card--principal']}`}>
           <img src={wheel} alt="" className={styles['motorista-card__image']} />
           <span>Trajeto Atual</span>
         </a>
 
-        <a href="#" className={styles['motorista-card']}>
+        <a href="/motorista-veiculo" className={styles['motorista-card']}>
           <Bus />
           <span>Veiculo</span>
         </a>

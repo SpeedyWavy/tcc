@@ -6,13 +6,18 @@ import { apiRequest } from '../api.js'
 
 function normalizarRota(rota) {
   return {
-    id: rota.id,
-    rota: rota.rota || 'Rota',
-    horario: rota.horario || 'Sem horário',
+    id: rota.id || rota.route_id || rota.vehicle_id || Math.random().toString(36).slice(2, 10),
+    rota: rota.rota || rota.route || 'Rota',
+    horario: rota.horario || rota.created_at || rota.updated_at || 'Sem horário',
     status: rota.status || 'Em andamento',
-    vehicleName: rota.vehicle_name || 'Veiculo nao informado',
-    driverName: rota.driver_name || 'Motorista nao informado',
-    students: Array.isArray(rota.students) ? rota.students : [],
+    vehicleName: rota.vehicle_name || rota.vehicle || rota.vehicle_id || 'Veiculo nao informado',
+    driverName: rota.driver_name || rota.driver || rota.driver_id || 'Motorista nao informado',
+    students: Array.isArray(rota.students)
+      ? rota.students.map((student) => ({
+          id: student.id,
+          nome: student.nome || student.name || 'Aluno sem nome',
+        }))
+      : [],
   }
 }
 
@@ -36,7 +41,8 @@ function Rotas() {
           return
         }
 
-        setRotas(Array.isArray(data) ? data.map(normalizarRota) : [])
+        const rotasRecebidas = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : [])
+        setRotas(rotasRecebidas.map(normalizarRota))
       } catch (error) {
         if (ativo) {
           setErro(error.message || 'Erro ao carregar rotas.')
@@ -122,7 +128,12 @@ function Rotas() {
 
                 return (
                   <article key={rota.id} className={styles['bloco']}>
-                    <button type="button" className={styles['linha']} onClick={() => alternarRota(rota.id)}>
+                    <button
+                      type="button"
+                      className={styles['linha']}
+                      onClick={() => alternarRota(rota.id)}
+                      aria-expanded={aberta}
+                    >
                       <div className={styles['coluna-rota']}>
                         {aberta ? <ChevronDown className={styles['seta']} /> : <ChevronRight className={styles['seta']} />}
                         <span>{rota.rota}</span>
@@ -136,9 +147,9 @@ function Rotas() {
                           <p className={styles['sem-alunos']}>Nenhum aluno nesta rota.</p>
                         ) : (
                           rota.students.map((student) => (
-                            <div key={student.id} className={styles['aluno']}>
-                              <span>{student.nome}</span>
-                              <button type="button" className={styles['info']} aria-label={`Detalhes de ${student.nome}`}>
+                            <div key={student.id || student.nome || student.name} className={styles['aluno']}>
+                              <span>{student.nome || student.name || 'Aluno sem nome'}</span>
+                              <button type="button" className={styles['info']} aria-label={`Detalhes de ${student.nome || student.name}`}>
                                 <Info />
                               </button>
                             </div>

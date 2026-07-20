@@ -5,6 +5,23 @@ function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function normalizeName(value) {
+  return normalizeText(value).toLowerCase()
+}
+
+function shouldSkipStudentValidation(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return false
+  }
+
+  const keys = Object.keys(payload)
+  if (!keys.includes('route_id')) {
+    return false
+  }
+
+  return keys.every((key) => ['route_id', 'photo_path', 'photo_url'].includes(key))
+}
+
 function parseJsonBody(body) {
   if (!body) {
     return {}
@@ -31,6 +48,78 @@ function handleSupabaseError(error, fallbackMessage) {
   }
 
   throw new Error(fallbackMessage)
+}
+
+async function resolveDriverId(currentUser) {
+  if (!currentUser || currentUser.role !== 'driver') {
+    return null
+  }
+
+  const candidateEmail = normalizeText(currentUser.email)
+  const candidateName = normalizeText(currentUser.full_name)
+
+  if (currentUser.id) {
+    const { data: userById, error: userByIdError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', currentUser.id)
+      .eq('role', 'driver')
+      .maybeSingle()
+
+    if (!userByIdError && userById?.id) {
+      return userById.id
+    }
+  }
+
+  if (candidateEmail) {
+    const { data: userByEmail, error: userByEmailError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'driver')
+      .ilike('email', candidateEmail)
+      .maybeSingle()
+
+    if (!userByEmailError && userByEmail?.id) {
+      return userByEmail.id
+    }
+  }
+
+  if (candidateName) {
+    const { data: userByName, error: userByNameError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'driver')
+      .ilike('full_name', candidateName)
+      .maybeSingle()
+
+    if (!userByNameError && userByName?.id) {
+      return userByName.id
+    }
+
+    const { data: drivers, error: driversError } = await supabase
+      .from('users')
+      .select('id, full_name, email')
+      .eq('role', 'driver')
+      .limit(1000)
+
+    if (!driversError && Array.isArray(drivers)) {
+      const match = drivers.find((driver) => {
+        const driverName = normalizeName(driver.full_name)
+        return (
+          driverName === candidateName ||
+          driverName.includes(candidateName) ||
+          candidateName.includes(driverName) ||
+          normalizeName(driver.email) === candidateEmail
+        )
+      })
+
+      if (match?.id) {
+        return match.id
+      }
+    }
+  }
+
+  return null
 }
 
 async function invokeManageUsers(action, payload) {
@@ -92,6 +181,7 @@ function buildStudentRecord(student, isUpdate = false) {
     unit,
     unidade: unit,
     photo_url: photoUrl || null,
+    route_id: student.route_id ?? null,
     updated_at: new Date().toISOString(),
   }
 
@@ -106,6 +196,8 @@ function buildStudentRecord(student, isUpdate = false) {
 }
 
 async function handleStudents(method, studentId, body) {
+  const currentUser = getStoredUser()
+
   if (method === 'GET' && studentId) {
     const { data, error } = await supabase
       .from('students')
@@ -121,6 +213,128 @@ async function handleStudents(method, studentId, body) {
   }
 
   if (method === 'GET') {
+    if (currentUser?.role === 'driver') {
+      const driverId = await resolveDriverId(currentUser)
+      const candidateName = normalizeName(currentUser.full_name)
+      if (!driverId && !candidateName) {
+        return []
+      }
+
+      const [{ data: vehicleRoutes, error: vehicleRoutesError }, { data: vehicles, error: vehiclesError }] = await Promise.all([
+        driverId ? supabase.from('routes').select('id, vehicle_id').eq('driver_id', driverId) : Promise.resolve({ data: [], error: null }),
+        driverId ? supabase.from('vehicles').select('id').eq('driver_id', driverId) : Promise.resolve({ data: [], error: null }),
+      ])
+
+      if (vehicleRoutesError) {
+        handleSupabaseError(vehicleRoutesError, 'Não foi possível carregar as rotas do motorista.')
+      }
+      if (vehiclesError) {
+        handleSupabaseError(vehiclesError, 'Não foi possível carregar os veículos do motorista.')
+      }
+
+      const vehicleIds = Array.isArray(vehicles) ? vehicles.map((vehicle) => vehicle.id).filter(Boolean) : []
+      const routeIdsFromDriver = Array.isArray(vehicleRoutes)
+        ? vehicleRoutes.map((route) => route.id).filter(Boolean)
+        : []
+
+      const routeIds = new Set(routeIdsFromDriver)
+
+      if (vehicleIds.length > 0) {
+        const { data: vehicleRoutesByVehicle, error: vehicleRoutesByVehicleError } = await supabase
+          .from('routes')
+          .select('id')
+          .in('vehicle_id', vehicleIds)
+
+        if (vehicleRoutesByVehicleError) {
+          handleSupabaseError(vehicleRoutesByVehicleError, 'Não foi possível carregar as rotas vinculadas aos veículos do motorista.')
+        }
+
+        for (const route of vehicleRoutesByVehicle ?? []) {
+          if (route?.id) {
+            routeIds.add(route.id)
+          }
+        }
+      }
+
+      if (routeIds.size === 0 && candidateName) {
+        const { data: vehiclesByName, error: vehiclesByNameError } = await supabase
+          .from('vehicles')
+          .select('id')
+          .ilike('driver_name', `%${candidateName}%`)
+
+        if (vehiclesByNameError) {
+          handleSupabaseError(vehiclesByNameError, 'Não foi possível carregar veículos pelo nome do motorista.')
+        }
+
+        const vehicleIdsByName = Array.isArray(vehiclesByName)
+          ? vehiclesByName.map((vehicle) => vehicle.id).filter(Boolean)
+          : []
+
+        if (vehicleIdsByName.length > 0) {
+          const { data: routesByVehicleName, error: routesByVehicleNameError } = await supabase
+            .from('routes')
+            .select('id')
+            .in('vehicle_id', vehicleIdsByName)
+
+          if (routesByVehicleNameError) {
+            handleSupabaseError(routesByVehicleNameError, 'Não foi possível carregar as rotas vinculadas aos veículos do motorista.')
+          }
+
+          for (const route of routesByVehicleName ?? []) {
+            if (route?.id) {
+              routeIds.add(route.id)
+            }
+          }
+        }
+
+        if (routeIds.size === 0) {
+          const { data: driverByName, error: driverByNameError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('role', 'driver')
+            .ilike('full_name', `%${candidateName}%`)
+            .maybeSingle()
+
+          if (driverByNameError) {
+            handleSupabaseError(driverByNameError, 'Não foi possível localizar o motorista pelo nome.')
+          }
+
+          if (driverByName?.id) {
+            const { data: routesByDriverName, error: routesByDriverNameError } = await supabase
+              .from('routes')
+              .select('id')
+              .eq('driver_id', driverByName.id)
+
+            if (routesByDriverNameError) {
+              handleSupabaseError(routesByDriverNameError, 'Não foi possível carregar as rotas do motorista.')
+            }
+
+            for (const route of routesByDriverName ?? []) {
+              if (route?.id) {
+                routeIds.add(route.id)
+              }
+            }
+          }
+        }
+      }
+
+      if (routeIds.size === 0) {
+        return []
+      }
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .in('route_id', Array.from(routeIds))
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        handleSupabaseError(error, 'Não foi possível carregar os alunos.')
+      }
+
+      return data ?? []
+    }
+
     const { data, error } = await supabase
       .from('students')
       .select('*')
@@ -149,11 +363,29 @@ async function handleStudents(method, studentId, body) {
   }
 
   if (method === 'PUT' && studentId) {
+    const payload = parseJsonBody(body)
+    const { data: existingStudent, error: studentLookupError } = await supabase
+      .from('students')
+      .select('*')
+      .eq('id', studentId)
+      .maybeSingle()
+
+    if (studentLookupError) {
+      handleSupabaseError(studentLookupError, 'Não foi possível localizar o aluno.')
+    }
+
+    const mergedPayload = { ...(existingStudent || {}), ...payload }
+    const targetRouteId = payload.route_id ?? mergedPayload.route_id ?? null
+
+    if (payload.route_id !== undefined && payload.route_id !== null && existingStudent?.route_id && existingStudent.route_id !== targetRouteId) {
+      throw new Error('Este aluno já está vinculado a outra rota.')
+    }
+
     const { data, error } = await supabase.functions.invoke('manage-students', {
       body: {
         action: 'update_student',
         id: studentId,
-        data: buildStudentRecord(parseJsonBody(body), true),
+        data: buildStudentRecord(mergedPayload, true),
       },
     })
 
@@ -260,7 +492,7 @@ function formatRouteTime(value) {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
-async function handleRoutes(method, body) {
+async function handleRoutes(method, body, routeId = null) {
   const currentUser = getStoredUser()
 
   if (method === 'POST') {
@@ -289,6 +521,83 @@ async function handleRoutes(method, body) {
     }
 
     return data
+  }
+
+  if (method === 'PUT') {
+    const payload = parseJsonBody(body)
+    const stops = Array.isArray(payload.stops) ? payload.stops : []
+    const studentIds = stops
+      .map((stop) => stop?.student_id || stop?.id || stop?.studentId)
+      .filter(Boolean)
+
+    const routeUpdate = {
+      status: normalizeText(payload.status) || 'Aguardando Saída',
+      vehicle_id: payload.vehicle_id ?? null,
+      driver_id: payload.driver_id ?? null,
+      stops,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { data: routeData, error: routeError } = await supabase
+      .from('routes')
+      .update(routeUpdate)
+      .eq('id', routeId)
+      .select('*')
+      .single()
+
+    if (routeError) {
+      handleSupabaseError(routeError, 'Não foi possível atualizar a rota.')
+    }
+
+    if (studentIds.length > 0) {
+      const { error: clearStudentsError } = await supabase
+        .from('students')
+        .update({ route_id: null, updated_at: new Date().toISOString() })
+        .eq('route_id', routeId)
+
+      if (clearStudentsError) {
+        handleSupabaseError(clearStudentsError, 'Não foi possível limpar a antiga vinculação de alunos.')
+      }
+
+      const { error: assignStudentsError } = await supabase
+        .from('students')
+        .update({ route_id: routeId, updated_at: new Date().toISOString() })
+        .in('id', studentIds)
+
+      if (assignStudentsError) {
+        handleSupabaseError(assignStudentsError, 'Não foi possível vincular os alunos à rota.')
+      }
+    } else {
+      const { error: clearStudentsError } = await supabase
+        .from('students')
+        .update({ route_id: null, updated_at: new Date().toISOString() })
+        .eq('route_id', routeId)
+
+      if (clearStudentsError) {
+        handleSupabaseError(clearStudentsError, 'Não foi possível remover os alunos da rota.')
+      }
+    }
+
+    return routeData
+  }
+
+  if (method === 'DELETE') {
+    const { error: clearStudentsError } = await supabase
+      .from('students')
+      .update({ route_id: null, updated_at: new Date().toISOString() })
+      .eq('route_id', routeId)
+
+    if (clearStudentsError) {
+      handleSupabaseError(clearStudentsError, 'Não foi possível remover os alunos da rota.')
+    }
+
+    const { error } = await supabase.from('routes').delete().eq('id', routeId)
+
+    if (error) {
+      handleSupabaseError(error, 'Não foi possível excluir a rota.')
+    }
+
+    return { message: 'Rota excluída com sucesso.' }
   }
 
   if (method !== 'GET') {
@@ -359,6 +668,7 @@ async function handleRoutes(method, body) {
       vehicle_name: vehicle?.identification || vehicle?.model || vehicle?.license_plate || 'Veículo não informado',
       driver_id: route.driver_id,
       driver_name: driver?.full_name || vehicle?.driver_name || 'Motorista não informado',
+      vehicle_driver_id: vehicle?.driver_id || null,
       status: route.status || 'Aguardando Saída',
       created_at: route.created_at,
       updated_at: route.updated_at,
@@ -367,7 +677,21 @@ async function handleRoutes(method, body) {
   })
 
   if (currentUser?.role === 'driver') {
-    return routes.filter((route) => route.driver_id === currentUser.id)
+    const currentDriverId = await resolveDriverId(currentUser) || currentUser.id
+    const currentDriverName = normalizeName(currentUser.full_name)
+
+    return routes.filter((route) => {
+      const routeDriverName = normalizeName(route.driver_name)
+      const vehicleDriverName = normalizeName(route.driver_name)
+
+      return (
+        route.driver_id === currentDriverId ||
+        route.driver_id === currentUser.id ||
+        route.vehicle_driver_id === currentDriverId ||
+        route.vehicle_driver_id === currentUser.id ||
+        (currentDriverName && (routeDriverName === currentDriverName || routeDriverName.includes(currentDriverName) || currentDriverName.includes(routeDriverName)))
+      )
+    })
   }
 
   return routes
@@ -389,6 +713,78 @@ async function handleVehicles(method, vehicleId, body) {
   }
 
   if (method === 'GET') {
+    const currentUser = getStoredUser()
+    const isDriver = currentUser?.role === 'driver'
+    const candidateName = normalizeText(currentUser?.full_name)
+    const driverId = isDriver ? await resolveDriverId(currentUser) : null
+    const driverIds = isDriver ? [driverId, currentUser?.id].filter(Boolean) : []
+
+    if (isDriver) {
+      if (driverIds.length > 0) {
+        const { data: directVehicles, error: directError } = await supabase
+          .from('vehicles')
+          .select('*')
+          .in('driver_id', driverIds)
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (directError) {
+          handleSupabaseError(directError, 'Não foi possível carregar os veículos.')
+        }
+
+        if (Array.isArray(directVehicles) && directVehicles.length > 0) {
+          return directVehicles
+        }
+
+        const { data: routeVehicles, error: routeError } = await supabase
+          .from('routes')
+          .select('vehicle_id')
+          .in('driver_id', driverIds)
+
+        if (routeError) {
+          handleSupabaseError(routeError, 'Não foi possível carregar as rotas do motorista.')
+        }
+
+        const vehicleIds = Array.isArray(routeVehicles)
+          ? routeVehicles.map((route) => route.vehicle_id).filter(Boolean)
+          : []
+
+        if (vehicleIds.length > 0) {
+          const { data: vehiclesByRoute, error: routeVehicleError } = await supabase
+            .from('vehicles')
+            .select('*')
+            .in('id', vehicleIds)
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (routeVehicleError) {
+            handleSupabaseError(routeVehicleError, 'Não foi possível carregar os veículos vinculados à rota do motorista.')
+          }
+
+          if (Array.isArray(vehiclesByRoute) && vehiclesByRoute.length > 0) {
+            return vehiclesByRoute
+          }
+        }
+      }
+
+      if (candidateName) {
+        const { data: nameVehicles, error: nameError } = await supabase
+          .from('vehicles')
+          .select('*')
+          .ilike('driver_name', `%${candidateName}%`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (nameError) {
+          handleSupabaseError(nameError, 'Não foi possível carregar os veículos.')
+        }
+
+        return nameVehicles ?? []
+      }
+
+      return []
+    }
+
     const { data, error } = await supabase
       .from('vehicles')
       .select('*')
@@ -499,7 +895,7 @@ throw new Error(`Endpoint não suportado: ${path}`)
     }
 
     if (resource === 'routes') {
-      return await handleRoutes(method, options.body)
+      return await handleRoutes(method, options.body, itemId)
     }
 
     throw new Error(`Endpoint nao suportado: ${path}`)

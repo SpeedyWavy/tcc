@@ -6,6 +6,7 @@ import ActionNotification, { useActionNotification } from './components/ActionNo
 import FilterPanel from './components/FilterPanel.jsx'
 import MotoristaSelect from './components/MotoristaSelect.jsx'
 import { apiRequest } from '../api.js'
+import { formatPlate, isPlateComplete, onlyDigits } from './formValidators.js'
 
 const veiculoInicial = {
   placa: '',
@@ -89,10 +90,10 @@ function GerenciarVeiculos() {
     setMenuAberto(null)
     setVeiculoEmEdicao(veiculo)
     setNovoVeiculo({
-      placa: veiculo.license_plate || '',
-      identificacao: veiculo.identification || veiculo.model || '',
+      placa: formatPlate(veiculo.license_plate || ''),
+      identificacao: onlyDigits(veiculo.identification || veiculo.model || '', 12),
       motoristaResp: veiculo.driver_name || '',
-      capacidadeTotal: String(veiculo.capacity || ''),
+      capacidadeTotal: onlyDigits(veiculo.capacity || '', 3),
       unidade: veiculo.unit || 'Garcia',
     })
     setEditorAberto(true)
@@ -105,11 +106,27 @@ function GerenciarVeiculos() {
   }
 
   const atualizarCampo = (campo) => (e) => {
-    setNovoVeiculo((atual) => ({ ...atual, [campo]: e.target.value }))
+    const formatters = {
+      placa: formatPlate,
+      identificacao: (value) => onlyDigits(value, 12),
+      capacidadeTotal: (value) => onlyDigits(value, 3),
+    }
+    const value = formatters[campo] ? formatters[campo](e.target.value) : e.target.value
+    setNovoVeiculo((atual) => ({ ...atual, [campo]: value }))
   }
 
   const enviarNovoVeiculo = async (e) => {
     e.preventDefault()
+
+    if (novoVeiculo.placa.trim() && !isPlateComplete(novoVeiculo.placa)) {
+      showError('Informe uma placa com 7 caracteres, contendo letras e numeros.')
+      return
+    }
+
+    if (!Number(novoVeiculo.capacidadeTotal)) {
+      showError('Informe a capacidade total do veiculo.')
+      return
+    }
 
     if (!novoVeiculo.identificacao.trim()) {
       showError('Informe a identificação do veículo para criar o cadastro.')
@@ -144,6 +161,16 @@ function GerenciarVeiculos() {
     e.preventDefault()
 
     if (!veiculoEmEdicao) {
+      return
+    }
+
+    if (novoVeiculo.placa.trim() && !isPlateComplete(novoVeiculo.placa)) {
+      showError('Informe uma placa com 7 caracteres, contendo letras e numeros.')
+      return
+    }
+
+    if (!Number(novoVeiculo.capacidadeTotal)) {
+      showError('Informe a capacidade total do veiculo.')
       return
     }
 
@@ -288,10 +315,10 @@ function GerenciarVeiculos() {
 
             <form className={styles['boadd-form']} onSubmit={enviarNovoVeiculo}>
               <p className={styles['boadd-label']}>Placa</p>
-              <input type="text" placeholder="Digite a placa do veiculo" value={novoVeiculo.placa} onChange={atualizarCampo('placa')} />
+              <input type="text" placeholder="Digite a placa do veiculo" value={novoVeiculo.placa} onChange={atualizarCampo('placa')} maxLength={8} />
 
               <p className={styles['boadd-label']}>Identificacao</p>
-              <input type="text" placeholder="Numero de identificacao do veiculo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} required />
+              <input type="text" placeholder="Numero de identificacao do veiculo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} inputMode="numeric" maxLength={12} required />
 
               <p className={styles['boadd-label']}>Motorista</p>
               <MotoristaSelect
@@ -302,9 +329,9 @@ function GerenciarVeiculos() {
               />
 
               <p className={styles['boadd-label']}>Capacidade</p>
-              <input type="number" placeholder="Capacidade total" value={novoVeiculo.capacidadeTotal} onChange={atualizarCampo('capacidadeTotal')} />
+              <input type="text" placeholder="Capacidade total" value={novoVeiculo.capacidadeTotal} onChange={atualizarCampo('capacidadeTotal')} inputMode="numeric" maxLength={3} />
 
-              <p className={styles['boadd-label']}>Unidade de atuacao</p>
+              <p className={styles['boadd-label']}>Unidade de atução</p>
               <div className={styles['boadd-unidade']}>
                 <p className={styles['boadd-unidade-titulo']}>Unidade:</p>
                 <label>
@@ -343,10 +370,10 @@ function GerenciarVeiculos() {
 
             <form className={styles['boadd-form']} onSubmit={salvarEdicaoVeiculo}>
               <p className={styles['boadd-label']}>Placa</p>
-              <input type="text" placeholder="Digite a placa do veiculo" value={novoVeiculo.placa} onChange={atualizarCampo('placa')} />
+              <input type="text" placeholder="Digite a placa do veiculo" value={novoVeiculo.placa} onChange={atualizarCampo('placa')} maxLength={8} />
 
               <p className={styles['boadd-label']}>Identificacao</p>
-              <input type="text" placeholder="Numero de identificacao do veiculo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} required />
+              <input type="text" placeholder="Numero de identificacao do veiculo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} inputMode="numeric" maxLength={12} required />
 
               <p className={styles['boadd-label']}>Motorista</p>
               <MotoristaSelect
@@ -357,7 +384,7 @@ function GerenciarVeiculos() {
               />
 
               <p className={styles['boadd-label']}>Capacidade</p>
-              <input type="number" placeholder="Capacidade total" value={novoVeiculo.capacidadeTotal} onChange={atualizarCampo('capacidadeTotal')} />
+              <input type="text" placeholder="Capacidade total" value={novoVeiculo.capacidadeTotal} onChange={atualizarCampo('capacidadeTotal')} inputMode="numeric" maxLength={3} />
 
               <p className={styles['boadd-label']}>Unidade de atuacao</p>
               <div className={styles['boadd-unidade']}>

@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+.motorista-trajeto-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #e6e8fb 0%, #f6f7ff 100%);
+  font-family: 'Inter', sans-serif;
+  color: #001355;
+}
+
+.logo {
+  width: clamp(128px, 28vw, 180px);
+  height: clamp(64px, 14vw, 90px);
+  background-image: url('../../assets/logo-rds.png');
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: contain;
+}
+
+.titulo-com-icone {
+  display: inline-flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.motorista-trajeto__image {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.conteudo {
+  width: min(860px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 24px 0 32px;
+}
+
+.card-aviso {
+  background: #eef0ff;
+  border: 1px solid rgba(0, 19, 85, 0.12);
+  border-radius: 22px;
+  padding: 24px 22px;
+  box-shadow: 0px 14px 40px rgba(0, 19, 85, 0.08);
+  display: grid;
+  gap: 14px;
+}
+
+.card-aviso-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.card-aviso-text {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #23326f;
+}
+
+.card-aviso-action {
+  display: inline-flex;
+  margin-left: 6px;
+  font-weight: 700;
+  color: #001355;
+}
+
+.card-botoes {
+  display: flex;
+  gap: 16px;
+  margin: 22px 0;
+  flex-wrap: wrap;
+}
+
+.botao-principal,
+.botao-secundario {
+  min-width: 160px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.botao-principal {
+  background: #001355;
+  color: #fff;
+  box-shadow: 0px 18px 28px rgba(0, 19, 85, 0.22);
+}
+
+.botao-principal:hover {
+  transform: translateY(-1px);
+}
+
+.botao-secundario {
+  background: #ffffff;
+  color: #001355;
+  border: 1px solid rgba(0, 19, 85, 0.18);
+}
+
+.botao-secundario:hover {
+  transform: translateY(-1px);
+  background: #f4f6ff;
+}
+
+.detalhes-rota {
+  display: grid;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.detalhe-item {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0px 12px 20px rgba(0, 19, 85, 0.08);
+  display: grid;
+  gap: 6px;
+}
+
+.detalhe-label {
+  font-size: 0.9rem;
+  color: #5a68a0;
+}
+
+.detalhe-item strong {
+  font-size: 1.05rem;
+  color: #001355;
+}
+
+.empty-state {
+  min-height: calc(100vh - 220px);
+  display: grid;
+  place-items: center;
+  padding: 20px 0;
+}
+
+.empty-card {
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  padding: 36px 24px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 19, 85, 0.12);
+  box-shadow: 0px 28px 50px rgba(0, 19, 85, 0.12);
+}
+
+.empty-title {
+  margin-bottom: 18px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #001355;
+}
+
+.empty-text {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #33477b;
+}
+
+.empty-text strong {
+  color: #001355;
+}
+
+@media (max-width: 620px) {
+  .conteudo {
+    padding: 16px 0 28px;
+  }
+
+  .card-aviso {
+    padding: 18px 16px;
+  }
+
+  .card-botoes {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .botao-principal,
+  .botao-secundario {
+    width: 100%;
+  }
+}

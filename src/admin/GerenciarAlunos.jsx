@@ -10,6 +10,7 @@ import FilterPanel from './components/FilterPanel.jsx'
 import PhotoUpload from './components/PhotoUpload.jsx'
 import { apiRequest } from '../api.js'
 import { supabase } from '../supabase.js'
+import { formatPhone, isPhoneComplete, onlyDigits } from './formValidators.js'
 
 const alunoInicial = {
   nome: '',
@@ -90,9 +91,9 @@ function GerenciarAlunos() {
     setAlunoEmEdicao(aluno)
     setNovoAluno({
       nome: aluno.name || aluno.nome || '',
-      rm: aluno.rm || '',
+      rm: onlyDigits(aluno.rm || '', 12),
       responsavel: aluno.responsible_name || aluno.responsavel || '',
-      contatoResponsavel: aluno.parent_contact || aluno.contato_responsavel || '',
+      contatoResponsavel: formatPhone(aluno.parent_contact || aluno.contato_responsavel || ''),
       endereco: aluno.address || aluno.endereco || '',
       transporte: aluno.transport_identification || aluno.transporte || '',
       unidade: aluno.unit || aluno.unidade || 'Garcia',
@@ -111,7 +112,12 @@ function GerenciarAlunos() {
   }
 
   const atualizarCampo = (campo) => (e) => {
-    setNovoAluno((atual) => ({ ...atual, [campo]: e.target.value }))
+    const formatters = {
+      rm: (value) => onlyDigits(value, 12),
+      contatoResponsavel: formatPhone,
+    }
+    const value = formatters[campo] ? formatters[campo](e.target.value) : e.target.value
+    setNovoAluno((atual) => ({ ...atual, [campo]: value }))
   }
 
   const handlePhotoChange = async (photoUrl, filePath) => {
@@ -149,6 +155,11 @@ function GerenciarAlunos() {
 
     if (!nome || !rm || !responsavel || !contatoResponsavel || !endereco || !transporte || !unidade) {
       showError('Preencha todos os campos do cadastro do aluno.')
+      return null
+    }
+
+    if (!isPhoneComplete(contatoResponsavel)) {
+      showError('Informe o contato do responsavel com DDD e 8 ou 9 digitos.')
       return null
     }
 
@@ -338,9 +349,9 @@ function GerenciarAlunos() {
 
             <form className={styles['boadd-form']} onSubmit={enviarNovoAluno}>
               <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
-              <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} required />
+              <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} inputMode="numeric" maxLength={12} required />
               <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
-              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} required />
+              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
               <input type="text" placeholder="Endereco do aluno" value={novoAluno.endereco} onChange={atualizarCampo('endereco')} required />
 
               <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
@@ -399,9 +410,9 @@ function GerenciarAlunos() {
 
             <form className={styles['boadd-form']} onSubmit={salvarEdicaoAluno}>
               <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
-              <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} required />
+              <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} inputMode="numeric" maxLength={12} required />
               <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
-              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} required />
+              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
               <input type="text" placeholder="Endereco do aluno" value={novoAluno.endereco} onChange={atualizarCampo('endereco')} required />
 
               <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>

@@ -258,6 +258,11 @@
   padding: 0;
 }
 
+.rota-menu-wrap {
+  position: relative;
+  margin-left: auto;
+}
+
 .rota-menu {
   width: 38px;
   height: 42px;
@@ -268,11 +273,109 @@
   place-items: center;
   cursor: pointer;
   flex-shrink: 0;
-  margin-left: auto;
 }
 
 .rota-menu:hover {
   background: rgba(75, 93, 166, 0.1);
+}
+
+.rota-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  display: grid;
+  min-width: 150px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(12, 23, 67, 0.16);
+  overflow: hidden;
+  z-index: 2;
+}
+
+.rota-menu-item {
+  border: none;
+  background: #fff;
+  color: #30418e;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.rota-menu-item:hover {
+  background: rgba(75, 93, 166, 0.08);
+}
+
+.rota-menu-item:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.rota-edicao {
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.rota-edicao-lista {
+  display: grid;
+  gap: 8px;
+}
+
+.rota-edicao-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.rota-edicao-acoes-item {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rota-edicao-botao,
+.rota-edicao-cancelar,
+.rota-edicao-salvar {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.rota-edicao-botao {
+  background: rgba(48, 65, 142, 0.12);
+  color: #30418e;
+}
+
+.rota-edicao-botao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rota-edicao-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.rota-edicao-cancelar {
+  background: rgba(75, 93, 166, 0.15);
+  color: #30418e;
+}
+
+.rota-edicao-salvar {
+  background: #30418e;
+  color: #fff;
+}
+
+.rota-edicao-salvar:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .rotas-cabecalho .rotas-coluna,
@@ -289,6 +392,56 @@
   display: grid;
   gap: 6px;
   color: #5d68a2;
+}
+
+.rota-associacao {
+  padding: 0 14px 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.rota-associacao-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #30418e;
+}
+
+.rota-associacao-controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rota-associacao-select {
+  flex: 1 1 220px;
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #30418e;
+}
+
+.rota-associacao-botao {
+  border: none;
+  border-radius: 10px;
+  min-height: 44px;
+  padding: 0 14px;
+  background: #30418e;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rota-associacao-botao:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.rota-associacao-erro {
+  margin: 0;
+  color: #d51616;
+  font-size: 0.9rem;
 }
 
 .rotas-alunos p,

@@ -4,6 +4,7 @@
   min-height: 100vh;
   background: #dfe1fa;
   font-family: 'Inter', sans-serif;
+  color: #fff;
 }
 
 .logo {
@@ -21,7 +22,9 @@
 }
 
 .conteudo {
-  padding: 12px 0 24px;
+  padding: 14px 16px 24px;
+  width: min(860px, calc(100% - 24px));
+  margin: 0 auto;
 }
 
 .barra-pesquisa {
@@ -55,7 +58,7 @@
 
 .cabecalho {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px;
+  grid-template-columns: minmax(0, 1fr) 110px;
   margin: 0 0 2px;
   background: #c2c6ea;
   border-bottom: 1px solid #8a93cd;
@@ -91,7 +94,7 @@
 .linha {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px;
+  grid-template-columns: minmax(0, 1fr) 110px;
   border: 0;
   background: #c8ccef;
   color: #4050a0;
@@ -124,7 +127,7 @@
 
 .aluno {
   display: grid;
-  grid-template-columns: 1fr 30px;
+  grid-template-columns: minmax(0, 1fr) 30px;
   align-items: center;
   min-height: 32px;
   padding: 0 12px 0 34px;
@@ -148,8 +151,8 @@
 
 .sem-alunos {
   margin: 0;
-  padding: 8px 16px 8px 34px;
-  color: #5460a5;
+  padding: 10px 14px 10px 36px;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 @media (max-width: 520px){

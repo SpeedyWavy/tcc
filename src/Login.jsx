@@ -1,15 +1,57 @@
 import { useEffect, useState } from 'react'
 import styles from './Login.module.css'
 import { getHomePathByRole, getStoredUser, saveSession } from './auth.js'
+import { apiRequest } from './api.js'
 import { supabase } from './supabase.js'
 
-function normalizeAuthEmail(fullName) {
-  const normalized = fullName
+function normalizeText(value) {
+  if (!value || typeof value !== 'string') {
+    return ''
+  }
+
+  return value
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
     .toLowerCase()
+}
 
+function normalizeAuthEmail(fullName) {
+  const normalized = normalizeText(fullName)
   return `${normalized.replace(/\s+/g, '.')}@local.tcc`
+}
+
+async function resolveAppUserId(role, displayName, sessionUser) {
+  try {
+    const endpoint = role === 'admin' ? '/api/admins' : '/api/drivers'
+    const users = await apiRequest(endpoint)
+    if (!Array.isArray(users)) {
+      return null
+    }
+
+    const normalizedDisplayName = normalizeText(displayName)
+    const normalizedEmail = normalizeText(sessionUser?.email)
+    const normalizedAuthName = normalizeText(
+      sessionUser?.app_metadata?.full_name || sessionUser?.user_metadata?.full_name || '',
+    )
+
+    const matchByEmail = users.find(
+      (user) => user.email && normalizeText(user.email) === normalizedEmail,
+    )
+    if (matchByEmail?.id) {
+      return matchByEmail.id
+    }
+
+    const matchByName = users.find((user) => {
+      const userName = normalizeText(user.full_name)
+      return userName === normalizedDisplayName || userName === normalizedAuthName
+    })
+
+    return matchByName?.id ?? null
+  } catch {
+    return null
+  }
 }
 
 function Login() {
@@ -46,7 +88,8 @@ function Login() {
       }
 
       const sessionUser = data?.user
-      const sessionToken = data?.session?.access_token
+      const session = data?.session
+      const sessionToken = session?.access_token
 
       if (!sessionToken || !sessionUser) {
         throw new Error('A autenticacao do Supabase nao retornou uma sessao valida.')
@@ -56,8 +99,15 @@ function Login() {
       const displayName =
         sessionUser.app_metadata?.full_name || sessionUser.user_metadata?.full_name || fullName.trim()
 
-      saveSession(sessionToken, {
-        id: sessionUser.id,
+      let appUserId = sessionUser.id
+      const resolvedAppUserId = await resolveAppUserId(role, displayName, sessionUser)
+      if (resolvedAppUserId) {
+        appUserId = resolvedAppUserId
+      }
+
+      saveSession(session, {
+        id: appUserId,
+        email: sessionUser.email || '',
         full_name: displayName,
         role,
       })
