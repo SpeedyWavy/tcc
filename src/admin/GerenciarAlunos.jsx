@@ -30,6 +30,7 @@ function GerenciarAlunos() {
   const [novoAluno, setNovoAluno] = useState(alunoInicial)
   const [alunoEmEdicao, setAlunoEmEdicao] = useState(null)
   const [alunos, setAlunos] = useState([])
+  const [veiculos, setVeiculos] = useState([])
   const [busca, setBusca] = useState('')
   const [menuAberto, setMenuAberto] = useState(null)
   const [filtroAberto, setFiltroAberto] = useState(false)
@@ -50,8 +51,18 @@ function GerenciarAlunos() {
     }
   }
 
+  const carregarVeiculos = async () => {
+    try {
+      const data = await apiRequest('/api/vehicles')
+      setVeiculos(Array.isArray(data) ? data : [])
+    } catch (error) {
+      showError(error.message || 'Erro ao carregar veículos.')
+    }
+  }
+
   useEffect(() => {
     carregarAlunos()
+    carregarVeiculos()
   }, [])
 
   useEffect(() => {
@@ -251,7 +262,9 @@ function GerenciarAlunos() {
 
   const opcoesUnidade = [...new Set(alunos.map((aluno) => aluno.unit || aluno.unidade).filter(Boolean))]
   const opcoesMotorista = [...new Set(alunos.map((aluno) => aluno.responsible_name || aluno.responsavel).filter(Boolean))]
-  const opcoesVeiculo = [...new Set(alunos.map((aluno) => aluno.transport_identification || aluno.transporte).filter(Boolean))]
+  const opcoesVeiculo = [...new Set(veiculos
+    .map((veiculo) => veiculo.identification || veiculo.model || veiculo.license_plate)
+    .filter(Boolean))]
 
   const secoesFiltro = [
     { id: 'unidade', label: 'Unidade', options: opcoesUnidade.map((value) => ({ value, label: value })) },
@@ -356,11 +369,9 @@ function GerenciarAlunos() {
 
               <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
                 <option value="">Identificacao do transporte</option>
-                <option value="Linha 01 - Van 3">Linha 01 - Van 3</option>
-                <option value="Linha 02 - Onibus 2">Linha 02 - Onibus 2</option>
-                <option value="Linha 03 - Van 1">Linha 03 - Van 1</option>
-                <option value="Linha 04 - Onibus 5">Linha 04 - Onibus 5</option>
-                <option value="Linha 05 - Van 2">Linha 05 - Van 2</option>
+                {opcoesVeiculo.map((value) => (
+                  <option key={value} value={value}>{value}</option>
+                ))}
               </select>
 
               <div className={styles['boadd-unidade']}>
@@ -417,11 +428,9 @@ function GerenciarAlunos() {
 
               <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
                 <option value="">Identificacao do transporte</option>
-                <option value="Linha 01 - Van 3">Linha 01 - Van 3</option>
-                <option value="Linha 02 - Onibus 2">Linha 02 - Onibus 2</option>
-                <option value="Linha 03 - Van 1">Linha 03 - Van 1</option>
-                <option value="Linha 04 - Onibus 5">Linha 04 - Onibus 5</option>
-                <option value="Linha 05 - Van 2">Linha 05 - Van 2</option>
+                {opcoesVeiculo.map((value) => (
+                  <option key={value} value={value}>{value}</option>
+                ))}
               </select>
 
               <div className={styles['boadd-unidade']}>

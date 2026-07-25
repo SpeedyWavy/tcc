@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js'
+import { supabase, sessionReady } from './supabase.js'
 import { clearSession, getStoredUser } from './auth.js'
 
 function normalizeText(value) {
@@ -866,6 +866,12 @@ export async function apiRequest(path, options = {}) {
   const itemId = segments[2] || null
 
   try {
+    // Garante que a sessão do Supabase (restaurada a partir dos tokens salvos
+    // pelo auth.js) já foi aplicada ao client antes de qualquer query. Sem
+    // isso, requests disparadas logo no mount de um componente podem sair
+    // sem autenticação e o RLS filtra tudo silenciosamente.
+    await sessionReady
+
     if (segments[0] !== 'api') {
 throw new Error(`Endpoint não suportado: ${path}`)
     }

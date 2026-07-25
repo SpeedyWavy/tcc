@@ -11,20 +11,35 @@ export const supabase = createClient(supabaseUrl || '', supabaseKey || '', {
   },
 })
 
-if (typeof window !== 'undefined') {
+// Restaura a sessão a partir dos tokens salvos pelo auth.js (login customizado).
+// Isso é ASSÍNCRONO. Qualquer código que vá consultar o Supabase logo em seguida
+// (ex: api.js) precisa aguardar essa Promise antes de disparar queries, senão a
+// query sai sem sessão autenticada e o RLS silenciosamente devolve 0 linhas
+// (sem lançar erro), mesmo com dados existindo na tabela.
+export const sessionReady = (async () => {
+  if (typeof window === 'undefined') {
+    return
+  }
+
   const accessToken = getStoredToken()
   const refreshToken = getStoredRefreshToken()
 
-  if (accessToken || refreshToken) {
-    supabase.auth.setSession({
+  if (!accessToken && !refreshToken) {
+    return
+  }
+
+  try {
+    await supabase.auth.setSession({
       access_token: accessToken || undefined,
       refresh_token: refreshToken || undefined,
-    }).catch(() => {
-      // Ignore failures; the client may restore session automatically.
     })
+  } catch {
+    // Ignora falhas; o client pode restaurar a sessão automaticamente
+    // via persistSession/autoRefreshToken.
   }
-}
+})()
 
 export async function getSupabaseClient() {
+  await sessionReady
   return supabase
 }
