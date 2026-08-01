@@ -482,6 +482,93 @@
     cursor: pointer;
 }
 
+/* etapa 2 do cadastro: endereco (CEP) */
+.boadd-titulo{
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1c2350;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    text-align: center;
+}
+
+.boadd-label{
+    display: grid;
+    gap: 0.35rem;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    font-weight: 700;
+    color: #2f3558;
+    font-size: 0.95rem;
+}
+
+.boadd-cep-linha{
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.boadd-cep-linha input{
+    flex: 1;
+    min-width: 0;
+}
+
+.boadd-buscar-cep{
+    background: #001a63;
+    color: #ffdf3a;
+    border: none;
+    border-radius: 12px;
+    padding: 0 1rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 6px 12px rgba(0, 10, 50, 0.25);
+    transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+.boadd-buscar-cep:hover{
+    transform: translateY(-1px);
+}
+
+.boadd-buscar-cep:disabled{
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.boadd-linha-dupla{
+    display: flex;
+    gap: 0.5rem;
+}
+
+.boadd-linha-dupla input{
+    flex: 1;
+    min-width: 0;
+}
+
+.boadd-linha-dupla .boadd-uf{
+    flex: 0 0 70px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.boadd-voltar{
+    background: transparent;
+    border: 2px solid #001a63;
+    color: #001a63;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: calc(0.85rem - 2px) 1rem;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 180ms ease, background 180ms ease;
+}
+
+.boadd-voltar:hover{
+    background: rgba(0, 26, 99, 0.08);
+    transform: translateY(-1px);
+}
+
 @keyframes popIn {
   0% {
     opacity: 0;

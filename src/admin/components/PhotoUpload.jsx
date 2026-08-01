@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Camera, X } from 'lucide-react'
+import { Camera, X, GraduationCap, User } from 'lucide-react'
 import styles from './PhotoUpload.module.css'
 import { supabase } from '../../supabase.js'
 
@@ -7,6 +7,7 @@ function PhotoUpload({ photoUrl, onPhotoChange, entityType = 'driver', entityId 
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(photoUrl || null)
   const fileInputRef = useRef(null)
+  const PlaceholderIcon = entityType === 'student' ? GraduationCap : User
 
   useEffect(() => {
     setPreview(photoUrl || null)
@@ -151,10 +152,16 @@ function PhotoUpload({ photoUrl, onPhotoChange, entityType = 'driver', entityId 
             disabled={uploading}
             title="Adicionar foto"
           >
-            <Camera size={32} />
+            <PlaceholderIcon size={32} strokeWidth={1.5} />
           </button>
         )}
       </div>
+
+      {!preview && (
+        <span className={styles['photo-badge']} aria-hidden="true">
+          <Camera size={14} />
+        </span>
+      )}
 
       {uploading && <div className={styles['uploading-spinner']} />}
     </div>

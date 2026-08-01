@@ -7,21 +7,16 @@
 
 .photo-frame {
   position: relative;
-  width: 140px;
-  height: 140px;
-  background: #f6f8fb;
-  border: 2px dashed #cbd6e9;
-  border-radius: 20px;
+  width: 80px;
+  height: 80px;
+  background: #dde4f7;
+  border: none;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   transition: all 0.3s ease;
-}
-
-.photo-frame:hover {
-  border-color: #1976d2;
-  background: #fafbfc;
 }
 
 .photo-preview {
@@ -33,10 +28,8 @@
 
 .photo-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  border-radius: 50%;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
@@ -56,8 +49,8 @@
   color: white;
   border: none;
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -91,18 +84,41 @@
   background: #c62828;
 }
 
+/* Estado sem foto: circulo neutro com icone de placeholder + badge da camera no canto */
 .photo-button-add {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background: #e8efff;
-  color: #1976d2;
-  border: 2px dashed #1976d2;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #dde4f7;
+  color: #30418e;
+  border-radius: 50%;
 }
 
 .photo-button-add:hover {
-  background: #dfe8ff;
-  transform: scale(1.05);
+  background: #cdd6f2;
+  transform: none;
+}
+
+.photo-button-add:disabled {
+  background: #e6e9f5;
+  color: #a7adc6;
+}
+
+.photo-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1976d2;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  border: 2px solid #fff;
+  pointer-events: none;
 }
 
 .uploading-spinner {

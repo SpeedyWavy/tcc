@@ -157,6 +157,15 @@ async function findDriverIdByName(driverName) {
   return data?.id ?? null
 }
 
+function toNullableNumber(value) {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 function buildStudentRecord(student, isUpdate = false) {
   const name = normalizeText(student.name)
   const address = normalizeText(student.address)
@@ -172,6 +181,8 @@ function buildStudentRecord(student, isUpdate = false) {
     rm: normalizeText(student.rm),
     address,
     endereco: address,
+    latitude: toNullableNumber(student.latitude),
+    longitude: toNullableNumber(student.longitude),
     parent_contact: parentContact,
     contato_responsavel: parentContact,
     responsible_name: responsibleName,
@@ -186,8 +197,6 @@ function buildStudentRecord(student, isUpdate = false) {
   }
 
   if (!isUpdate) {
-    record.latitude = null
-    record.longitude = null
     record.route_id = null
     record.created_at = new Date().toISOString()
   }

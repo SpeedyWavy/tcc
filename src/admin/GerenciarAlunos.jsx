@@ -8,8 +8,11 @@ import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import FilterPanel from './components/FilterPanel.jsx'
 import PhotoUpload from './components/PhotoUpload.jsx'
+import AddressAutocompleteInput from './components/AddressAutocompleteInput.jsx'
+import MiniMap from './components/MiniMap.jsx'
 import { apiRequest } from '../api.js'
 import { supabase } from '../supabase.js'
+import { loadGoogleMaps } from '../lib/googleMapsLoader.js'
 import { formatPhone, isPhoneComplete, onlyDigits } from './formValidators.js'
 
 const alunoInicial = {
@@ -18,16 +21,31 @@ const alunoInicial = {
   responsavel: '',
   contatoResponsavel: '',
   endereco: '',
+  latitude: null,
+  longitude: null,
   transporte: '',
   unidade: 'Garcia',
   fotoUrl: null,
+}
+
+const enderecoInicial = {
+  cep: '',
+  rua: '',
+  numero: '',
+  complemento: '',
+  bairro: '',
+  cidade: '',
+  estado: '',
 }
 
 function GerenciarAlunos() {
   const [alunoAberto, setAlunoAberto] = useState(null)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [editorAberto, setEditorAberto] = useState(false)
+  const [passoCadastro, setPassoCadastro] = useState(1)
   const [novoAluno, setNovoAluno] = useState(alunoInicial)
+  const [enderecoForm, setEnderecoForm] = useState(enderecoInicial)
+  const [buscandoCep, setBuscandoCep] = useState(false)
   const [alunoEmEdicao, setAlunoEmEdicao] = useState(null)
   const [alunos, setAlunos] = useState([])
   const [veiculos, setVeiculos] = useState([])
@@ -88,11 +106,14 @@ function GerenciarAlunos() {
 
   const abrirAdicionar = () => {
     setFormularioAberto(true)
+    setPassoCadastro(1)
   }
 
   const fecharAdicionar = () => {
     setFormularioAberto(false)
+    setPassoCadastro(1)
     setNovoAluno(alunoInicial)
+    setEnderecoForm(enderecoInicial)
     setFotoUrlArmazenado(null)
     setPhotoUploading(false)
   }
@@ -106,6 +127,8 @@ function GerenciarAlunos() {
       responsavel: aluno.responsible_name || aluno.responsavel || '',
       contatoResponsavel: formatPhone(aluno.parent_contact || aluno.contato_responsavel || ''),
       endereco: aluno.address || aluno.endereco || '',
+      latitude: aluno.latitude ?? null,
+      longitude: aluno.longitude ?? null,
       transporte: aluno.transport_identification || aluno.transporte || '',
       unidade: aluno.unit || aluno.unidade || 'Garcia',
       fotoUrl: aluno.photo_url || null,
@@ -129,6 +152,150 @@ function GerenciarAlunos() {
     }
     const value = formatters[campo] ? formatters[campo](e.target.value) : e.target.value
     setNovoAluno((atual) => ({ ...atual, [campo]: value }))
+  }
+
+  const alterarEnderecoDigitado = (e) => {
+    // Digitação livre invalida a coordenada anterior: só volta a ser confiável
+    // quando o usuário selecionar uma sugestão do autocomplete novamente.
+    setNovoAluno((atual) => ({ ...atual, endereco: e.target.value, latitude: null, longitude: null }))
+  }
+
+  const selecionarEnderecoAutocomplete = ({ endereco, latitude, longitude }) => {
+    setNovoAluno((atual) => ({ ...atual, endereco, latitude, longitude }))
+  }
+
+  const formatCep = (value) => {
+    const digitos = onlyDigits(value, 8)
+    return digitos.length <= 5 ? digitos : `${digitos.slice(0, 5)}-${digitos.slice(5)}`
+  }
+
+  const atualizarEndereco = (campo) => (e) => {
+    const value = campo === 'cep' ? formatCep(e.target.value) : e.target.value
+    setEnderecoForm((atual) => ({ ...atual, [campo]: value }))
+
+    // Editar o CEP depois de uma busca invalida a coordenada anterior,
+    // forcando uma nova busca antes de finalizar o cadastro.
+    if (campo === 'cep') {
+      setNovoAluno((atual) => ({ ...atual, latitude: null, longitude: null }))
+    }
+  }
+
+  const buscarEnderecoPorCep = async () => {
+    const cepDigitos = onlyDigits(enderecoForm.cep, 8)
+    if (cepDigitos.length !== 8) {
+      return
+    }
+
+    setBuscandoCep(true)
+    try {
+      const maps = await loadGoogleMaps()
+      const geocoder = new maps.Geocoder()
+
+      const resultado = await new Promise((resolve, reject) => {
+        geocoder.geocode(
+          { componentRestrictions: { country: 'BR', postalCode: cepDigitos } },
+          (results, status) => {
+            if (status === 'OK' && results?.[0]) {
+              resolve(results[0])
+            } else {
+              reject(new Error('CEP nao encontrado.'))
+            }
+          },
+        )
+      })
+
+      const componentes = resultado.address_components
+      const pegar = (tipo) => componentes.find((c) => c.types.includes(tipo))
+
+      const rua = pegar('route')?.long_name || ''
+      const bairro =
+        pegar('sublocality_level_1')?.long_name ||
+        pegar('sublocality')?.long_name ||
+        pegar('neighborhood')?.long_name ||
+        ''
+      const cidade = pegar('locality')?.long_name || pegar('administrative_area_level_2')?.long_name || ''
+      const estado = pegar('administrative_area_level_1')?.short_name || ''
+
+      setEnderecoForm((atual) => ({ ...atual, rua, bairro, cidade, estado }))
+      setNovoAluno((atual) => ({
+        ...atual,
+        latitude: resultado.geometry.location.lat(),
+        longitude: resultado.geometry.location.lng(),
+      }))
+    } catch (error) {
+      showError(error.message || 'Nao foi possivel localizar esse CEP.')
+    } finally {
+      setBuscandoCep(false)
+    }
+  }
+
+  const handleCepKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      buscarEnderecoPorCep()
+    }
+  }
+
+  // Reforca a precisao das coordenadas usando o endereco completo (com numero),
+  // ja que a busca por CEP retorna apenas o centro aproximado da regiao.
+  // Em caso de falha, mantem a coordenada aproximada do CEP em vez de bloquear o cadastro.
+  const refinarCoordenadasComNumero = async () => {
+    const coordenadaAtual = { latitude: novoAluno.latitude, longitude: novoAluno.longitude }
+    const { rua, numero, bairro, cidade, estado, cep } = enderecoForm
+
+    if (!numero.trim()) {
+      return coordenadaAtual
+    }
+
+    try {
+      const maps = await loadGoogleMaps()
+      const geocoder = new maps.Geocoder()
+      const enderecoCompleto = `${rua}, ${numero} - ${bairro}, ${cidade} - ${estado}, ${cep}, Brasil`
+
+      const resultado = await new Promise((resolve, reject) => {
+        geocoder.geocode({ address: enderecoCompleto, region: 'br' }, (results, status) => {
+          if (status === 'OK' && results?.[0]) {
+            resolve(results[0])
+          } else {
+            reject(new Error('sem resultado'))
+          }
+        })
+      })
+
+      const refinada = {
+        latitude: resultado.geometry.location.lat(),
+        longitude: resultado.geometry.location.lng(),
+      }
+      setNovoAluno((atual) => ({ ...atual, ...refinada }))
+      return refinada
+    } catch {
+      return coordenadaAtual
+    }
+  }
+
+  const avancarParaEndereco = () => {
+    const nome = novoAluno.nome.trim()
+    const rm = novoAluno.rm.trim()
+    const responsavel = novoAluno.responsavel.trim()
+    const contatoResponsavel = novoAluno.contatoResponsavel.trim()
+    const transporte = novoAluno.transporte.trim()
+    const unidade = novoAluno.unidade.trim()
+
+    if (!nome || !rm || !responsavel || !contatoResponsavel || !transporte || !unidade) {
+      showError('Preencha todos os campos antes de continuar.')
+      return
+    }
+
+    if (!isPhoneComplete(contatoResponsavel)) {
+      showError('Informe o contato do responsavel com DDD e 8 ou 9 digitos.')
+      return
+    }
+
+    setPassoCadastro(2)
+  }
+
+  const voltarParaDadosBasicos = () => {
+    setPassoCadastro(1)
   }
 
   const handlePhotoChange = async (photoUrl, filePath) => {
@@ -174,12 +341,19 @@ function GerenciarAlunos() {
       return null
     }
 
+    if (novoAluno.latitude == null || novoAluno.longitude == null) {
+      showError('Selecione o endereco a partir das sugestoes do mapa para capturar a localizacao.')
+      return null
+    }
+
     return {
       name: nome,
       rm,
       responsible_name: responsavel,
       parent_contact: contatoResponsavel,
       address: endereco,
+      latitude: novoAluno.latitude,
+      longitude: novoAluno.longitude,
       transport_identification: transporte,
       unit: unidade,
       photo_url: novoAluno.fotoUrl || null,
@@ -190,16 +364,60 @@ function GerenciarAlunos() {
   const enviarNovoAluno = async (e) => {
     e.preventDefault()
 
-    const payload = validarAluno()
-    if (!payload) {
+    const nome = novoAluno.nome.trim()
+    const rm = novoAluno.rm.trim()
+    const responsavel = novoAluno.responsavel.trim()
+    const contatoResponsavel = novoAluno.contatoResponsavel.trim()
+    const transporte = novoAluno.transporte.trim()
+    const unidade = novoAluno.unidade.trim()
+
+    const cep = enderecoForm.cep.trim()
+    const rua = enderecoForm.rua.trim()
+    const numero = enderecoForm.numero.trim()
+    const complemento = enderecoForm.complemento.trim()
+    const bairro = enderecoForm.bairro.trim()
+    const cidade = enderecoForm.cidade.trim()
+    const estado = enderecoForm.estado.trim()
+
+    if (!cep || !rua || !numero || !bairro || !cidade || !estado) {
+      showError('Preencha o CEP e complete o endereco (numero, bairro, cidade e estado).')
       return
     }
 
+    if (novoAluno.latitude == null || novoAluno.longitude == null) {
+      showError('Busque o CEP para localizar o endereco no mapa antes de finalizar.')
+      return
+    }
+
+    const enderecoCompleto = [
+      [rua, numero].filter(Boolean).join(', '),
+      complemento || null,
+      bairro,
+      [cidade, estado].filter(Boolean).join(' - '),
+      cep,
+    ]
+      .filter(Boolean)
+      .join(', ')
+
     setFormSubmitting(true)
     try {
+      const coordenadasFinais = await refinarCoordenadasComNumero()
+
       await apiRequest('/api/students', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          name: nome,
+          rm,
+          responsible_name: responsavel,
+          parent_contact: contatoResponsavel,
+          address: enderecoCompleto,
+          latitude: coordenadasFinais.latitude,
+          longitude: coordenadasFinais.longitude,
+          transport_identification: transporte,
+          unit: unidade,
+          photo_url: novoAluno.fotoUrl || null,
+          photo_path: fotoUrlArmazenado || null,
+        }),
       })
 
       await carregarAlunos()
@@ -349,57 +567,112 @@ function GerenciarAlunos() {
       {formularioAberto && (
         <div className={styles['boadd-overlay']} onClick={fecharAdicionar}>
           <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
-            <div className={styles['boadd-top']}>
-              <PhotoUpload
-                photoUrl={novoAluno.fotoUrl}
-                onPhotoChange={handlePhotoChange}
-                onUploadingChange={setPhotoUploading}
-                entityType="student"
-                entityId={alunoEmEdicao?.id}
-                userName={novoAluno.nome}
-              />
-            </div>
+            {passoCadastro === 1 && (
+              <div className={styles['boadd-top']}>
+                <PhotoUpload
+                  photoUrl={novoAluno.fotoUrl}
+                  onPhotoChange={handlePhotoChange}
+                  onUploadingChange={setPhotoUploading}
+                  entityType="student"
+                  entityId={alunoEmEdicao?.id}
+                  userName={novoAluno.nome}
+                />
+              </div>
+            )}
 
             <form className={styles['boadd-form']} onSubmit={enviarNovoAluno}>
-              <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
-              <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} inputMode="numeric" maxLength={12} required />
-              <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
-              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
-              <input type="text" placeholder="Endereco do aluno" value={novoAluno.endereco} onChange={atualizarCampo('endereco')} required />
+              {passoCadastro === 1 ? (
+                <>
+                  <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
+                  <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} inputMode="numeric" maxLength={12} required />
+                  <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
+                  <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
 
-              <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
-                <option value="">Identificacao do transporte</option>
-                {opcoesVeiculo.map((value) => (
-                  <option key={value} value={value}>{value}</option>
-                ))}
-              </select>
+                  <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
+                    <option value="">Identificacao do transporte</option>
+                    {opcoesVeiculo.map((value) => (
+                      <option key={value} value={value}>{value}</option>
+                    ))}
+                  </select>
 
-              <div className={styles['boadd-unidade']}>
-                <p>Unidade:</p>
-                <label>
-                  <input type="radio" name="unidade" value="Garcia" checked={novoAluno.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} required />
-                  Garcia
-                </label>
-                <label>
-                  <input type="radio" name="unidade" value="Vila Mimosa" checked={novoAluno.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} required />
-                  Mimosa
-                </label>
-                <label>
-                  <input type="radio" name="unidade" value="Swiss Park" checked={novoAluno.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} required />
-                  Swiss Park
-                </label>
-                <label>
-                  <input type="radio" name="unidade" value="Vivendo e Aprendendo" checked={novoAluno.unidade === 'Vivendo e Aprendendo'} onChange={atualizarCampo('unidade')} required />
-                  Vivendo e Aprendendo
-                </label>
-              </div>
+                  <div className={styles['boadd-unidade']}>
+                    <p>Unidade:</p>
+                    <label>
+                      <input type="radio" name="unidade" value="Garcia" checked={novoAluno.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} required />
+                      Garcia
+                    </label>
+                    <label>
+                      <input type="radio" name="unidade" value="Vila Mimosa" checked={novoAluno.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} required />
+                      Mimosa
+                    </label>
+                    <label>
+                      <input type="radio" name="unidade" value="Swiss Park" checked={novoAluno.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} required />
+                      Swiss Park
+                    </label>
+                    <label>
+                      <input type="radio" name="unidade" value="Vivendo e Aprendendo" checked={novoAluno.unidade === 'Vivendo e Aprendendo'} onChange={atualizarCampo('unidade')} required />
+                      Vivendo e Aprendendo
+                    </label>
+                  </div>
 
-              <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
-                {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Criando...' : 'Criar Cadastro'}
-              </button>
-              <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
-                Cancelar
-              </button>
+                  <button type="button" className={styles['boadd-confirmar']} onClick={avancarParaEndereco} disabled={photoUploading}>
+                    {photoUploading ? 'Aguardando upload...' : 'Continuar'}
+                  </button>
+                  <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2 className={styles['boadd-titulo']}>Endereco do Aluno</h2>
+
+                  <label className={styles['boadd-label']}>
+                    CEP:
+                    <div className={styles['boadd-cep-linha']}>
+                      <input
+                        type="text"
+                        placeholder="00000-000"
+                        value={enderecoForm.cep}
+                        onChange={atualizarEndereco('cep')}
+                        onBlur={buscarEnderecoPorCep}
+                        onKeyDown={handleCepKeyDown}
+                        inputMode="numeric"
+                        maxLength={9}
+                        required
+                      />
+                      <button type="button" className={styles['boadd-buscar-cep']} onClick={buscarEnderecoPorCep} disabled={buscandoCep}>
+                        {buscandoCep ? 'Buscando...' : 'Buscar'}
+                      </button>
+                    </div>
+                  </label>
+
+                  <input type="text" placeholder="Rua / Logradouro" value={enderecoForm.rua} onChange={atualizarEndereco('rua')} required />
+
+                  <div className={styles['boadd-linha-dupla']}>
+                    <input type="text" placeholder="Numero" value={enderecoForm.numero} onChange={atualizarEndereco('numero')} required />
+                    <input type="text" placeholder="Complemento (opcional)" value={enderecoForm.complemento} onChange={atualizarEndereco('complemento')} />
+                  </div>
+
+                  <input type="text" placeholder="Bairro" value={enderecoForm.bairro} onChange={atualizarEndereco('bairro')} required />
+
+                  <div className={styles['boadd-linha-dupla']}>
+                    <input type="text" placeholder="Cidade" value={enderecoForm.cidade} onChange={atualizarEndereco('cidade')} required />
+                    <input type="text" placeholder="UF" value={enderecoForm.estado} onChange={atualizarEndereco('estado')} maxLength={2} required className={styles['boadd-uf']} />
+                  </div>
+
+                  <MiniMap latitude={novoAluno.latitude} longitude={novoAluno.longitude} height={140} />
+
+                  <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
+                    {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Criando...' : 'Criar Cadastro'}
+                  </button>
+                  <button type="button" className={styles['boadd-voltar']} onClick={voltarParaDadosBasicos}>
+                    Voltar
+                  </button>
+                  <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
+                    Cancelar
+                  </button>
+                </>
+              )}
             </form>
           </div>
         </div>
@@ -424,7 +697,13 @@ function GerenciarAlunos() {
               <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} inputMode="numeric" maxLength={12} required />
               <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
               <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
-              <input type="text" placeholder="Endereco do aluno" value={novoAluno.endereco} onChange={atualizarCampo('endereco')} required />
+              <AddressAutocompleteInput
+                value={novoAluno.endereco}
+                onChange={alterarEnderecoDigitado}
+                onSelectPlace={selecionarEnderecoAutocomplete}
+                placeholder="Endereco do aluno"
+                required
+              />
 
               <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
                 <option value="">Identificacao do transporte</option>
@@ -560,7 +839,7 @@ function GerenciarAlunos() {
                     <p><strong>Endereço:</strong> {aluno.address || aluno.endereco}</p>
                   </div>
                   <div className={styles['aluno-mapa']}>
-                    <div className={styles['mapa-placeholder']} />
+                    <MiniMap latitude={aluno.latitude} longitude={aluno.longitude} />
                   </div>
                 </div>
               )}
