@@ -19,16 +19,15 @@ Projeto de Conclusão de Curso, com o foco em Simplificar, Automatizar e Moderni
 <p>Controle Total e Aprimorado sob o sistema de Transporte Escolar.</p>
 
 <h1>Link do Projeto</h1>
-<a>https://tccdobrulezzi.vercel.app/</a>
+<a> https://tccdobrulezzi.vercel.app/ </a>
 
 # Integrantes do grupo do TCC
 <p>Lucas Brulezzi dos Santos - Frontend + Backend</p>
-<br>
+
 <p>Davi Furlan Pereira - Backend
 <br>
 <p>Ana Clara Grigolon Dutra Rosa - Design</p>
-<br>
 <p>Miguel Augusto Pereira - Documentação</p>
-<br>
+
 <p>Felippe Gabriel Araujo Alves - Documentação</p>
 
