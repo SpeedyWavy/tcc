@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './css/GerenciarAlunos.module.css'
 import student2 from '../assets/student2.png'
 import student3 from '../assets/student3.png'
@@ -18,6 +19,11 @@ import { formatPhone, isPhoneComplete, onlyDigits } from './formValidators.js'
 const alunoInicial = {
   nome: '',
   rm: '',
+  periodo: '',
+  horarioSaida: '',
+  tipoPercurso: '',
+  percursoIda: [],
+  percursoVolta: [],
   responsavel: '',
   contatoResponsavel: '',
   endereco: '',
@@ -38,11 +44,14 @@ const enderecoInicial = {
   estado: '',
 }
 
+const diasSemana = ['Segunda-Feira', 'Terça-Feira', 'Quarta-Feira', 'Quinta-Feira', 'Sexta-Feira']
+
 function GerenciarAlunos() {
   const [alunoAberto, setAlunoAberto] = useState(null)
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [editorAberto, setEditorAberto] = useState(false)
   const [passoCadastro, setPassoCadastro] = useState(1)
+  const [passoEdicao, setPassoEdicao] = useState('dados')
   const [novoAluno, setNovoAluno] = useState(alunoInicial)
   const [enderecoForm, setEnderecoForm] = useState(enderecoInicial)
   const [buscandoCep, setBuscandoCep] = useState(false)
@@ -51,6 +60,7 @@ function GerenciarAlunos() {
   const [veiculos, setVeiculos] = useState([])
   const [busca, setBusca] = useState('')
   const [menuAberto, setMenuAberto] = useState(null)
+  const [menuPosicao, setMenuPosicao] = useState({ top: 0, left: 0 })
   const [filtroAberto, setFiltroAberto] = useState(false)
   const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], responsavel: [], transporte: [] })
   const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], responsavel: [], transporte: [] })
@@ -58,6 +68,7 @@ function GerenciarAlunos() {
   const [fotoUrlArmazenado, setFotoUrlArmazenado] = useState(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const menuRef = useRef(null)
+  const popoverRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarAlunos = async () => {
@@ -89,7 +100,9 @@ function GerenciarAlunos() {
     }
 
     const fecharAoClicarFora = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      const dentroTrigger = menuRef.current && menuRef.current.contains(event.target)
+      const dentroPopover = popoverRef.current && popoverRef.current.contains(event.target)
+      if (!dentroTrigger && !dentroPopover) {
         setMenuAberto(null)
       }
     }
@@ -124,6 +137,11 @@ function GerenciarAlunos() {
     setNovoAluno({
       nome: aluno.name || aluno.nome || '',
       rm: onlyDigits(aluno.rm || '', 12),
+      periodo: aluno.period || aluno.periodo || '',
+      horarioSaida: aluno.departure_time || aluno.horario_saida || '',
+      tipoPercurso: aluno.route_type || aluno.tipo_percurso || '',
+      percursoIda: Array.isArray(aluno.custom_route_days_departure) ? aluno.custom_route_days_departure : [],
+      percursoVolta: Array.isArray(aluno.custom_route_days_return) ? aluno.custom_route_days_return : [],
       responsavel: aluno.responsible_name || aluno.responsavel || '',
       contatoResponsavel: formatPhone(aluno.parent_contact || aluno.contato_responsavel || ''),
       endereco: aluno.address || aluno.endereco || '',
@@ -134,11 +152,13 @@ function GerenciarAlunos() {
       fotoUrl: aluno.photo_url || null,
     })
     setFotoUrlArmazenado(aluno.photo_url || null)
+    setPassoEdicao('dados')
     setEditorAberto(true)
   }
 
   const fecharEditor = () => {
     setEditorAberto(false)
+    setPassoEdicao('dados')
     setAlunoEmEdicao(null)
     setNovoAluno(alunoInicial)
     setFotoUrlArmazenado(null)
@@ -281,7 +301,17 @@ function GerenciarAlunos() {
     const transporte = novoAluno.transporte.trim()
     const unidade = novoAluno.unidade.trim()
 
-    if (!nome || !rm || !responsavel || !contatoResponsavel || !transporte || !unidade) {
+    if (
+      !nome ||
+      !rm ||
+      !novoAluno.periodo ||
+      !novoAluno.horarioSaida ||
+      !novoAluno.tipoPercurso ||
+      !responsavel ||
+      !contatoResponsavel ||
+      !transporte ||
+      !unidade
+    ) {
       showError('Preencha todos os campos antes de continuar.')
       return
     }
@@ -296,6 +326,59 @@ function GerenciarAlunos() {
 
   const voltarParaDadosBasicos = () => {
     setPassoCadastro(1)
+  }
+
+  const selecionarTipoPercurso = (e) => {
+    const value = e.target.value
+    setNovoAluno((atual) => ({ ...atual, tipoPercurso: value }))
+
+    if (value === 'Personalizado') {
+      setPassoCadastro('percurso')
+    }
+  }
+
+  const alternarDiaPercurso = (direcao, dia) => (e) => {
+    const campo = direcao === 'ida' ? 'percursoIda' : 'percursoVolta'
+
+    setNovoAluno((atual) => {
+      if (dia === 'Nenhum') {
+        return { ...atual, [campo]: e.target.checked ? ['Nenhum'] : [] }
+      }
+
+      const semNenhum = atual[campo].filter((item) => item !== 'Nenhum')
+      const proximos = e.target.checked
+        ? [...semNenhum, dia]
+        : semNenhum.filter((item) => item !== dia)
+
+      return { ...atual, [campo]: proximos }
+    })
+  }
+
+  const confirmarPercursoPersonalizado = () => {
+    if (novoAluno.percursoIda.length === 0 && novoAluno.percursoVolta.length === 0) {
+      showError('Selecione ao menos um dia (ou "Nenhum") para ida e volta.')
+      return
+    }
+
+    setPassoCadastro(1)
+  }
+
+  const selecionarTipoPercursoEdicao = (e) => {
+    const value = e.target.value
+    setNovoAluno((atual) => ({ ...atual, tipoPercurso: value }))
+
+    if (value === 'Personalizado') {
+      setPassoEdicao('percurso')
+    }
+  }
+
+  const confirmarPercursoPersonalizadoEdicao = () => {
+    if (novoAluno.percursoIda.length === 0 && novoAluno.percursoVolta.length === 0) {
+      showError('Selecione ao menos um dia (ou "Nenhum") para ida e volta.')
+      return
+    }
+
+    setPassoEdicao('dados')
   }
 
   const handlePhotoChange = async (photoUrl, filePath) => {
@@ -331,7 +414,18 @@ function GerenciarAlunos() {
     const transporte = novoAluno.transporte.trim()
     const unidade = novoAluno.unidade.trim()
 
-    if (!nome || !rm || !responsavel || !contatoResponsavel || !endereco || !transporte || !unidade) {
+    if (
+      !nome ||
+      !rm ||
+      !novoAluno.periodo ||
+      !novoAluno.horarioSaida ||
+      !novoAluno.tipoPercurso ||
+      !responsavel ||
+      !contatoResponsavel ||
+      !endereco ||
+      !transporte ||
+      !unidade
+    ) {
       showError('Preencha todos os campos do cadastro do aluno.')
       return null
     }
@@ -349,6 +443,11 @@ function GerenciarAlunos() {
     return {
       name: nome,
       rm,
+      period: novoAluno.periodo,
+      departure_time: novoAluno.horarioSaida,
+      route_type: novoAluno.tipoPercurso,
+      custom_route_days_departure: novoAluno.tipoPercurso === 'Personalizado' ? novoAluno.percursoIda : null,
+      custom_route_days_return: novoAluno.tipoPercurso === 'Personalizado' ? novoAluno.percursoVolta : null,
       responsible_name: responsavel,
       parent_contact: contatoResponsavel,
       address: endereco,
@@ -408,6 +507,11 @@ function GerenciarAlunos() {
         body: JSON.stringify({
           name: nome,
           rm,
+          period: novoAluno.periodo,
+          departure_time: novoAluno.horarioSaida,
+          route_type: novoAluno.tipoPercurso,
+          custom_route_days_departure: novoAluno.tipoPercurso === 'Personalizado' ? novoAluno.percursoIda : null,
+          custom_route_days_return: novoAluno.tipoPercurso === 'Personalizado' ? novoAluno.percursoVolta : null,
           responsible_name: responsavel,
           parent_contact: contatoResponsavel,
           address: enderecoCompleto,
@@ -576,15 +680,66 @@ function GerenciarAlunos() {
                   entityType="student"
                   entityId={alunoEmEdicao?.id}
                   userName={novoAluno.nome}
+                  size={72}
+                  iconSize={26}
+                  badgeSize={26}
                 />
+                <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
               </div>
             )}
 
             <form className={styles['boadd-form']} onSubmit={enviarNovoAluno}>
               {passoCadastro === 1 ? (
                 <>
-                  <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
                   <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} inputMode="numeric" maxLength={12} required />
+
+                  <div className={styles['boadd-linha-unidades']}>
+                    <div className={styles['boadd-unidade']}>
+                      <p>Período:</p>
+                      <label>
+                        <input type="radio" name="periodo" value="Manhã" checked={novoAluno.periodo === 'Manhã'} onChange={atualizarCampo('periodo')} required />
+                        Manhã
+                      </label>
+                      <label>
+                        <input type="radio" name="periodo" value="Tarde" checked={novoAluno.periodo === 'Tarde'} onChange={atualizarCampo('periodo')} required />
+                        Tarde
+                      </label>
+                      <label>
+                        <input type="radio" name="periodo" value="Integral" checked={novoAluno.periodo === 'Integral'} onChange={atualizarCampo('periodo')} required />
+                        Integral
+                      </label>
+                    </div>
+
+                    <div className={styles['boadd-unidade']}>
+                      <p>Horário de saída:</p>
+                      <label>
+                        <input type="radio" name="horarioSaida" value="11:45" checked={novoAluno.horarioSaida === '11:45'} onChange={atualizarCampo('horarioSaida')} required />
+                        11:45
+                      </label>
+                      <label>
+                        <input type="radio" name="horarioSaida" value="12:35" checked={novoAluno.horarioSaida === '12:35'} onChange={atualizarCampo('horarioSaida')} required />
+                        12:35
+                      </label>
+                      <label>
+                        <input type="radio" name="horarioSaida" value="17:30" checked={novoAluno.horarioSaida === '17:30'} onChange={atualizarCampo('horarioSaida')} required />
+                        17:30
+                      </label>
+                    </div>
+                  </div>
+
+                  <select value={novoAluno.tipoPercurso} onChange={selecionarTipoPercurso} required>
+                    <option value="">Tipo de percurso</option>
+                    <option value="Ida">Ida</option>
+                    <option value="Volta">Volta</option>
+                    <option value="Ida e volta">Ida e volta</option>
+                    <option value="Personalizado">Personalizado...</option>
+                  </select>
+                  {novoAluno.tipoPercurso === 'Personalizado' && (
+                    <button type="button" className={styles['boadd-editar-percurso']} onClick={() => setPassoCadastro('percurso')}>
+                      Editar dias personalizados
+                    </button>
+                  )}
+
                   <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
                   <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
 
@@ -617,6 +772,43 @@ function GerenciarAlunos() {
 
                   <button type="button" className={styles['boadd-confirmar']} onClick={avancarParaEndereco} disabled={photoUploading}>
                     {photoUploading ? 'Aguardando upload...' : 'Continuar'}
+                  </button>
+                  <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
+                    Cancelar
+                  </button>
+                </>
+              ) : passoCadastro === 'percurso' ? (
+                <>
+                  <div className={styles['boadd-unidade']}>
+                    <p>Ida:</p>
+                    {[...diasSemana, 'Nenhum'].map((dia) => (
+                      <label key={`ida-${dia}`}>
+                        <input
+                          type="checkbox"
+                          checked={novoAluno.percursoIda.includes(dia)}
+                          onChange={alternarDiaPercurso('ida', dia)}
+                        />
+                        {dia}
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className={styles['boadd-unidade']}>
+                    <p>Volta:</p>
+                    {[...diasSemana, 'Nenhum'].map((dia) => (
+                      <label key={`volta-${dia}`}>
+                        <input
+                          type="checkbox"
+                          checked={novoAluno.percursoVolta.includes(dia)}
+                          onChange={alternarDiaPercurso('volta', dia)}
+                        />
+                        {dia}
+                      </label>
+                    ))}
+                  </div>
+
+                  <button type="button" className={styles['boadd-confirmar']} onClick={confirmarPercursoPersonalizado}>
+                    Confirmar
                   </button>
                   <button type="button" className={styles['boadd-cancelar']} onClick={fecharAdicionar}>
                     Cancelar
@@ -681,61 +873,155 @@ function GerenciarAlunos() {
       {editorAberto && (
         <div className={styles['boadd-overlay']} onClick={fecharEditor}>
           <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
-            <div className={styles['boadd-top']}>
-              <PhotoUpload
-                photoUrl={novoAluno.fotoUrl}
-                onPhotoChange={handlePhotoChange}
-                onUploadingChange={setPhotoUploading}
-                entityType="student"
-                entityId={alunoEmEdicao?.id}
-                userName={novoAluno.nome}
-              />
-            </div>
+            {passoEdicao === 'dados' && (
+              <div className={styles['boadd-top']}>
+                <PhotoUpload
+                  photoUrl={novoAluno.fotoUrl}
+                  onPhotoChange={handlePhotoChange}
+                  onUploadingChange={setPhotoUploading}
+                  entityType="student"
+                  entityId={alunoEmEdicao?.id}
+                  userName={novoAluno.nome}
+                  size={72}
+                  iconSize={26}
+                  badgeSize={26}
+                />
+                <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
+              </div>
+            )}
 
             <form className={styles['boadd-form']} onSubmit={salvarEdicaoAluno}>
-              <input type="text" placeholder="Digite o nome do aluno" value={novoAluno.nome} onChange={atualizarCampo('nome')} required />
-              <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} inputMode="numeric" maxLength={12} required />
-              <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
-              <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
-              <AddressAutocompleteInput
-                value={novoAluno.endereco}
-                onChange={alterarEnderecoDigitado}
-                onSelectPlace={selecionarEnderecoAutocomplete}
-                placeholder="Endereco do aluno"
-                required
-              />
+              {passoEdicao === 'dados' ? (
+                <>
+                  <input type="text" placeholder="Insira o RM do aluno" value={novoAluno.rm} onChange={atualizarCampo('rm')} inputMode="numeric" maxLength={12} required />
 
-              <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
-                <option value="">Identificacao do transporte</option>
-                {opcoesVeiculo.map((value) => (
-                  <option key={value} value={value}>{value}</option>
-                ))}
-              </select>
+                  <div className={styles['boadd-linha-unidades']}>
+                    <div className={styles['boadd-unidade']}>
+                      <p>Período:</p>
+                      <label>
+                        <input type="radio" name="periodo-edicao" value="Manhã" checked={novoAluno.periodo === 'Manhã'} onChange={atualizarCampo('periodo')} required />
+                        Manhã
+                      </label>
+                      <label>
+                        <input type="radio" name="periodo-edicao" value="Tarde" checked={novoAluno.periodo === 'Tarde'} onChange={atualizarCampo('periodo')} required />
+                        Tarde
+                      </label>
+                      <label>
+                        <input type="radio" name="periodo-edicao" value="Integral" checked={novoAluno.periodo === 'Integral'} onChange={atualizarCampo('periodo')} required />
+                        Integral
+                      </label>
+                    </div>
 
-              <div className={styles['boadd-unidade']}>
-                <p>Unidade:</p>
-                <label>
-                  <input type="radio" name="unidade-edicao" value="Garcia" checked={novoAluno.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} required />
-                  Garcia
-                </label>
-                <label>
-                  <input type="radio" name="unidade-edicao" value="Vila Mimosa" checked={novoAluno.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} required />
-                  Mimosa
-                </label>
-                <label>
-                  <input type="radio" name="unidade-edicao" value="Swiss Park" checked={novoAluno.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} required />
-                  Swiss Park
-                </label>
-                <label>
-                  <input type="radio" name="unidade-edicao" value="Vivendo e Aprendendo" checked={novoAluno.unidade === 'Vivendo e Aprendendo'} onChange={atualizarCampo('unidade')} required />
-                  Vivendo e Aprendendo
-                </label>
-              </div>
+                    <div className={styles['boadd-unidade']}>
+                      <p>Horário de saída:</p>
+                      <label>
+                        <input type="radio" name="horarioSaida-edicao" value="11:45" checked={novoAluno.horarioSaida === '11:45'} onChange={atualizarCampo('horarioSaida')} required />
+                        11:45
+                      </label>
+                      <label>
+                        <input type="radio" name="horarioSaida-edicao" value="12:35" checked={novoAluno.horarioSaida === '12:35'} onChange={atualizarCampo('horarioSaida')} required />
+                        12:35
+                      </label>
+                      <label>
+                        <input type="radio" name="horarioSaida-edicao" value="17:30" checked={novoAluno.horarioSaida === '17:30'} onChange={atualizarCampo('horarioSaida')} required />
+                        17:30
+                      </label>
+                    </div>
+                  </div>
 
-              <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
-                {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
-              </button>
-              <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
+                  <select value={novoAluno.tipoPercurso} onChange={selecionarTipoPercursoEdicao} required>
+                    <option value="">Tipo de percurso</option>
+                    <option value="Ida">Ida</option>
+                    <option value="Volta">Volta</option>
+                    <option value="Ida e volta">Ida e volta</option>
+                    <option value="Personalizado">Personalizado...</option>
+                  </select>
+                  {novoAluno.tipoPercurso === 'Personalizado' && (
+                    <button type="button" className={styles['boadd-editar-percurso']} onClick={() => setPassoEdicao('percurso')}>
+                      Editar dias personalizados
+                    </button>
+                  )}
+
+                  <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
+                  <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
+                  <AddressAutocompleteInput
+                    value={novoAluno.endereco}
+                    onChange={alterarEnderecoDigitado}
+                    onSelectPlace={selecionarEnderecoAutocomplete}
+                    placeholder="Endereco do aluno"
+                    required
+                  />
+
+                  <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
+                    <option value="">Identificacao do transporte</option>
+                    {opcoesVeiculo.map((value) => (
+                      <option key={value} value={value}>{value}</option>
+                    ))}
+                  </select>
+
+                  <div className={styles['boadd-unidade']}>
+                    <p>Unidade:</p>
+                    <label>
+                      <input type="radio" name="unidade-edicao" value="Garcia" checked={novoAluno.unidade === 'Garcia'} onChange={atualizarCampo('unidade')} required />
+                      Garcia
+                    </label>
+                    <label>
+                      <input type="radio" name="unidade-edicao" value="Vila Mimosa" checked={novoAluno.unidade === 'Vila Mimosa'} onChange={atualizarCampo('unidade')} required />
+                      Mimosa
+                    </label>
+                    <label>
+                      <input type="radio" name="unidade-edicao" value="Swiss Park" checked={novoAluno.unidade === 'Swiss Park'} onChange={atualizarCampo('unidade')} required />
+                      Swiss Park
+                    </label>
+                    <label>
+                      <input type="radio" name="unidade-edicao" value="Vivendo e Aprendendo" checked={novoAluno.unidade === 'Vivendo e Aprendendo'} onChange={atualizarCampo('unidade')} required />
+                      Vivendo e Aprendendo
+                    </label>
+                  </div>
+
+                  <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
+                    {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
+                  </button>
+                  <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
+                </>
+              ) : (
+                <>
+                  <div className={styles['boadd-unidade']}>
+                    <p>Ida:</p>
+                    {[...diasSemana, 'Nenhum'].map((dia) => (
+                      <label key={`ida-edicao-${dia}`}>
+                        <input
+                          type="checkbox"
+                          checked={novoAluno.percursoIda.includes(dia)}
+                          onChange={alternarDiaPercurso('ida', dia)}
+                        />
+                        {dia}
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className={styles['boadd-unidade']}>
+                    <p>Volta:</p>
+                    {[...diasSemana, 'Nenhum'].map((dia) => (
+                      <label key={`volta-edicao-${dia}`}>
+                        <input
+                          type="checkbox"
+                          checked={novoAluno.percursoVolta.includes(dia)}
+                          onChange={alternarDiaPercurso('volta', dia)}
+                        />
+                        {dia}
+                      </label>
+                    ))}
+                  </div>
+
+                  <button type="button" className={styles['boadd-confirmar']} onClick={confirmarPercursoPersonalizadoEdicao}>
+                    Confirmar
+                  </button>
+                  <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>
+                    Cancelar
+                  </button>
+                </>
+              )}
             </form>
           </div>
         </div>
@@ -789,7 +1075,10 @@ function GerenciarAlunos() {
               >
                 {alunoAberto === aluno.id ? <ChevronDown className={styles['setinha']} /> : <ChevronRight className={styles['setinha']} />}
                 <h1>{aluno.name || aluno.nome}</h1>
-                <div className={styles['item-acoes']} ref={menuAberto === aluno.id ? menuRef : null}>
+                <div
+                  className={`${styles['item-acoes']} ${menuAberto === aluno.id ? styles['item-acoes--aberto'] : ''}`}
+                  ref={menuAberto === aluno.id ? menuRef : null}
+                >
                   <button
                     type="button"
                     className={styles['item-acoes-trigger']}
@@ -798,21 +1087,36 @@ function GerenciarAlunos() {
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      setMenuAberto((atual) => (atual === aluno.id ? null : aluno.id))
+
+                      if (menuAberto === aluno.id) {
+                        setMenuAberto(null)
+                        return
+                      }
+
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      const left = Math.min(Math.max(8, rect.right - 140), window.innerWidth - 148)
+                      setMenuPosicao({ top: rect.bottom + 8, left })
+                      setMenuAberto(aluno.id)
                     }}
                   >
                     &#8801;
                   </button>
 
-                  {menuAberto === aluno.id && (
-                    <div className={styles['item-acoes-popover']} role="menu">
+                  {menuAberto === aluno.id && createPortal(
+                    <div
+                      ref={popoverRef}
+                      className={styles['item-acoes-popover']}
+                      role="menu"
+                      style={{ position: 'fixed', top: menuPosicao.top, left: menuPosicao.left }}
+                    >
                       <button type="button" onClick={() => abrirEditor(aluno)}>
                         Editar
                       </button>
                       <button type="button" onClick={() => excluirAluno(aluno)}>
                         Excluir
                       </button>
-                    </div>
+                    </div>,
+                    document.body,
                   )}
                 </div>
               </div>
@@ -832,11 +1136,20 @@ function GerenciarAlunos() {
                       <p><strong>Unidade:</strong> {aluno.unit || aluno.unidade || 'Não informada'}</p>
                       <p><strong>Transporte:</strong> {aluno.transport_identification || aluno.transporte || 'Não informado'}</p>
                       <p><strong>Responsável:</strong> {aluno.responsible_name || aluno.responsavel || 'Não informado'}</p>
+                      <p><strong>Período:</strong> {aluno.period || aluno.periodo || 'Não informado'}</p>
+                      <p><strong>Horário de saída:</strong> {aluno.departure_time || aluno.horario_saida || 'Não informado'}</p>
                     </div>
                   </div>
                   <div className={styles['aluno-info-extra']}>
                     <p><strong>Contato do responsável:</strong> {aluno.parent_contact || aluno.contato_responsavel || 'Não informado'}</p>
                     <p><strong>Endereço:</strong> {aluno.address || aluno.endereco}</p>
+                    <p><strong>Tipo de percurso:</strong> {aluno.route_type || aluno.tipo_percurso || 'Não informado'}</p>
+                    {(aluno.route_type || aluno.tipo_percurso) === 'Personalizado' && (
+                      <>
+                        <p><strong>Dias de ida:</strong> {(aluno.custom_route_days_departure || []).join(', ') || 'Nenhum'}</p>
+                        <p><strong>Dias de volta:</strong> {(aluno.custom_route_days_return || []).join(', ') || 'Nenhum'}</p>
+                      </>
+                    )}
                   </div>
                   <div className={styles['aluno-mapa']}>
                     <MiniMap latitude={aluno.latitude} longitude={aluno.longitude} />

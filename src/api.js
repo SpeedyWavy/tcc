@@ -166,6 +166,10 @@ function toNullableNumber(value) {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function toNullableStringArray(value) {
+  return Array.isArray(value) ? value : null
+}
+
 function buildStudentRecord(student, isUpdate = false) {
   const name = normalizeText(student.name)
   const address = normalizeText(student.address)
@@ -183,6 +187,11 @@ function buildStudentRecord(student, isUpdate = false) {
     endereco: address,
     latitude: toNullableNumber(student.latitude),
     longitude: toNullableNumber(student.longitude),
+    period: normalizeText(student.period),
+    departure_time: normalizeText(student.departure_time),
+    route_type: normalizeText(student.route_type),
+    custom_route_days_departure: toNullableStringArray(student.custom_route_days_departure),
+    custom_route_days_return: toNullableStringArray(student.custom_route_days_return),
     parent_contact: parentContact,
     contato_responsavel: parentContact,
     responsible_name: responsibleName,

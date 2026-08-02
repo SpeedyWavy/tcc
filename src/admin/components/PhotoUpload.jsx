@@ -3,7 +3,17 @@ import { Camera, X, GraduationCap, User } from 'lucide-react'
 import styles from './PhotoUpload.module.css'
 import { supabase } from '../../supabase.js'
 
-function PhotoUpload({ photoUrl, onPhotoChange, entityType = 'driver', entityId = null, userName = '', onUploadingChange = () => {} }) {
+function PhotoUpload({
+  photoUrl,
+  onPhotoChange,
+  entityType = 'driver',
+  entityId = null,
+  userName = '',
+  onUploadingChange = () => {},
+  size = 120,
+  iconSize = 32,
+  badgeSize = 32,
+}) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(photoUrl || null)
   const fileInputRef = useRef(null)
@@ -109,7 +119,10 @@ function PhotoUpload({ photoUrl, onPhotoChange, entityType = 'driver', entityId 
   }
 
   return (
-    <div className={styles['photo-upload-container']}>
+    <div
+      className={styles['photo-upload-container']}
+      style={{ '--pu-size': `${size}px`, '--pu-badge-size': `${badgeSize}px` }}
+    >
       <input
         ref={fileInputRef}
         type="file"
@@ -152,14 +165,14 @@ function PhotoUpload({ photoUrl, onPhotoChange, entityType = 'driver', entityId 
             disabled={uploading}
             title="Adicionar foto"
           >
-            <PlaceholderIcon size={32} strokeWidth={1.5} />
+            <PlaceholderIcon size={iconSize} strokeWidth={1.5} />
           </button>
         )}
       </div>
 
       {!preview && (
         <span className={styles['photo-badge']} aria-hidden="true">
-          <Camera size={14} />
+          <Camera size={Math.round(badgeSize * 0.45)} />
         </span>
       )}
 

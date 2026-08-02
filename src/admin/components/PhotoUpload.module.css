@@ -7,8 +7,8 @@
 
 .photo-frame {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: var(--pu-size, 120px);  /* 80px */
+  height: var(--pu-size, 120px); /* 80px */
   background: #dde4f7;
   border: none;
   border-radius: 50%;
@@ -108,8 +108,8 @@
   position: absolute;
   bottom: -2px;
   right: -2px;
-  width: 32px;
-  height: 32px;
+  width: var(--pu-badge-size, 32px);
+  height: var(--pu-badge-size, 32px);
   border-radius: 50%;
   background: #1976d2;
   color: #fff;
