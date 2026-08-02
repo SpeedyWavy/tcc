@@ -3,6 +3,7 @@ import styles from './css/Alunos.module.css'
 import student3 from '../assets/student3.png'
 import { ArrowLeft, ChevronDown, ChevronRight, Search } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
+import MiniMap from './components/MiniMap.jsx'
 import { apiRequest } from '../api.js'
 
 const normalizarAluno = (aluno) => ({
@@ -14,6 +15,13 @@ const normalizarAluno = (aluno) => ({
   responsavel: aluno.responsible_name || aluno.responsavel || 'Nao informado',
   contatoResponsavel: aluno.parent_contact || aluno.contato_responsavel || 'Nao informado',
   endereco: aluno.address || aluno.endereco || 'Nao informado',
+  latitude: aluno.latitude ?? null,
+  longitude: aluno.longitude ?? null,
+  periodo: aluno.period || aluno.periodo || 'Nao informado',
+  horarioSaida: aluno.departure_time || aluno.horario_saida || 'Nao informado',
+  tipoPercurso: aluno.route_type || aluno.tipo_percurso || 'Nao informado',
+  diasIda: aluno.custom_route_days_departure || [],
+  diasVolta: aluno.custom_route_days_return || [],
 })
 
 function Alunos() {
@@ -145,14 +153,23 @@ function Alunos() {
                         <p><strong>Unidade:</strong> {aluno.unidade}</p>
                         <p><strong>Transporte:</strong> {aluno.identificacaoTransporte}</p>
                         <p><strong>Responsavel:</strong> {aluno.responsavel}</p>
+                        <p><strong>Periodo:</strong> {aluno.periodo}</p>
+                        <p><strong>Horario de saida:</strong> {aluno.horarioSaida}</p>
                       </div>
                     </div>
                     <div className={styles['aluno-info-extra']}>
                       <p><strong>Contato do responsavel:</strong> {aluno.contatoResponsavel}</p>
                       <p><strong>Endereco:</strong> {aluno.endereco}</p>
+                      <p><strong>Tipo de percurso:</strong> {aluno.tipoPercurso}</p>
+                      {aluno.tipoPercurso === 'Personalizado' && (
+                        <>
+                          <p><strong>Dias de ida:</strong> {aluno.diasIda.join(', ') || 'Nenhum'}</p>
+                          <p><strong>Dias de volta:</strong> {aluno.diasVolta.join(', ') || 'Nenhum'}</p>
+                        </>
+                      )}
                     </div>
                     <div className={styles['aluno-mapa']}>
-                      <div className={styles['mapa-placeholder']} />
+                      <MiniMap latitude={aluno.latitude} longitude={aluno.longitude} />
                     </div>
                   </div>
                 )}
