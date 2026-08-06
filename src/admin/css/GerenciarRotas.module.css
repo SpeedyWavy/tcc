@@ -482,6 +482,42 @@
   cursor: wait;
 }
 
+.rotas-acoes-topo {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rotas-gerar-automatico {
+  border: none;
+  border-radius: 12px;
+  min-height: 48px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #4b5da6;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rotas-gerar-automatico:hover {
+  filter: brightness(1.06);
+}
+
+.rotas-gerar-automatico:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+@media (max-width: 680px) {
+  .rotas-gerar-automatico {
+    width: 100%;
+  }
+}
+
 @media (max-width: 680px) {
   .rotas-pagina {
     width: calc(100% - 16px);

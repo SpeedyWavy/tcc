@@ -11,10 +11,12 @@ import {
   Search,
   TriangleAlert,
   CircleCheckBig,
+  Wand2,
 } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import { apiRequest } from '../api.js'
+import { supabase } from '../supabase.js'
 
 function normalizarVeiculo(veiculo) {
   return {
@@ -110,6 +112,7 @@ function GerenciarRotas() {
   const [alunosEdicaoPorRota, setAlunosEdicaoPorRota] = useState({})
   const [salvandoEdicaoRotaId, setSalvandoEdicaoRotaId] = useState(null)
   const [excluindoRotaId, setExcluindoRotaId] = useState(null)
+  const [gerandoRotas, setGerandoRotas] = useState(false)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarDados = async () => {
@@ -328,6 +331,39 @@ function GerenciarRotas() {
 
   const filtrarPlaceholder = 'Filtrar por...'
 
+  const gerarRotasAutomaticamente = async () => {
+    setGerandoRotas(true)
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-routes', { method: 'POST' })
+      if (error) {
+        throw error
+      }
+
+      await carregarDados()
+
+      const partes = [
+        `${data.rotasCriadas} rota(s) criada(s)`,
+        `${data.alunosAlocados} aluno(s) alocado(s)`,
+      ]
+      if (data.alunosSemVeiculo?.length) {
+        partes.push(`${data.alunosSemVeiculo.length} sem veiculo disponivel`)
+      }
+      if (data.alunosPersonalizados?.length) {
+        partes.push(`${data.alunosPersonalizados.length} com percurso personalizado (atribuicao manual)`)
+      }
+      if (data.alunosSemCoordenada?.length) {
+        partes.push(`${data.alunosSemCoordenada.length} sem coordenadas cadastradas`)
+      }
+
+      showSuccess(partes.join(' - '))
+    } catch (error) {
+      showError(error.message || 'Nao foi possivel gerar as rotas automaticamente.')
+    } finally {
+      setGerandoRotas(false)
+    }
+  }
+
   return (
     <div className={`${styles['admin-page']} ${styles['admin-page--rotas']}`}>
       <div className="ui-header">
@@ -348,6 +384,18 @@ function GerenciarRotas() {
 
       <main className={styles['rotas-pagina']}>
         <section className={`${styles['cadastros']} ${styles['rotas-cadastros']}`}>
+          <div className={styles['rotas-acoes-topo']}>
+            <button
+              type="button"
+              className={styles['rotas-gerar-automatico']}
+              onClick={gerarRotasAutomaticamente}
+              disabled={gerandoRotas}
+            >
+              <Wand2 />
+              <span>{gerandoRotas ? 'Gerando rotas...' : 'Gerar rotas automaticamente'}</span>
+            </button>
+          </div>
+
           <div className={styles['filtro-linha']}>
             <div className={`${styles['filtro']} ${styles['rotas-filtro']}`}>
               <div className={styles['filtro-input-wrap']}>

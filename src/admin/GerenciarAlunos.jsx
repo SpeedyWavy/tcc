@@ -29,7 +29,7 @@ const alunoInicial = {
   endereco: '',
   latitude: null,
   longitude: null,
-  transporte: '',
+  transporte: 'Automático',
   unidade: 'Garcia',
   fotoUrl: null,
 }
@@ -744,7 +744,7 @@ function GerenciarAlunos() {
                   <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
 
                   <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
-                    <option value="">Identificacao do transporte</option>
+                    <option value="Automático">Automático</option>
                     {opcoesVeiculo.map((value) => (
                       <option key={value} value={value}>{value}</option>
                     ))}
@@ -953,7 +953,7 @@ function GerenciarAlunos() {
                   />
 
                   <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
-                    <option value="">Identificacao do transporte</option>
+                    <option value="Automático">Automático</option>
                     {opcoesVeiculo.map((value) => (
                       <option key={value} value={value}>{value}</option>
                     ))}
