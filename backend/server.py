@@ -52,6 +52,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+APP_ENV = (os.environ.get("APP_ENV") or os.environ.get("ENVIRONMENT") or "").strip().lower()
+ENABLE_DEFAULT_SEED_USERS = (os.environ.get("ENABLE_DEFAULT_SEED_USERS") or "").strip().lower() == "true"
+ALLOWED_CORS_ORIGINS = [
+    origin.strip()
+    for origin in (os.environ.get("CORS_ORIGINS") or "http://localhost:5173,https://tccdobrulezzi.vercel.app").split(",")
+    if origin.strip()
+]
+
 # ==================== HELPERS ====================
 
 def serialize_doc(doc: dict) -> dict:
@@ -103,19 +111,35 @@ def normalize_auth_email(full_name: str) -> str:
     normalized = ''.join(char for char in normalized if not unicodedata.combining(char))
     return f"{normalized.lower().replace(' ', '.')}@local.tcc"
 
-
-def ensure_supabase_auth_user(full_name: str, password: str, role: str, email: Optional[str] = None) -> None:
-    """Create a real Supabase Auth user so it appears in the Authentication panel."""
+def find_supabase_auth_user(full_name: str, email: Optional[str] = None):
     if not supabase_client:
-        return
+        return None
 
     auth_email = (email or '').strip() or normalize_auth_email(full_name)
+
     try:
         users_response = supabase_client.auth.admin.list_users()
         existing_users = getattr(users_response, "users", []) or []
-        if any(user.email == auth_email for user in existing_users):
+        for user in existing_users:
+            if user.email == auth_email:
+                return user
+    except Exception as exc:
+        logger.warning("Unable to locate Supabase Auth user: %s", exc)
+
+    return None
+
+
+def ensure_supabase_auth_user(full_name: str, password: str, role: str, email: Optional[str] = None):
+    """Create a real Supabase Auth user so it appears in the Authentication panel."""
+    if not supabase_client:
+        return None
+
+    auth_email = (email or '').strip() or normalize_auth_email(full_name)
+    try:
+        existing_user = find_supabase_auth_user(full_name, auth_email)
+        if existing_user:
             logger.info("Supabase Auth user already exists: %s", auth_email)
-            return
+            return existing_user.id
     except Exception as exc:
         logger.warning("Unable to list Supabase Auth users before creation: %s", exc)
 
@@ -130,10 +154,37 @@ def ensure_supabase_auth_user(full_name: str, password: str, role: str, email: O
         user = getattr(result, "user", None)
         if user is not None:
             logger.info("Supabase Auth user created: %s (%s)", user.email, role)
+            return user.id
         else:
             logger.warning("Supabase Auth user creation returned no user for %s", auth_email)
     except Exception as exc:
         logger.warning("Unable to create Supabase Auth user %s: %s", auth_email, exc)
+
+    return None
+
+
+async def sync_app_user_auth_id(user: dict) -> Optional[str]:
+    app_user_id = str(user.get("id") or user.get("_id") or "").strip()
+    if not app_user_id:
+        return None
+
+    existing_auth_user_id = (user.get("auth_user_id") or "").strip()
+    if existing_auth_user_id:
+        return existing_auth_user_id
+
+    email = (user.get("email") or "").strip()
+    if not email:
+        return None
+
+    auth_user = find_supabase_auth_user(user.get("full_name") or "", email)
+    if not auth_user:
+        return None
+
+    await db.users.update_one(
+        make_id_filter(app_user_id),
+        {"$set": {"auth_user_id": str(auth_user.id), "email": user.get("email") or email}},
+    )
+    return str(auth_user.id)
 
 # ==================== CONSTANTS ====================
 
@@ -153,7 +204,8 @@ class Token(BaseModel):
     user: Dict[str, Any]
 
 class LoginRequest(BaseModel):
-    full_name: str
+    full_name: Optional[str] = None
+    identifier: Optional[str] = None
     password: str
 
 class UserCreate(BaseModel):
@@ -298,6 +350,10 @@ def haversine_distance(lat1, lon1, lat2, lon2):
 @app.on_event("startup")
 async def seed_default_users():
     """Create the default admin and driver users expected by the app."""
+    if APP_ENV == "production" and not ENABLE_DEFAULT_SEED_USERS:
+        logger.info("Skipping default user seeding in production environment.")
+        return
+
     default_users = [
         {
             "full_name": "Debora",
@@ -316,28 +372,59 @@ async def seed_default_users():
     for user_data in default_users:
         existing = await db.users.find_one({"full_name": user_data["full_name"]})
         if not existing:
+            auth_email = normalize_auth_email(user_data["full_name"])
+            auth_user_id = ensure_supabase_auth_user(
+                user_data["full_name"],
+                user_data["plain_password"],
+                user_data["role"],
+                auth_email,
+            )
+            if not auth_user_id:
+                logger.warning("Seed user auth account could not be prepared: %s", user_data["full_name"])
+                continue
             await db.users.insert_one({
                 "full_name": user_data["full_name"],
                 "password": hash_password(user_data["plain_password"]),
                 "role": user_data["role"],
+                "email": auth_email,
+                "auth_user_id": auth_user_id,
                 "created_at": user_data["created_at"],
             })
             logger.info("Seed user created: %s (%s)", user_data["full_name"], user_data["role"])
+        else:
+            await sync_app_user_auth_id(existing)
+            ensure_supabase_auth_user(
+                user_data["full_name"],
+                user_data["plain_password"],
+                user_data["role"],
+                user_data.get("email"),
+            )
 
-        ensure_supabase_auth_user(
-            user_data["full_name"],
-            user_data["plain_password"],
-            user_data["role"],
-            user_data.get("email"),
-        )
+    all_users = await db.users.find().to_list(1000)
+    for app_user in all_users:
+        await sync_app_user_auth_id(app_user)
 
 # ==================== AUTH ENDPOINTS ====================
 
 @api_router.post("/auth/login")
 async def login(request: LoginRequest):
-    user = await db.users.find_one({"full_name": request.full_name})
-    email = (user or {}).get("email") or normalize_auth_email(request.full_name)
+    login_identifier = (request.identifier or request.full_name or "").strip()
+    if not login_identifier:
+        raise HTTPException(status_code=401, detail="Nome ou senha incorretos")
+
+    if "@" in login_identifier:
+        user = await db.users.find_one({"email": login_identifier})
+        if user is None:
+            user = await db.users.find_one({"email": login_identifier.lower()})
+    else:
+        user = await db.users.find_one({"full_name": login_identifier})
+        if user is None:
+            user = await db.users.find_one({"email": login_identifier})
+
     try:
+        email = (user or {}).get("email")
+        if not email:
+            raise HTTPException(status_code=401, detail="Nome ou senha incorretos")
         auth_response = supabase_client.auth.sign_in_with_password({
             "email": email,
             "password": request.password,
@@ -347,29 +434,15 @@ async def login(request: LoginRequest):
             raise HTTPException(status_code=401, detail="Nome ou senha incorretos")
     except Exception:
         auth_user = None
+        raise HTTPException(status_code=401, detail="Nome ou senha incorretos")
 
-        if auth_user is not None:
-            if user is None:
-                user = {
-                    "id": str(auth_user.id),
-                    "full_name": request.full_name,
-                    "role": (auth_user.app_metadata or {}).get("role")
-                    or (auth_user.user_metadata or {}).get("role", UserRole.DRIVER),
-                }
+    user = await db.users.find_one({"auth_user_id": str(auth_user.id)})
+    if user is None and auth_user.email:
+        user = await db.users.find_one({"email": auth_user.email})
+    if user is None:
+        raise HTTPException(status_code=401, detail="Nome ou senha incorretos")
 
-        user_id = str(user.get("id") or auth_user.id)
-        access_token = create_access_token(data={"sub": user_id})
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-                "user": {
-                    "id": user_id,
-                    "full_name": user.get("full_name") or request.full_name,
-                    "role": user.get("role")
-                    or (auth_user.app_metadata or {}).get("role")
-                    or (auth_user.user_metadata or {}).get("role", UserRole.DRIVER),
-                },
-            }
+    await sync_app_user_auth_id(user)
 
     if not user or not verify_password(request.password, user["password"]):
         raise HTTPException(
@@ -382,8 +455,10 @@ async def login(request: LoginRequest):
 
     user_data = {
         "id": user_id,
+        "auth_user_id": str(auth_user.id),
         "full_name": user["full_name"],
-        "role": user["role"]
+        "email": user.get("email") or auth_user.email or "",
+        "role": user["role"],
     }
 
     return {
@@ -414,8 +489,12 @@ async def create_admin(admin: UserCreate, current_user: dict = Depends(get_admin
             "created_at": datetime.now(timezone.utc).isoformat()
         }
 
+        auth_user_id = ensure_supabase_auth_user(admin.full_name, admin.password, UserRole.ADMIN, admin.email)
+        if not auth_user_id:
+            raise HTTPException(status_code=500, detail="Nao foi possivel criar a conta autenticada do administrador")
+        admin_data["auth_user_id"] = auth_user_id
+
         result = await db.users.insert_one(admin_data)
-        ensure_supabase_auth_user(admin.full_name, admin.password, UserRole.ADMIN, admin.email)
         created = result.record or await db.users.find_one({"id": result.inserted_id})
         return serialize_doc(created)
     except HTTPException:
@@ -498,8 +577,12 @@ async def create_driver(driver: UserCreate, current_user: dict = Depends(get_adm
             "created_at": datetime.now(timezone.utc).isoformat()
         }
 
+        auth_user_id = ensure_supabase_auth_user(driver.full_name, driver.password, UserRole.DRIVER, driver.email)
+        if not auth_user_id:
+            raise HTTPException(status_code=500, detail="Nao foi possivel criar a conta autenticada do motorista")
+        driver_data["auth_user_id"] = auth_user_id
+
         result = await db.users.insert_one(driver_data)
-        ensure_supabase_auth_user(driver.full_name, driver.password, UserRole.DRIVER, driver.email)
         created = result.record or await db.users.find_one({"id": result.inserted_id})
         return serialize_doc(created)
     except HTTPException:
@@ -981,7 +1064,7 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -989,4 +1072,3 @@ app.add_middleware(
 @app.on_event("shutdown")
 async def shutdown_db_client():
     return None
-

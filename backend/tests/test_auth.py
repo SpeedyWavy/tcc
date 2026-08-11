@@ -19,6 +19,19 @@ class TestAuth:
         assert data["user"]["role"] == "admin", "User role should be admin"
         assert data["user"]["full_name"] == "Debora", "User name mismatch"
 
+    def test_login_admin_by_email_success(self, base_url, api_client):
+        """Test admin login using email instead of name"""
+        response = api_client.post(f"{base_url}/api/auth/login", json={
+            "identifier": "debora@local.tcc",
+            "password": "12345"
+        })
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+
+        data = response.json()
+        assert "access_token" in data
+        assert data["user"]["role"] == "admin"
+        assert data["user"]["email"] == "debora@local.tcc"
+
     def test_login_driver_success(self, base_url, api_client):
         """Test driver login with correct credentials"""
         response = api_client.post(f"{base_url}/api/auth/login", json={
