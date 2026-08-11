@@ -26,9 +26,27 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+const allowedOrigins = new Set(
+  (Deno.env.get('CORS_ORIGINS') ?? 'http://localhost:5173,https://tccdobrulezzi.vercel.app')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+)
+
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin') ?? ''
+  const allowOrigin = allowedOrigins.has(origin) ? origin : 'http://localhost:5173'
+
+  return {
+    ...corsHeaders,
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Credentials': 'true',
+  }
 }
 
 const UNIT_ADDRESSES: Record<string, string> = {
@@ -129,6 +147,58 @@ function clusterizarAlunos(alunos: Aluno[], veiculos: Veiculo[]) {
   return { clusters, sobrando }
 }
 
+function createUserClient(request: Request) {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: request.headers.get('Authorization') ?? '',
+      },
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  })
+}
+
+function createAdminClient() {
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  })
+}
+
+async function requireAdmin(request: Request) {
+  const userClient = createUserClient(request)
+  const { data, error } = await userClient.auth.getUser()
+
+  if (error || !data.user) {
+    return { error: 'Autenticacao invalida.', status: 401 as const }
+  }
+
+  const jwtRole = data.user.app_metadata?.role
+  if (jwtRole === 'admin') {
+    return { user: data.user }
+  }
+
+  const adminClient = createAdminClient()
+  const { data: userRecord, error: userError } = await adminClient
+    .from('users')
+    .select('role')
+    .eq('auth_user_id', data.user.id)
+    .maybeSingle()
+
+  if (userError || userRecord?.role !== 'admin') {
+    return { error: 'Admin access required.', status: 403 as const }
+  }
+
+  return { user: data.user }
+}
+
 // Usa a Directions API (optimizeWaypoints) pra achar a melhor ordem de visita.
 // Origem e destino sao a propria unidade (o trajeto e tratado como um loop:
 // sai da unidade, visita as casas, volta pra unidade) - assim a mesma ordem
@@ -176,13 +246,13 @@ async function otimizarOrdemParadas(enderecoUnidade: string, alunos: Aluno[], ap
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(req) })
   }
 
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Metodo nao permitido.' }), {
       status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 
@@ -196,7 +266,15 @@ Deno.serve(async (req) => {
         error:
           'Variaveis de ambiente ausentes (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY ou GOOGLE_DIRECTIONS_API_KEY).',
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
+    )
+  }
+
+  const adminCheck = await requireAdmin(req)
+  if ('error' in adminCheck) {
+    return new Response(
+      JSON.stringify({ error: adminCheck.error }),
+      { status: adminCheck.status, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     )
   }
 
@@ -210,7 +288,7 @@ Deno.serve(async (req) => {
   if (erroAlunos || erroVeiculos) {
     return new Response(
       JSON.stringify({ error: (erroAlunos || erroVeiculos)?.message || 'Erro ao carregar dados.' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     )
   }
 
@@ -308,6 +386,6 @@ Deno.serve(async (req) => {
   }
 
   return new Response(JSON.stringify(resumo), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
   })
 })

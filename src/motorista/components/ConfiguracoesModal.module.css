@@ -1,0 +1,130 @@
+.config-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 19, 85, 0.35);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.config-card {
+  width: min(360px, 100%);
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 24px 22px;
+  box-shadow: 0px 28px 50px rgba(0, 19, 85, 0.18);
+  display: grid;
+  gap: 18px;
+  font-family: 'Inter', sans-serif;
+  color: #001355;
+}
+
+.config-titulo {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.config-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #eef0ff;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.config-item-coluna {
+  display: grid;
+  gap: 10px;
+  background: #eef0ff;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.config-radios {
+  display: grid;
+  gap: 8px;
+  font-weight: 400;
+  font-size: 0.95rem;
+}
+
+.config-radios label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.config-radios input {
+  width: 18px;
+  height: 18px;
+  accent-color: #001355;
+  cursor: pointer;
+}
+
+/* Switch (toggle) do Modo Escuro */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-trilho {
+  position: absolute;
+  inset: 0;
+  background: #cfd6ee;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+
+.switch-trilho::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 3px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 180ms ease;
+  box-shadow: 0 2px 4px rgba(0, 19, 85, 0.25);
+}
+
+.switch input:checked + .switch-trilho {
+  background: #001355;
+}
+
+.switch input:checked + .switch-trilho::before {
+  transform: translateX(18px);
+}
+
+.config-fechar {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  background: #001355;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 180ms ease;
+}
+
+.config-fechar:hover {
+  transform: translateY(-1px);
+}

@@ -55,8 +55,21 @@ async function resolveDriverId(currentUser) {
     return null
   }
 
+  const currentAuthUserId = normalizeText(currentUser.auth_user_id)
   const candidateEmail = normalizeText(currentUser.email)
-  const candidateName = normalizeText(currentUser.full_name)
+
+  if (currentAuthUserId) {
+    const { data: userByAuthId, error: userByAuthIdError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_user_id', currentAuthUserId)
+      .eq('role', 'driver')
+      .maybeSingle()
+
+    if (!userByAuthIdError && userByAuthId?.id) {
+      return userByAuthId.id
+    }
+  }
 
   if (currentUser.id) {
     const { data: userById, error: userByIdError } = await supabase
@@ -81,41 +94,6 @@ async function resolveDriverId(currentUser) {
 
     if (!userByEmailError && userByEmail?.id) {
       return userByEmail.id
-    }
-  }
-
-  if (candidateName) {
-    const { data: userByName, error: userByNameError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('role', 'driver')
-      .ilike('full_name', candidateName)
-      .maybeSingle()
-
-    if (!userByNameError && userByName?.id) {
-      return userByName.id
-    }
-
-    const { data: drivers, error: driversError } = await supabase
-      .from('users')
-      .select('id, full_name, email')
-      .eq('role', 'driver')
-      .limit(1000)
-
-    if (!driversError && Array.isArray(drivers)) {
-      const match = drivers.find((driver) => {
-        const driverName = normalizeName(driver.full_name)
-        return (
-          driverName === candidateName ||
-          driverName.includes(candidateName) ||
-          candidateName.includes(driverName) ||
-          normalizeName(driver.email) === candidateEmail
-        )
-      })
-
-      if (match?.id) {
-        return match.id
-      }
     }
   }
 
@@ -233,8 +211,7 @@ async function handleStudents(method, studentId, body) {
   if (method === 'GET') {
     if (currentUser?.role === 'driver') {
       const driverId = await resolveDriverId(currentUser)
-      const candidateName = normalizeName(currentUser.full_name)
-      if (!driverId && !candidateName) {
+      if (!driverId) {
         return []
       }
 
@@ -270,68 +247,6 @@ async function handleStudents(method, studentId, body) {
         for (const route of vehicleRoutesByVehicle ?? []) {
           if (route?.id) {
             routeIds.add(route.id)
-          }
-        }
-      }
-
-      if (routeIds.size === 0 && candidateName) {
-        const { data: vehiclesByName, error: vehiclesByNameError } = await supabase
-          .from('vehicles')
-          .select('id')
-          .ilike('driver_name', `%${candidateName}%`)
-
-        if (vehiclesByNameError) {
-          handleSupabaseError(vehiclesByNameError, 'Não foi possível carregar veículos pelo nome do motorista.')
-        }
-
-        const vehicleIdsByName = Array.isArray(vehiclesByName)
-          ? vehiclesByName.map((vehicle) => vehicle.id).filter(Boolean)
-          : []
-
-        if (vehicleIdsByName.length > 0) {
-          const { data: routesByVehicleName, error: routesByVehicleNameError } = await supabase
-            .from('routes')
-            .select('id')
-            .in('vehicle_id', vehicleIdsByName)
-
-          if (routesByVehicleNameError) {
-            handleSupabaseError(routesByVehicleNameError, 'Não foi possível carregar as rotas vinculadas aos veículos do motorista.')
-          }
-
-          for (const route of routesByVehicleName ?? []) {
-            if (route?.id) {
-              routeIds.add(route.id)
-            }
-          }
-        }
-
-        if (routeIds.size === 0) {
-          const { data: driverByName, error: driverByNameError } = await supabase
-            .from('users')
-            .select('id')
-            .eq('role', 'driver')
-            .ilike('full_name', `%${candidateName}%`)
-            .maybeSingle()
-
-          if (driverByNameError) {
-            handleSupabaseError(driverByNameError, 'Não foi possível localizar o motorista pelo nome.')
-          }
-
-          if (driverByName?.id) {
-            const { data: routesByDriverName, error: routesByDriverNameError } = await supabase
-              .from('routes')
-              .select('id')
-              .eq('driver_id', driverByName.id)
-
-            if (routesByDriverNameError) {
-              handleSupabaseError(routesByDriverNameError, 'Não foi possível carregar as rotas do motorista.')
-            }
-
-            for (const route of routesByDriverName ?? []) {
-              if (route?.id) {
-                routeIds.add(route.id)
-              }
-            }
           }
         }
       }
@@ -733,9 +648,8 @@ async function handleVehicles(method, vehicleId, body) {
   if (method === 'GET') {
     const currentUser = getStoredUser()
     const isDriver = currentUser?.role === 'driver'
-    const candidateName = normalizeText(currentUser?.full_name)
     const driverId = isDriver ? await resolveDriverId(currentUser) : null
-    const driverIds = isDriver ? [driverId, currentUser?.id].filter(Boolean) : []
+    const driverIds = isDriver && driverId ? [driverId] : []
 
     if (isDriver) {
       if (driverIds.length > 0) {
@@ -783,21 +697,6 @@ async function handleVehicles(method, vehicleId, body) {
             return vehiclesByRoute
           }
         }
-      }
-
-      if (candidateName) {
-        const { data: nameVehicles, error: nameError } = await supabase
-          .from('vehicles')
-          .select('*')
-          .ilike('driver_name', `%${candidateName}%`)
-          .order('created_at', { ascending: false })
-          .limit(1)
-
-        if (nameError) {
-          handleSupabaseError(nameError, 'Não foi possível carregar os veículos.')
-        }
-
-        return nameVehicles ?? []
       }
 
       return []
@@ -933,3 +832,4 @@ throw new Error(`Endpoint não suportado: ${path}`)
     throw error instanceof Error ? error : new Error(message)
   }
 }
+// 

@@ -76,3 +76,4 @@ function MiniMap({ latitude, longitude, height = 180 }) {
 }
 
 export default MiniMap
+// 

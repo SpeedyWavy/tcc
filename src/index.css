@@ -4,6 +4,7 @@
   box-sizing: border-box;
 }
 
+/*  */
 body{
   background: #E3E7FF;
   min-height: 100vh;
@@ -194,3 +195,5 @@ body{
     font-size: 0.98rem;
   }
 }
+
+/*  */

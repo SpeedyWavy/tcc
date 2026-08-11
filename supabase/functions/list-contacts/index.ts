@@ -5,17 +5,30 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const allowedOrigins = new Set(
+  (Deno.env.get('CORS_ORIGINS') ?? 'http://localhost:5173,https://tccdobrulezzi.vercel.app')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+)
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin') ?? ''
+  const allowOrigin = allowedOrigins.has(origin) ? origin : 'http://localhost:5173'
+
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
-function jsonResponse(body: unknown, status = 200) {
+function jsonResponse(request: Request, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
-      ...corsHeaders,
+      ...getCorsHeaders(request),
       'Content-Type': 'application/json',
     },
   })
@@ -46,7 +59,7 @@ function createAdminClient() {
   })
 }
 
-async function requireAuthenticatedUser(request: Request) {
+async function requireAdmin(request: Request) {
   const userClient = createUserClient(request)
   const { data, error } = await userClient.auth.getUser()
 
@@ -54,34 +67,50 @@ async function requireAuthenticatedUser(request: Request) {
     return { error: 'Autenticacao invalida.', status: 401 as const }
   }
 
+  const jwtRole = data.user.app_metadata?.role
+  if (jwtRole === 'admin') {
+    return { user: data.user }
+  }
+
+  const adminClient = createAdminClient()
+  const { data: userRecord } = await adminClient
+    .from('users')
+    .select('role')
+    .eq('auth_user_id', data.user.id)
+    .maybeSingle()
+
+  if (userRecord?.role !== 'admin') {
+    return { error: 'Admin access required.', status: 403 as const }
+  }
+
   return { user: data.user }
 }
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(request) })
   }
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
-    return jsonResponse({ detail: 'Variaveis de ambiente do Supabase nao configuradas.' }, 500)
+    return jsonResponse(request, { detail: 'Variaveis de ambiente do Supabase nao configuradas.' }, 500)
   }
 
-  const authCheck = await requireAuthenticatedUser(request)
-  if ('error' in authCheck) {
-    return jsonResponse({ detail: authCheck.error }, authCheck.status)
+  const adminCheck = await requireAdmin(request)
+  if ('error' in adminCheck) {
+    return jsonResponse(request, { detail: adminCheck.error }, adminCheck.status)
   }
 
   const adminClient = createAdminClient()
   const { data, error } = await adminClient
     .from('users')
-    .select('id, full_name, role, contact, email, unit, transport_identification, cpf')
-    .in('role', ['admin', 'driver'])
+    .select('id, full_name, contact, unit')
+    .eq('role', 'admin')
     .order('role', { ascending: true })
     .order('full_name', { ascending: true })
 
   if (error) {
-    return jsonResponse({ detail: error.message || 'Nao foi possivel carregar os contatos.' }, 400)
+    return jsonResponse(request, { detail: error.message || 'Nao foi possivel carregar os contatos.' }, 400)
   }
 
-  return jsonResponse(data ?? [])
+  return jsonResponse(request, data ?? [])
 })

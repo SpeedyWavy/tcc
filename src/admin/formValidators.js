@@ -60,3 +60,4 @@ export const isPlateComplete = (value) => {
   const normalized = String(value || '').replace(/[^a-zA-Z0-9]/g, '')
   return normalized.length === 7 && /\d/.test(normalized) && /[a-zA-Z]/.test(normalized)
 }
+// 

@@ -19,8 +19,6 @@ function normalizarContato(contato) {
 
 function Contatos() {
   const [busca, setBusca] = useState('')
-  const [mostrarAdministradores, setMostrarAdministradores] = useState(true)
-  const [mostrarMotoristas, setMostrarMotoristas] = useState(true)
   const [contatos, setContatos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
@@ -62,13 +60,6 @@ function Contatos() {
 
     return contatos.filter((contato) => {
       const ehAdmin = contato.role === 'admin'
-      const ehMotorista = contato.role === 'driver'
-      const semFiltroAtivo = !mostrarAdministradores && !mostrarMotoristas
-
-      const permiteAdmin = mostrarAdministradores
-      const permiteMotorista = mostrarMotoristas
-      const passaTipo = semFiltroAtivo || (ehAdmin && permiteAdmin) || (ehMotorista && permiteMotorista)
-
       const passaBusca =
         !termo ||
         [
@@ -76,24 +67,19 @@ function Contatos() {
           contato.telefone,
           contato.email,
           contato.unidade,
-          contato.transporte,
           contato.cpf,
         ]
           .join(' ')
           .toLowerCase()
           .includes(termo)
 
-      return passaTipo && passaBusca
+      return ehAdmin && passaBusca
     })
-  }, [busca, contatos, mostrarAdministradores, mostrarMotoristas])
+  }, [busca, contatos])
 
   const grupos = useMemo(() => {
-    const adminList = filtrados.filter((contato) => contato.role === 'admin')
-    const driverList = filtrados.filter((contato) => contato.role === 'driver')
-
     return [
-      { titulo: 'Administradores', itens: adminList },
-      { titulo: 'Motoristas', itens: driverList },
+      { titulo: 'Administradores', itens: filtrados },
     ]
   }, [filtrados])
 
@@ -122,26 +108,6 @@ function Contatos() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
-        </div>
-
-        <div className={styles['filtros']}>
-          <label className={styles['filtro-item']}>
-            <input
-              type="checkbox"
-              checked={mostrarAdministradores}
-              onChange={(e) => setMostrarAdministradores(e.target.checked)}
-            />
-            <span>Apenas Administradores</span>
-          </label>
-
-          <label className={styles['filtro-item']}>
-            <input
-              type="checkbox"
-              checked={mostrarMotoristas}
-              onChange={(e) => setMostrarMotoristas(e.target.checked)}
-            />
-            <span>Apenas Motoristas</span>
-          </label>
         </div>
 
         {carregando ? <p className={styles['estado']}>Carregando contatos...</p> : null}
@@ -184,3 +150,5 @@ function Contatos() {
 }
 
 export default Contatos
+
+// 

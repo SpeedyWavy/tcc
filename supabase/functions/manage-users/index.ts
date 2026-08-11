@@ -1,14 +1,28 @@
 /// <reference path="../types.d.ts" />
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { hashSync as bcryptHashSync } from 'npm:bcryptjs@2.4.3'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const allowedOrigins = new Set(
+  (Deno.env.get('CORS_ORIGINS') ?? 'http://localhost:5173,https://tccdobrulezzi.vercel.app')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+)
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin') ?? ''
+  const allowOrigin = allowedOrigins.has(origin) ? origin : 'http://localhost:5173'
+
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 function normalizeText(value: unknown) {
@@ -23,11 +37,11 @@ function normalizeEmail(fullName: string) {
     .replace(/\s+/g, '.')}@local.tcc`
 }
 
-function jsonResponse(body: unknown, status = 200) {
+function jsonResponse(request: Request, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
-      ...corsHeaders,
+      ...getCorsHeaders(request),
       'Content-Type': 'application/json',
     },
   })
@@ -66,7 +80,7 @@ async function requireAdmin(request: Request) {
     return { error: 'Autenticacao invalida.', status: 401 as const }
   }
 
-  const jwtRole = data.user.app_metadata?.role || data.user.user_metadata?.role
+  const jwtRole = data.user.app_metadata?.role
   if (jwtRole === 'admin') {
     return { user: data.user }
   }
@@ -75,7 +89,7 @@ async function requireAdmin(request: Request) {
   const { data: userRecord, error: userError } = await adminClient
     .from('users')
     .select('role')
-    .eq('id', data.user.id)
+    .eq('auth_user_id', data.user.id)
     .maybeSingle()
 
   if (userError || userRecord?.role !== 'admin') {
@@ -86,8 +100,8 @@ async function requireAdmin(request: Request) {
 }
 
 async function findAuthUserByRecord(adminClient: ReturnType<typeof createAdminClient>, record: { id?: string; email?: string }) {
-  if (record.id) {
-    const { data } = await adminClient.auth.admin.getUserById(record.id)
+  if ((record as { auth_user_id?: string }).auth_user_id) {
+    const { data } = await adminClient.auth.admin.getUserById((record as { auth_user_id?: string }).auth_user_id || '')
     if (data.user) {
       return data.user
     }
@@ -112,7 +126,7 @@ async function createManagedUser(request: Request, targetRole: 'admin' | 'driver
   const password = normalizeText(payload.password)
 
   if (!fullName || !email || !password) {
-    return jsonResponse({ detail: 'Nome, email e senha sao obrigatorios.' }, 400)
+    return jsonResponse(request, { detail: 'Nome, email e senha sao obrigatorios.' }, 400)
   }
 
   const adminClient = createAdminClient()
@@ -126,14 +140,15 @@ async function createManagedUser(request: Request, targetRole: 'admin' | 'driver
   })
 
   if (authError || !authData.user) {
-    return jsonResponse({ detail: authError?.message || 'Nao foi possivel criar o usuario autenticado.' }, 400)
+    return jsonResponse(request, { detail: authError?.message || 'Nao foi possivel criar o usuario autenticado.' }, 400)
   }
 
   const authUser = authData.user
   const userRecord: Record<string, unknown> = {
     id: authUser.id,
+    auth_user_id: authUser.id,
     full_name: fullName,
-    password,
+    password: bcryptHashSync(password, 12),
     role: targetRole,
     cpf: normalizeText(payload.cpf),
     email,
@@ -178,10 +193,10 @@ async function createManagedUser(request: Request, targetRole: 'admin' | 'driver
 
   if (insertError) {
     await adminClient.auth.admin.deleteUser(authUser.id)
-    return jsonResponse({ detail: insertError.message || 'Nao foi possivel gravar o cadastro.' }, 400)
+    return jsonResponse(request, { detail: insertError.message || 'Nao foi possivel gravar o cadastro.' }, 400)
   }
 
-  return jsonResponse(insertedUser, 201)
+  return jsonResponse(request, insertedUser, 201)
 }
 
 async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver', userId: string, payload: Record<string, unknown>) {
@@ -190,7 +205,7 @@ async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver
   const password = normalizeText(payload.password)
 
   if (!fullName || !email) {
-    return jsonResponse({ detail: 'Nome e email sao obrigatorios.' }, 400)
+    return jsonResponse(request, { detail: 'Nome e email sao obrigatorios.' }, 400)
   }
 
   const adminClient = createAdminClient()
@@ -202,19 +217,20 @@ async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver
     .maybeSingle()
 
   if (currentError) {
-    return jsonResponse({ detail: currentError.message || 'Nao foi possivel localizar o usuario.' }, 400)
+    return jsonResponse(request, { detail: currentError.message || 'Nao foi possivel localizar o usuario.' }, 400)
   }
 
   if (!currentRecord) {
-    return jsonResponse({ detail: 'Usuario nao encontrado.' }, 404)
+    return jsonResponse(request, { detail: 'Usuario nao encontrado.' }, 404)
   }
 
   const authUser = await findAuthUserByRecord(adminClient, currentRecord)
   if (!authUser) {
-    return jsonResponse({ detail: 'Nao foi possivel localizar a conta autenticada.' }, 404)
+    return jsonResponse(request, { detail: 'Nao foi possivel localizar a conta autenticada.' }, 404)
   }
 
   const updateRecord: Record<string, unknown> = {
+    auth_user_id: currentRecord.auth_user_id || authUser.id,
     full_name: fullName,
     cpf: normalizeText(payload.cpf),
     email,
@@ -229,7 +245,7 @@ async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver
   }
 
   if (password) {
-    updateRecord.password = password
+    updateRecord.password = bcryptHashSync(password, 12)
   }
 
   // Resolve photo_url from photo_path if needed
@@ -267,7 +283,7 @@ async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver
   )
 
   if (authUpdateError || !updatedAuth.user) {
-    return jsonResponse({ detail: authUpdateError?.message || 'Nao foi possivel atualizar a conta autenticada.' }, 400)
+    return jsonResponse(request, { detail: authUpdateError?.message || 'Nao foi possivel atualizar a conta autenticada.' }, 400)
   }
 
   const { data: updatedUser, error: updateError } = await adminClient
@@ -278,13 +294,13 @@ async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver
     .single()
 
   if (updateError) {
-    return jsonResponse({ detail: updateError.message || 'Nao foi possivel atualizar o cadastro.' }, 400)
+    return jsonResponse(request, { detail: updateError.message || 'Nao foi possivel atualizar o cadastro.' }, 400)
   }
 
-  return jsonResponse(updatedUser)
+  return jsonResponse(request, updatedUser)
 }
 
-async function deleteManagedUser(currentAuthUserId: string | undefined, targetRole: 'admin' | 'driver', userId: string) {
+async function deleteManagedUser(request: Request, currentAuthUserId: string | undefined, targetRole: 'admin' | 'driver', userId: string) {
   const adminClient = createAdminClient()
   const { data: currentRecord, error: currentError } = await adminClient
     .from('users')
@@ -294,11 +310,11 @@ async function deleteManagedUser(currentAuthUserId: string | undefined, targetRo
     .maybeSingle()
 
   if (currentError) {
-    return jsonResponse({ detail: currentError.message || 'Nao foi possivel localizar o usuario.' }, 400)
+    return jsonResponse(request, { detail: currentError.message || 'Nao foi possivel localizar o usuario.' }, 400)
   }
 
   if (!currentRecord) {
-    return jsonResponse({ detail: 'Usuario nao encontrado.' }, 404)
+    return jsonResponse(request, { detail: 'Usuario nao encontrado.' }, 404)
   }
 
   if (targetRole === 'admin') {
@@ -308,13 +324,13 @@ async function deleteManagedUser(currentAuthUserId: string | undefined, targetRo
       .eq('role', 'admin')
 
     if ((count ?? 0) <= 1) {
-      return jsonResponse({ detail: 'Deve existir pelo menos um administrador.' }, 400)
+      return jsonResponse(request, { detail: 'Deve existir pelo menos um administrador.' }, 400)
     }
   }
 
   const authUser = await findAuthUserByRecord(adminClient, currentRecord)
   if (authUser && currentAuthUserId && authUser.id === currentAuthUserId && targetRole === 'admin') {
-    return jsonResponse({ detail: 'Voce nao pode excluir a si mesmo.' }, 400)
+    return jsonResponse(request, { detail: 'Voce nao pode excluir a si mesmo.' }, 400)
   }
 
   const { error: deleteError } = await adminClient
@@ -324,17 +340,17 @@ async function deleteManagedUser(currentAuthUserId: string | undefined, targetRo
     .eq('role', targetRole)
 
   if (deleteError) {
-    return jsonResponse({ detail: deleteError.message || 'Nao foi possivel excluir o usuario.' }, 400)
+    return jsonResponse(request, { detail: deleteError.message || 'Nao foi possivel excluir o usuario.' }, 400)
   }
 
   if (authUser) {
     const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(authUser.id)
     if (authDeleteError) {
-      return jsonResponse({ detail: authDeleteError.message || 'Cadastro removido, mas a conta autenticada nao pode ser apagada.' }, 400)
+      return jsonResponse(request, { detail: authDeleteError.message || 'Cadastro removido, mas a conta autenticada nao pode ser apagada.' }, 400)
     }
   }
 
-  return jsonResponse({ message: 'Usuario excluido com sucesso.' })
+  return jsonResponse(request, { message: 'Usuario excluido com sucesso.' })
 }
 
 Deno.serve(async (request) => {
@@ -343,20 +359,12 @@ Deno.serve(async (request) => {
   }
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
-    return jsonResponse({ detail: 'Variaveis de ambiente do Supabase nao configuradas.' }, 500)
+    return jsonResponse(request, { detail: 'Variaveis de ambiente do Supabase nao configuradas.' }, 500)
   }
 
-  // Allow an internal service invocation using the Service Role key via header
-  // (header name: x-service-role). This bypass is intended for internal tests only.
-  let adminCheck: any = {}
-  const serviceRoleHeader = request.headers.get('x-service-role') || request.headers.get('x-supabase-service-role')
-  if (serviceRoleHeader && serviceRoleHeader === supabaseServiceRoleKey) {
-    adminCheck = { user: { id: 'service' } }
-  } else {
-    adminCheck = await requireAdmin(request)
-    if ('error' in adminCheck) {
-      return jsonResponse({ detail: adminCheck.error }, adminCheck.status)
-    }
+  const adminCheck = await requireAdmin(request)
+  if ('error' in adminCheck) {
+    return jsonResponse(request, { detail: adminCheck.error }, adminCheck.status)
   }
 
   let payload: Record<string, unknown> = {}
@@ -377,7 +385,7 @@ Deno.serve(async (request) => {
 
   if (action === `update_${userType}`) {
     if (!userId) {
-      return jsonResponse({ detail: 'ID obrigatorio.' }, 400)
+      return jsonResponse(request, { detail: 'ID obrigatorio.' }, 400)
     }
 
     const data = (payload.data as Record<string, unknown> | undefined) ?? {}
@@ -386,11 +394,11 @@ Deno.serve(async (request) => {
 
   if (action === `delete_${userType}`) {
     if (!userId) {
-      return jsonResponse({ detail: 'ID obrigatorio.' }, 400)
+      return jsonResponse(request, { detail: 'ID obrigatorio.' }, 400)
     }
 
-    return await deleteManagedUser(adminCheck.user?.id, userType, userId)
+    return await deleteManagedUser(request, adminCheck.user?.id, userType, userId)
   }
 
-  return jsonResponse({ detail: 'Acao nao suportada.' }, 400)
+  return jsonResponse(request, { detail: 'Acao nao suportada.' }, 400)
 })

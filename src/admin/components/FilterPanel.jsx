@@ -52,3 +52,5 @@ function FilterPanel({ open, title = 'Filtre por...', sections, draftFilters, on
 }
 
 export default FilterPanel
+
+// 

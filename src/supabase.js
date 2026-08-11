@@ -43,3 +43,4 @@ export async function getSupabaseClient() {
   await sessionReady
   return supabase
 }
+// 
