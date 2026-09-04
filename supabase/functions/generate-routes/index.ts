@@ -14,6 +14,7 @@
 //
 // Variaveis de ambiente necessarias (configurar via `supabase secrets set`):
 //   SUPABASE_URL                 - preenchida automaticamente pelo Supabase
+//   SUPABASE_ANON_KEY            - preenchida automaticamente pelo Supabase
 //   SUPABASE_SERVICE_ROLE_KEY    - preenchida automaticamente pelo Supabase
 //   GOOGLE_DIRECTIONS_API_KEY    - chave do Google Maps restrita a Directions API
 //                                  (NAO reutilize a VITE_GOOGLE_MAPS_API_KEY do
@@ -24,6 +25,11 @@
 // abaixo (busque por `.capacity`).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const googleApiKey = Deno.env.get('GOOGLE_DIRECTIONS_API_KEY')!
 
 const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -256,15 +262,11 @@ Deno.serve(async (req) => {
     })
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const googleApiKey = Deno.env.get('GOOGLE_DIRECTIONS_API_KEY')
-
-  if (!supabaseUrl || !supabaseServiceKey || !googleApiKey) {
+  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !googleApiKey) {
     return new Response(
       JSON.stringify({
         error:
-          'Variaveis de ambiente ausentes (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY ou GOOGLE_DIRECTIONS_API_KEY).',
+          'Variaveis de ambiente ausentes (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY ou GOOGLE_DIRECTIONS_API_KEY).',
       }),
       { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     )
@@ -278,7 +280,7 @@ Deno.serve(async (req) => {
     )
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
   const [{ data: alunosData, error: erroAlunos }, { data: veiculosData, error: erroVeiculos }] = await Promise.all([
     supabase.from('students').select('*').is('route_id', null),
