@@ -28,6 +28,24 @@ function normalizeText(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function toNullableNumber(value: unknown) {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function toNullableStringArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return null
+  }
+
+  const limpo = value.filter((item) => typeof item === 'string' && item.trim().length > 0)
+  return limpo.length > 0 ? limpo : null
+}
+
 function shouldSkipStudentValidation(payload: Record<string, unknown>) {
   const keys = Object.keys(payload)
   if (!keys.includes('route_id')) {
@@ -106,6 +124,9 @@ function buildStudentRecord(payload: Record<string, unknown>, isUpdate = false) 
   const parentContact = normalizeText(payload.parent_contact)
   const transportIdentification = normalizeText(payload.transport_identification)
   const unit = normalizeText(payload.unit)
+  const period = normalizeText(payload.period)
+  const departureTime = normalizeText(payload.departure_time)
+  const routeType = normalizeText(payload.route_type)
 
   const photoUrl = typeof payload.photo_url === 'string' ? payload.photo_url.trim() : ''
 
@@ -115,6 +136,8 @@ function buildStudentRecord(payload: Record<string, unknown>, isUpdate = false) 
     rm: normalizeText(payload.rm),
     address,
     endereco: address,
+    latitude: toNullableNumber(payload.latitude),
+    longitude: toNullableNumber(payload.longitude),
     parent_contact: parentContact,
     contato_responsavel: parentContact,
     responsible_name: responsibleName,
@@ -123,14 +146,17 @@ function buildStudentRecord(payload: Record<string, unknown>, isUpdate = false) 
     transporte: transportIdentification,
     unit,
     unidade: unit,
+    period: period || null,
+    departure_time: departureTime || null,
+    route_type: routeType || null,
+    custom_route_days_departure: toNullableStringArray(payload.custom_route_days_departure),
+    custom_route_days_return: toNullableStringArray(payload.custom_route_days_return),
     photo_url: photoUrl || null,
     route_id: payload.route_id ?? null,
     updated_at: new Date().toISOString(),
   }
 
   if (!isUpdate) {
-    record.latitude = payload.latitude ?? null
-    record.longitude = payload.longitude ?? null
     record.created_at = new Date().toISOString()
   }
 
@@ -150,6 +176,9 @@ function validateStudentPayload(payload: Record<string, unknown>) {
     'address',
     'transport_identification',
     'unit',
+    'period',
+    'departure_time',
+    'route_type',
   ]
 
   const missingFields = requiredFields.filter((field) => !normalizeText(payload[field]))

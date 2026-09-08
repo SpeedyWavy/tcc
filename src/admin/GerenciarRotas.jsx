@@ -14,9 +14,11 @@ import {
   Wand2,
 } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
+import RouteMap from './components/RouteMap.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import { apiRequest } from '../api.js'
 import { supabase } from '../supabase.js'
+import { ENDERECOS_UNIDADES } from '../lib/unidadesEnderecos.js'
 
 function normalizarVeiculo(veiculo) {
   return {
@@ -36,6 +38,9 @@ function normalizarAluno(aluno) {
     routeId: aluno.route_id ?? null,
     rm: aluno.rm || '',
     unidade: aluno.unit || aluno.unidade || '',
+    endereco: aluno.address || aluno.endereco || '',
+    latitude: aluno.latitude ?? null,
+    longitude: aluno.longitude ?? null,
   }
 }
 
@@ -113,6 +118,7 @@ function GerenciarRotas() {
   const [salvandoEdicaoRotaId, setSalvandoEdicaoRotaId] = useState(null)
   const [excluindoRotaId, setExcluindoRotaId] = useState(null)
   const [gerandoRotas, setGerandoRotas] = useState(false)
+  const [rotaMapaAbertoId, setRotaMapaAbertoId] = useState(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarDados = async () => {
@@ -138,6 +144,8 @@ function GerenciarRotas() {
   useEffect(() => {
     carregarDados()
   }, [])
+
+  const alunosPorId = useMemo(() => new Map(alunos.map((aluno) => [aluno.id, aluno])), [alunos])
 
   const rotasPorVeiculo = useMemo(() => {
     const mapa = new Map()
@@ -347,10 +355,19 @@ function GerenciarRotas() {
         `${data.alunosAlocados} aluno(s) alocado(s)`,
       ]
       if (data.alunosSemVeiculo?.length) {
-        partes.push(`${data.alunosSemVeiculo.length} sem veiculo disponivel`)
+        partes.push(`${data.alunosSemVeiculo.length} sem vaga (capacidade cheia)`)
+      }
+      if (data.alunosSemVeiculoDaUnidade?.length) {
+        partes.push(`${data.alunosSemVeiculoDaUnidade.length} sem nenhum veiculo cadastrado na unidade`)
+      }
+      if (data.alunosSemEnderecoDaUnidade?.length) {
+        partes.push(`${data.alunosSemEnderecoDaUnidade.length} com unidade nao reconhecida`)
       }
       if (data.alunosPersonalizados?.length) {
         partes.push(`${data.alunosPersonalizados.length} com percurso personalizado (atribuicao manual)`)
+      }
+      if (data.alunosSemConfiguracaoRota?.length) {
+        partes.push(`${data.alunosSemConfiguracaoRota.length} sem periodo/horario/tipo de percurso definido`)
       }
       if (data.alunosSemCoordenada?.length) {
         partes.push(`${data.alunosSemCoordenada.length} sem coordenadas cadastradas`)
@@ -576,11 +593,41 @@ function GerenciarRotas() {
                                     {rota.alunos.length === 0 ? (
                                       <p className={styles['vazio']}>Sem alunos vinculados.</p>
                                     ) : (
-                                      rota.alunos.map((aluno) => (
-                                        <p key={aluno.id || aluno.nome || aluno.name}>
-                                          {aluno.nome || aluno.name || 'Aluno sem nome'}
-                                        </p>
-                                      ))
+                                      <>
+                                        {rota.alunos.map((aluno) => (
+                                          <p key={aluno.id || aluno.nome || aluno.name}>
+                                            {aluno.nome || aluno.name || 'Aluno sem nome'}
+                                          </p>
+                                        ))}
+
+                                        <button
+                                          type="button"
+                                          className={styles['rota-ver-mapa']}
+                                          onClick={() =>
+                                            setRotaMapaAbertoId((atual) => (atual === rota.id ? null : rota.id))
+                                          }
+                                        >
+                                          <MapIcon size={16} />
+                                          {rotaMapaAbertoId === rota.id ? 'Ocultar mapa' : 'Ver no mapa'}
+                                        </button>
+
+                                        {rotaMapaAbertoId === rota.id ? (
+                                          <RouteMap
+                                            enderecoOrigem={ENDERECOS_UNIDADES[veiculo.unidade]}
+                                            paradas={rota.alunos.map((aluno) => {
+                                              const completo = alunosPorId.get(aluno.id)
+                                              return {
+                                                id: aluno.id,
+                                                nome: aluno.nome || aluno.name || 'Aluno sem nome',
+                                                endereco: completo?.endereco || aluno.address || '',
+                                                latitude: completo?.latitude ?? aluno.latitude ?? null,
+                                                longitude: completo?.longitude ?? aluno.longitude ?? null,
+                                              }
+                                            })}
+                                            height={240}
+                                          />
+                                        ) : null}
+                                      </>
                                     )}
                                   </div>
 
@@ -650,5 +697,3 @@ function GerenciarRotas() {
 }
 
 export default GerenciarRotas
-
-// 

@@ -394,6 +394,26 @@
   color: #5d68a2;
 }
 
+.rota-ver-mapa {
+  justify-self: start;
+  margin-top: 4px;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: rgba(48, 65, 142, 0.12);
+  color: #30418e;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.rota-ver-mapa:hover {
+  background: rgba(48, 65, 142, 0.2);
+}
+
 .rota-associacao {
   padding: 0 14px 14px;
   display: grid;
@@ -609,5 +629,3 @@
     display: none;
   }
 }
-
-/*  */

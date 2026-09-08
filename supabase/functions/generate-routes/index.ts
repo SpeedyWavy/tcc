@@ -14,6 +14,7 @@
 //
 // Variaveis de ambiente necessarias (configurar via `supabase secrets set`):
 //   SUPABASE_URL                 - preenchida automaticamente pelo Supabase
+//   SUPABASE_ANON_KEY            - preenchida automaticamente pelo Supabase
 //   SUPABASE_SERVICE_ROLE_KEY    - preenchida automaticamente pelo Supabase
 //   GOOGLE_DIRECTIONS_API_KEY    - chave do Google Maps restrita a Directions API
 //                                  (NAO reutilize a VITE_GOOGLE_MAPS_API_KEY do
@@ -24,6 +25,11 @@
 // abaixo (busque por `.capacity`).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const googleApiKey = Deno.env.get('GOOGLE_DIRECTIONS_API_KEY')!
 
 const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -79,6 +85,13 @@ type Veiculo = {
   capacity: number
 }
 
+// Normaliza o texto da unidade (tira espacos nas pontas) antes de comparar -
+// um espaco invisivel em um dos lados (aluno vs veiculo, ou vs UNIT_ADDRESSES)
+// faria a comparacao exata falhar mesmo os textos "parecendo" iguais.
+function normalizarUnidade(value: unknown) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371
   const toRad = (v: number) => (v * Math.PI) / 180
@@ -90,9 +103,6 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-// Clustering geografico com capacidade (variante simplificada de k-means balanceado).
-// Processa primeiro os alunos "mais decididos" (mais perto do centroide mais
-// proximo) pra reduzir alocacoes ruins feitas por ordem de chegada.
 function clusterizarAlunos(alunos: Aluno[], veiculos: Veiculo[]) {
   if (veiculos.length === 0) {
     return { clusters: [] as Aluno[][], sobrando: alunos }
@@ -199,10 +209,6 @@ async function requireAdmin(request: Request) {
   return { user: data.user }
 }
 
-// Usa a Directions API (optimizeWaypoints) pra achar a melhor ordem de visita.
-// Origem e destino sao a propria unidade (o trajeto e tratado como um loop:
-// sai da unidade, visita as casas, volta pra unidade) - assim a mesma ordem
-// serve pra ida e, invertida, pra volta.
 async function otimizarOrdemParadas(enderecoUnidade: string, alunos: Aluno[], apiKey: string): Promise<Aluno[]> {
   if (alunos.length <= 1) {
     return alunos
@@ -233,7 +239,7 @@ async function otimizarOrdemParadas(enderecoUnidade: string, alunos: Aluno[], ap
         resultado.push(...ordem.map((i) => grupo[i]))
       } else {
         console.error('Directions API retornou status', data.status, data.error_message)
-        resultado.push(...grupo) // fallback: mantem a ordem original
+        resultado.push(...grupo)
       }
     } catch (error) {
       console.error('Erro ao chamar Directions API:', error)
@@ -256,15 +262,11 @@ Deno.serve(async (req) => {
     })
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const googleApiKey = Deno.env.get('GOOGLE_DIRECTIONS_API_KEY')
-
-  if (!supabaseUrl || !supabaseServiceKey || !googleApiKey) {
+  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !googleApiKey) {
     return new Response(
       JSON.stringify({
         error:
-          'Variaveis de ambiente ausentes (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY ou GOOGLE_DIRECTIONS_API_KEY).',
+          'Variaveis de ambiente ausentes (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY ou GOOGLE_DIRECTIONS_API_KEY).',
       }),
       { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     )
@@ -278,7 +280,7 @@ Deno.serve(async (req) => {
     )
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
   const [{ data: alunosData, error: erroAlunos }, { data: veiculosData, error: erroVeiculos }] = await Promise.all([
     supabase.from('students').select('*').is('route_id', null),
@@ -293,20 +295,40 @@ Deno.serve(async (req) => {
   }
 
   const todosAlunos = (alunosData || []) as Aluno[]
-  const todosVeiculos = (veiculosData || []) as Veiculo[]
+  const todosVeiculos = (veiculosData || []).map((v: Record<string, unknown>) => ({
+    ...v,
+    capacity: Number(v.capacity) || 0,
+  })) as Veiculo[]
 
-  const alunosPersonalizados = todosAlunos.filter((a) => a.route_type === 'Personalizado')
   const alunosSemCoordenada = todosAlunos.filter((a) => a.latitude == null || a.longitude == null)
-  const alunosElegiveis = todosAlunos.filter(
-    (a) => a.latitude != null && a.longitude != null && a.unit && a.route_type && a.route_type !== 'Personalizado',
+  const alunosPersonalizados = todosAlunos.filter((a) => a.route_type === 'Personalizado')
+
+  // Alunos com coordenada e nao-personalizados, mas com Periodo/Horario de
+  // saida/Tipo de percurso incompletos - nao entram na geracao automatica
+  // porque esses 3 campos sao a chave usada pra agrupar quem pode dividir
+  // o mesmo veiculo. Reportados separadamente pra nao sumir silenciosamente.
+  const alunosSemConfiguracaoRota = todosAlunos.filter(
+    (a) =>
+      a.latitude != null &&
+      a.longitude != null &&
+      a.route_type !== 'Personalizado' &&
+      (!a.unit || !a.period || !a.departure_time || !a.route_type),
   )
 
-  // Agrupa por unidade + periodo + horario de saida (um veiculo so pode estar
-  // num lugar por vez, entao esses tres campos juntos definem quem PODE
-  // dividir o mesmo veiculo)
+  const alunosElegiveis = todosAlunos.filter(
+    (a) =>
+      a.latitude != null &&
+      a.longitude != null &&
+      a.unit &&
+      a.period &&
+      a.departure_time &&
+      a.route_type &&
+      a.route_type !== 'Personalizado',
+  )
+
   const grupos = new Map<string, Aluno[]>()
   for (const aluno of alunosElegiveis) {
-    const chave = `${aluno.unit}|${aluno.period || ''}|${aluno.departure_time || ''}`
+    const chave = `${normalizarUnidade(aluno.unit)}|${aluno.period || ''}|${aluno.departure_time || ''}`
     const lista = grupos.get(chave) || []
     lista.push(aluno)
     grupos.set(chave, lista)
@@ -316,8 +338,11 @@ Deno.serve(async (req) => {
     rotasCriadas: 0,
     alunosAlocados: 0,
     alunosSemVeiculo: [] as string[],
+    alunosSemVeiculoDaUnidade: [] as string[],
+    alunosSemEnderecoDaUnidade: [] as string[],
     alunosSemCoordenada: alunosSemCoordenada.map((a) => a.name),
     alunosPersonalizados: alunosPersonalizados.map((a) => a.name),
+    alunosSemConfiguracaoRota: alunosSemConfiguracaoRota.map((a) => a.name),
   }
 
   for (const [chave, alunosDoGrupo] of grupos) {
@@ -326,18 +351,33 @@ Deno.serve(async (req) => {
 
     if (!enderecoUnidade) {
       console.error(`Unidade "${unidade}" nao tem endereco cadastrado em UNIT_ADDRESSES.`)
-      resumo.alunosSemVeiculo.push(...alunosDoGrupo.map((a) => a.name))
+      resumo.alunosSemEnderecoDaUnidade.push(...alunosDoGrupo.map((a) => a.name))
       continue
     }
 
-    const veiculosDaUnidade = todosVeiculos.filter((v) => v.unit === unidade && v.capacity > 0)
+    const veiculosDaUnidade = todosVeiculos.filter((v) => normalizarUnidade(v.unit) === unidade && v.capacity > 0)
 
     if (veiculosDaUnidade.length === 0) {
-      resumo.alunosSemVeiculo.push(...alunosDoGrupo.map((a) => a.name))
+      console.error(
+        `Nenhum veiculo com capacidade > 0 encontrado para a unidade "${unidade}". Unidades disponiveis nos veiculos: ${[
+          ...new Set(todosVeiculos.map((v) => normalizarUnidade(v.unit))),
+        ].join(', ')}`,
+      )
+      resumo.alunosSemVeiculoDaUnidade.push(...alunosDoGrupo.map((a) => a.name))
       continue
     }
 
+    console.log(
+      `[DEBUG] Grupo "${chave}": ${alunosDoGrupo.length} aluno(s), veiculos candidatos:`,
+      JSON.stringify(veiculosDaUnidade.map((v) => ({ id: v.id, capacity: v.capacity, tipo: typeof v.capacity }))),
+    )
+
     const { clusters, sobrando } = clusterizarAlunos(alunosDoGrupo, veiculosDaUnidade)
+
+    console.log(
+      `[DEBUG] Resultado do clustering: ${clusters.map((c) => c.length).join(', ')} aluno(s) por veiculo | sobrando: ${sobrando.length}`,
+    )
+
     resumo.alunosSemVeiculo.push(...sobrando.map((a) => a.name))
 
     for (let i = 0; i < veiculosDaUnidade.length; i++) {
