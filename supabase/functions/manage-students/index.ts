@@ -48,11 +48,14 @@ function toNullableStringArray(value: unknown) {
 
 function shouldSkipStudentValidation(payload: Record<string, unknown>) {
   const keys = Object.keys(payload)
-  if (!keys.includes('route_id')) {
+  const camposDeRota = ['route_id', 'route_id_ida', 'route_id_volta', 'photo_path', 'photo_url']
+  const temAlgumCampoDeRota = keys.some((key) => key === 'route_id' || key === 'route_id_ida' || key === 'route_id_volta')
+
+  if (!temAlgumCampoDeRota) {
     return false
   }
 
-  return keys.every((key) => ['route_id', 'photo_path', 'photo_url'].includes(key))
+  return keys.every((key) => camposDeRota.includes(key))
 }
 
 function jsonResponse(request: Request, body: unknown, status = 200) {
@@ -153,6 +156,8 @@ function buildStudentRecord(payload: Record<string, unknown>, isUpdate = false) 
     custom_route_days_return: toNullableStringArray(payload.custom_route_days_return),
     photo_url: photoUrl || null,
     route_id: payload.route_id ?? null,
+    route_id_ida: payload.route_id_ida ?? null,
+    route_id_volta: payload.route_id_volta ?? null,
     updated_at: new Date().toISOString(),
   }
 
@@ -243,7 +248,19 @@ async function updateStudent(request: Request, studentId: string, payload: Recor
   }
 
   const mergedPayload = { ...(existingStudent || {}), ...payload }
-  if (payload.route_id !== undefined && payload.route_id !== null && existingStudent?.route_id && existingStudent.route_id !== payload.route_id) {
+
+  const conflitaIda =
+    payload.route_id_ida !== undefined &&
+    payload.route_id_ida !== null &&
+    existingStudent?.route_id_ida &&
+    existingStudent.route_id_ida !== payload.route_id_ida
+  const conflitaVolta =
+    payload.route_id_volta !== undefined &&
+    payload.route_id_volta !== null &&
+    existingStudent?.route_id_volta &&
+    existingStudent.route_id_volta !== payload.route_id_volta
+
+  if (conflitaIda || conflitaVolta) {
     return jsonResponse(request, { detail: 'Este aluno já está vinculado a outra rota.' }, 400)
   }
 

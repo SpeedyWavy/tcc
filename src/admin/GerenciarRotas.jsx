@@ -36,6 +36,8 @@ function normalizarAluno(aluno) {
     id: aluno.id,
     nome: aluno.nome || aluno.name || 'Aluno sem nome',
     routeId: aluno.route_id ?? null,
+    routeIdIda: aluno.route_id_ida ?? null,
+    routeIdVolta: aluno.route_id_volta ?? null,
     rm: aluno.rm || '',
     unidade: aluno.unit || aluno.unidade || '',
     endereco: aluno.address || aluno.endereco || '',
@@ -49,7 +51,9 @@ function normalizarRota(rota) {
     id: rota.id,
     vehicleId: rota.vehicle_id,
     driverId: rota.driver_id,
-    horario: rota.horario || 'Sem horario',
+    horario: rota.horario_label || rota.horario || 'Sem horario',
+    horarioInicio: rota.horario_inicio || null,
+    direction: rota.direction || null,
     status: rota.status || 'Aguardando Saida',
     createdAt: rota.created_at || rota.updated_at || null,
     alunos: Array.isArray(rota.students) ? rota.students : [],
@@ -228,7 +232,10 @@ function GerenciarRotas() {
       return
     }
 
-    if (aluno.routeId && aluno.routeId !== rota.id) {
+    const campo = rota.direction === 'Ida' ? 'routeIdIda' : rota.direction === 'Volta' ? 'routeIdVolta' : 'routeId'
+    const vinculoAtual = aluno[campo]
+
+    if (vinculoAtual && vinculoAtual !== rota.id) {
       showError('Este aluno já está vinculado a outra rota.')
       return
     }
@@ -236,9 +243,12 @@ function GerenciarRotas() {
     setAssociandoAlunoId(rota.id)
 
     try {
+      const campoPayload =
+        rota.direction === 'Ida' ? 'route_id_ida' : rota.direction === 'Volta' ? 'route_id_volta' : 'route_id'
+
       await apiRequest(`/api/students/${aluno.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ route_id: rota.id }),
+        body: JSON.stringify({ [campoPayload]: rota.id }),
       })
 
       await carregarDados()
@@ -351,7 +361,7 @@ function GerenciarRotas() {
       await carregarDados()
 
       const partes = [
-        `${data.rotasCriadas} rota(s) criada(s)`,
+        `${data.rotasCriadas} rota(s) criada(s) (${data.rotasIda ?? 0} ida, ${data.rotasVolta ?? 0} volta)`,
         `${data.alunosAlocados} aluno(s) alocado(s)`,
       ]
       if (data.alunosSemVeiculo?.length) {
@@ -483,7 +493,11 @@ function GerenciarRotas() {
                               <div className={styles['rota-linha']}>
                                 <div className={styles['rotas-celula--veiculo']}>
                                   <ChevronRight className={styles['rotas-seta']} />
-                                  <span className={styles['rotas-nome-veiculo']}>{`Rota ${indice + 1}`}</span>
+                                  <span className={styles['rotas-nome-veiculo']}>
+                                    {`Rota ${indice + 1}`}
+                                    {rota.direction ? ` · ${rota.direction}` : ''}
+                                    {rota.horarioInicio ? ` (${rota.horarioInicio})` : ''}
+                                  </span>
                                   <div className={styles['rota-menu-wrap']}>
                                     <button
                                       type="button"
@@ -648,7 +662,15 @@ function GerenciarRotas() {
                                   >
                                     <option value="">Selecione um aluno</option>
                                     {alunos
-                                      .filter((aluno) => !aluno.routeId || aluno.routeId === rota.id)
+                                      .filter((aluno) => {
+                                        const vinculoAtual =
+                                          rota.direction === 'Ida'
+                                            ? aluno.routeIdIda
+                                            : rota.direction === 'Volta'
+                                              ? aluno.routeIdVolta
+                                              : aluno.routeId
+                                        return !vinculoAtual || vinculoAtual === rota.id
+                                      })
                                       .map((aluno) => (
                                         <option key={aluno.id} value={aluno.id}>
                                           {aluno.nome} {aluno.rm ? `- ${aluno.rm}` : ''}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './css/GerenciarVeiculos.module.css'
 import { ArrowLeft, ArrowDownNarrowWide, Bus, CirclePlus, Search, ChevronRight, ChevronDown } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
@@ -26,11 +27,13 @@ function GerenciarVeiculos() {
   const [motoristas, setMotoristas] = useState([])
   const [busca, setBusca] = useState('')
   const [menuAberto, setMenuAberto] = useState(null)
+  const [menuPosicao, setMenuPosicao] = useState({ top: 0, left: 0 })
   const [filtroAberto, setFiltroAberto] = useState(false)
   const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], capacidade: [], status: [], motorista: [] })
   const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], capacidade: [], status: [], motorista: [] })
   const [formSubmitting, setFormSubmitting] = useState(false)
   const menuRef = useRef(null)
+  const popoverRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarVeiculos = async () => {
@@ -62,7 +65,9 @@ function GerenciarVeiculos() {
     }
 
     const fecharAoClicarFora = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      const dentroTrigger = menuRef.current && menuRef.current.contains(event.target)
+      const dentroPopover = popoverRef.current && popoverRef.current.contains(event.target)
+      if (!dentroTrigger && !dentroPopover) {
         setMenuAberto(null)
       }
     }
@@ -464,7 +469,10 @@ function GerenciarVeiculos() {
               >
                 {veiculoAberto === veiculo.id ? <ChevronDown className={styles['setinha']} /> : <ChevronRight className={styles['setinha']} />}
                 <h1>{veiculo.identification || veiculo.model || veiculo.license_plate}</h1>
-                <div className={styles['item-acoes']} ref={menuAberto === veiculo.id ? menuRef : null}>
+                <div
+                  className={styles['item-acoes']}
+                  ref={menuAberto === veiculo.id ? menuRef : null}
+                >
                   <button
                     type="button"
                     className={styles['item-acoes-trigger']}
@@ -473,21 +481,36 @@ function GerenciarVeiculos() {
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      setMenuAberto((atual) => (atual === veiculo.id ? null : veiculo.id))
+
+                      if (menuAberto === veiculo.id) {
+                        setMenuAberto(null)
+                        return
+                      }
+
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      const left = Math.min(Math.max(8, rect.right - 140), window.innerWidth - 148)
+                      setMenuPosicao({ top: rect.bottom + 8, left })
+                      setMenuAberto(veiculo.id)
                     }}
                   >
                     &#8801;
                   </button>
 
-                  {menuAberto === veiculo.id && (
-                    <div className={styles['item-acoes-popover']} role="menu">
+                  {menuAberto === veiculo.id && createPortal(
+                    <div
+                      ref={popoverRef}
+                      className={styles['item-acoes-popover']}
+                      role="menu"
+                      style={{ position: 'fixed', top: menuPosicao.top, left: menuPosicao.left }}
+                    >
                       <button type="button" onClick={() => abrirEditor(veiculo)}>
                         Editar
                       </button>
                       <button type="button" onClick={() => excluirVeiculo(veiculo)}>
                         Excluir
                       </button>
-                    </div>
+                    </div>,
+                    document.body,
                   )}
                 </div>
               </div>
@@ -513,5 +536,3 @@ function GerenciarVeiculos() {
 }
 
 export default GerenciarVeiculos
-
-// 

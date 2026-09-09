@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './css/GerenciarMotoristas.module.css'
 import motorista2 from '../assets/motorista2.png'
 import motorista3 from '../assets/motorista3.png'
@@ -41,6 +42,7 @@ function GerenciarMotoristas() {
   const [motoristas, setMotoristas] = useState([])
   const [busca, setBusca] = useState('')
   const [menuAberto, setMenuAberto] = useState(null)
+  const [menuPosicao, setMenuPosicao] = useState({ top: 0, left: 0 })
   const [filtroAberto, setFiltroAberto] = useState(false)
   const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], horarios: [], transporte: [] })
   const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], horarios: [], transporte: [] })
@@ -48,6 +50,7 @@ function GerenciarMotoristas() {
   const [fotoUrlArmazenado, setFotoUrlArmazenado] = useState(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const menuRef = useRef(null)
+  const popoverRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarMotoristas = async () => {
@@ -69,7 +72,9 @@ function GerenciarMotoristas() {
     }
 
     const fecharAoClicarFora = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      const dentroTrigger = menuRef.current && menuRef.current.contains(event.target)
+      const dentroPopover = popoverRef.current && popoverRef.current.contains(event.target)
+      if (!dentroTrigger && !dentroPopover) {
         setMenuAberto(null)
       }
     }
@@ -617,7 +622,10 @@ function GerenciarMotoristas() {
               >
                 {motoristaAberto === motorista.id ? <ChevronDown className={styles['setinha']} /> : <ChevronRight className={styles['setinha']} />}
                 <h1>{motorista.full_name}</h1>
-                <div className={styles['item-acoes']} ref={menuAberto === motorista.id ? menuRef : null}>
+                <div
+                  className={styles['item-acoes']}
+                  ref={menuAberto === motorista.id ? menuRef : null}
+                >
                   <button
                     type="button"
                     className={styles['item-acoes-trigger']}
@@ -626,21 +634,36 @@ function GerenciarMotoristas() {
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      setMenuAberto((atual) => (atual === motorista.id ? null : motorista.id))
+
+                      if (menuAberto === motorista.id) {
+                        setMenuAberto(null)
+                        return
+                      }
+
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      const left = Math.min(Math.max(8, rect.right - 140), window.innerWidth - 148)
+                      setMenuPosicao({ top: rect.bottom + 8, left })
+                      setMenuAberto(motorista.id)
                     }}
                   >
                     &#8801;
                   </button>
 
-                  {menuAberto === motorista.id && (
-                    <div className={styles['item-acoes-popover']} role="menu">
+                  {menuAberto === motorista.id && createPortal(
+                    <div
+                      ref={popoverRef}
+                      className={styles['item-acoes-popover']}
+                      role="menu"
+                      style={{ position: 'fixed', top: menuPosicao.top, left: menuPosicao.left }}
+                    >
                       <button type="button" onClick={() => abrirEditor(motorista)}>
                         Editar
                       </button>
                       <button type="button" onClick={() => excluirMotorista(motorista)}>
                         Excluir
                       </button>
-                    </div>
+                    </div>,
+                    document.body,
                   )}
                 </div>
               </div>
@@ -678,5 +701,3 @@ function GerenciarMotoristas() {
 }
 
 export default GerenciarMotoristas
-
-// 

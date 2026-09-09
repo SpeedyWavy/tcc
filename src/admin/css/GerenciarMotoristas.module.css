@@ -240,9 +240,6 @@
 }
 
 .item-acoes-popover{
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
     min-width: 140px;
     background: #dfe2f7;
     border-radius: 12px;
