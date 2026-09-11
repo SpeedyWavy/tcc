@@ -496,7 +496,6 @@ function GerenciarRotas() {
                                   <span className={styles['rotas-nome-veiculo']}>
                                     {`Rota ${indice + 1}`}
                                     {rota.direction ? ` · ${rota.direction}` : ''}
-                                    {rota.horarioInicio ? ` (${rota.horarioInicio})` : ''}
                                   </span>
                                   <div className={styles['rota-menu-wrap']}>
                                     <button
@@ -540,7 +539,15 @@ function GerenciarRotas() {
                                 </div>
 
                                 <div className={styles['rotas-celula--status']}>
-                                  {renderizarStatus(rota.status, styles, `Horario ${indice + 1}`)}
+                                  {renderizarStatus(
+                                    rota.status,
+                                    styles,
+                                    rota.horarioInicio
+                                      ? `Horario ${rota.horarioInicio}`
+                                      : rota.horario && rota.horario !== 'Sem horario'
+                                        ? rota.horario
+                                        : `Horario ${indice + 1}`,
+                                  )}
                                 </div>
                               </div>
 

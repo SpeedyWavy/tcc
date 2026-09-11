@@ -51,6 +51,8 @@ function GerenciarAlunos() {
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [editorAberto, setEditorAberto] = useState(false)
   const [passoCadastro, setPassoCadastro] = useState(1)
+  const [rotaSugerida, setRotaSugerida] = useState(null)
+  const [atribuindoRotaAutomatica, setAtribuindoRotaAutomatica] = useState(false)
   const [passoEdicao, setPassoEdicao] = useState('dados')
   const [novoAluno, setNovoAluno] = useState(alunoInicial)
   const [enderecoForm, setEnderecoForm] = useState(enderecoInicial)
@@ -129,6 +131,8 @@ function GerenciarAlunos() {
     setEnderecoForm(enderecoInicial)
     setFotoUrlArmazenado(null)
     setPhotoUploading(false)
+    setRotaSugerida(null)
+    setAtribuindoRotaAutomatica(false)
   }
 
   const abrirEditor = (aluno) => {
@@ -502,7 +506,7 @@ function GerenciarAlunos() {
     try {
       const coordenadasFinais = await refinarCoordenadasComNumero()
 
-      await apiRequest('/api/students', {
+      const alunoCriado = await apiRequest('/api/students', {
         method: 'POST',
         body: JSON.stringify({
           name: nome,
@@ -525,13 +529,47 @@ function GerenciarAlunos() {
       })
 
       await carregarAlunos()
-      showSuccess('Aluno cadastrado com sucesso.')
-      fecharAdicionar()
+
+      if (transporte === 'Automático' && alunoCriado?.id) {
+        setAtribuindoRotaAutomatica(true)
+        try {
+          await supabase.functions.invoke('generate-routes', { method: 'POST' })
+
+          const alunoAtualizado = await apiRequest(`/api/students/${alunoCriado.id}`)
+          const rotaId = alunoAtualizado?.route_id_ida || alunoAtualizado?.route_id_volta
+
+          if (rotaId) {
+            const rotas = await apiRequest('/api/routes')
+            const rotaEncontrada = Array.isArray(rotas) ? rotas.find((r) => r.id === rotaId) : null
+            setRotaSugerida(
+              rotaEncontrada
+                ? `${rotaEncontrada.vehicle_name}${rotaEncontrada.direction ? ` · ${rotaEncontrada.direction}` : ''}${
+                    rotaEncontrada.horario_inicio ? ` (${rotaEncontrada.horario_inicio})` : ''
+                  }`
+                : 'Rota atribuída',
+            )
+          } else {
+            setRotaSugerida('Ainda sem rota disponível (aguardando veículo ou horário compatível).')
+          }
+        } catch (error) {
+          setRotaSugerida('Não foi possível calcular a rota automaticamente agora.')
+        } finally {
+          setAtribuindoRotaAutomatica(false)
+        }
+      } else {
+        showSuccess('Aluno cadastrado com sucesso.')
+        fecharAdicionar()
+      }
     } catch (error) {
       showError(error.message || 'Erro ao cadastrar aluno.')
     } finally {
       setFormSubmitting(false)
     }
+  }
+
+  const concluirCadastroAutomatico = () => {
+    showSuccess('Aluno cadastrado com sucesso.')
+    fecharAdicionar()
   }
 
   const salvarEdicaoAluno = async (e) => {
@@ -671,7 +709,28 @@ function GerenciarAlunos() {
       {formularioAberto && (
         <div className={styles['boadd-overlay']} onClick={fecharAdicionar}>
           <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
-            {passoCadastro === 1 && (
+            {atribuindoRotaAutomatica || rotaSugerida !== null ? (
+              <div className={styles['auto-resultado']}>
+                <span
+                  className={`${styles['auto-label']} ${!atribuindoRotaAutomatica ? styles['auto-label--flutuando'] : ''}`}
+                >
+                  Automático
+                </span>
+                <p className={styles['auto-sugestao']}>
+                  {atribuindoRotaAutomatica ? 'Calculando a melhor rota...' : rotaSugerida}
+                </p>
+                <button
+                  type="button"
+                  className={styles['boadd-confirmar']}
+                  onClick={concluirCadastroAutomatico}
+                  disabled={atribuindoRotaAutomatica}
+                >
+                  {atribuindoRotaAutomatica ? 'Aguarde...' : 'Concluir'}
+                </button>
+              </div>
+            ) : (
+              <>
+                {passoCadastro === 1 && (
               <div className={styles['boadd-top']}>
                 <PhotoUpload
                   photoUrl={novoAluno.fotoUrl}
@@ -743,8 +802,13 @@ function GerenciarAlunos() {
                   <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
                   <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
 
-                  <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
-                    <option value="Automático">Automático</option>
+                  <select
+                    value={novoAluno.transporte}
+                    onChange={atualizarCampo('transporte')}
+                    required
+                    className={novoAluno.transporte === 'Automático' ? styles['select-automatico'] : ''}
+                  >
+                    <option value="Automático" style={{ fontStyle: 'italic', color: '#6b7398' }}>Automático</option>
                     {opcoesVeiculo.map((value) => (
                       <option key={value} value={value}>{value}</option>
                     ))}
@@ -866,6 +930,8 @@ function GerenciarAlunos() {
                 </>
               )}
             </form>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -407,14 +407,17 @@ function GerenciarMotoristas() {
                   entityType="driver"
                   entityId={motoristaEmEdicao?.id}
                   userName={novoMotorista.nome}
+                  size={72}
+                  iconSize={26}
+                  badgeSize={26}
                 />
+                <input type="text" placeholder="Digite o nome do motorista" value={novoMotorista.nome} onChange={atualizarCampo('nome')} />
               </div>
             )}
 
             <form className={styles['boadd-form']} onSubmit={enviarNovoMotorista}>
               {passoCadastro === 1 ? (
                 <>
-                  <input type="text" placeholder="Digite o nome do motorista" value={novoMotorista.nome} onChange={atualizarCampo('nome')} />
                   <input type="text" placeholder="Insira o CPF" value={novoMotorista.cpf} onChange={atualizarCampo('cpf')} inputMode="numeric" maxLength={14} required />
                   <input type="text" placeholder="Insira o RG" value={novoMotorista.rg} onChange={atualizarCampo('rg')} inputMode="numeric" maxLength={12} />
 
@@ -503,14 +506,17 @@ function GerenciarMotoristas() {
                   entityType="driver"
                   entityId={motoristaEmEdicao?.id}
                   userName={novoMotorista.nome}
+                  size={72}
+                  iconSize={26}
+                  badgeSize={26}
                 />
+                <input type="text" placeholder="Digite o nome do motorista" value={novoMotorista.nome} onChange={atualizarCampo('nome')} />
               </div>
             )}
 
             <form className={styles['boadd-form']} onSubmit={salvarEdicaoMotorista}>
               {passoEdicao === 1 ? (
                 <>
-                  <input type="text" placeholder="Digite o nome do motorista" value={novoMotorista.nome} onChange={atualizarCampo('nome')} />
                   <input type="text" placeholder="Insira o CPF" value={novoMotorista.cpf} onChange={atualizarCampo('cpf')} inputMode="numeric" maxLength={14} required />
                   <input type="text" placeholder="Insira o RG" value={novoMotorista.rg} onChange={atualizarCampo('rg')} inputMode="numeric" maxLength={12} />
 
@@ -673,7 +679,7 @@ function GerenciarMotoristas() {
                   <div className={styles['motorista-card-top']}>
                     <div className={styles['motorista-foto']}>
                       {motorista.photo_url ? (
-                        <img src={motorista.photo_url} alt={motorista.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={motorista.photo_url} alt={motorista.full_name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       ) : (
                         <span style={{ color: '#999', fontSize: '24px' }}>📷</span>
                       )}

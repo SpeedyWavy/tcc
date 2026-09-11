@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './css/GerenciarAdministradores.module.css'
 import { ArrowLeft, CirclePlus, Search, ChevronDown, ChevronRight, Users } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
@@ -23,8 +24,10 @@ function GerenciarAdministradores() {
   const [administradores, setAdministradores] = useState([])
   const [busca, setBusca] = useState('')
   const [menuAberto, setMenuAberto] = useState(null)
+  const [menuPosicao, setMenuPosicao] = useState({ top: 0, left: 0 })
   const [formSubmitting, setFormSubmitting] = useState(false)
   const menuRef = useRef(null)
+  const popoverRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarAdministradores = async () => {
@@ -46,7 +49,9 @@ function GerenciarAdministradores() {
     }
 
     const fecharAoClicarFora = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      const dentroTrigger = menuRef.current && menuRef.current.contains(event.target)
+      const dentroPopover = popoverRef.current && popoverRef.current.contains(event.target)
+      if (!dentroTrigger && !dentroPopover) {
         setMenuAberto(null)
       }
     }
@@ -352,7 +357,10 @@ function GerenciarAdministradores() {
                   <ChevronRight className={styles['setinha']} />
                 )}
                 <h1>{administrador.full_name}</h1>
-                <div className={styles['item-acoes']} ref={menuAberto === administrador.id ? menuRef : null}>
+                <div
+                  className={styles['item-acoes']}
+                  ref={menuAberto === administrador.id ? menuRef : null}
+                >
                   <button
                     type="button"
                     className={styles['item-acoes-trigger']}
@@ -361,21 +369,36 @@ function GerenciarAdministradores() {
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      setMenuAberto((atual) => (atual === administrador.id ? null : administrador.id))
+
+                      if (menuAberto === administrador.id) {
+                        setMenuAberto(null)
+                        return
+                      }
+
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      const left = Math.min(Math.max(8, rect.right - 140), window.innerWidth - 148)
+                      setMenuPosicao({ top: rect.bottom + 8, left })
+                      setMenuAberto(administrador.id)
                     }}
                   >
                     &#8801;
                   </button>
 
-                  {menuAberto === administrador.id && (
-                    <div className={styles['item-acoes-popover']} role="menu">
+                  {menuAberto === administrador.id && createPortal(
+                    <div
+                      ref={popoverRef}
+                      className={styles['item-acoes-popover']}
+                      role="menu"
+                      style={{ position: 'fixed', top: menuPosicao.top, left: menuPosicao.left }}
+                    >
                       <button type="button" onClick={() => abrirEditor(administrador)}>
                         Editar
                       </button>
                       <button type="button" onClick={() => excluirAdministrador(administrador)}>
                         Excluir
                       </button>
-                    </div>
+                    </div>,
+                    document.body,
                   )}
                 </div>
               </div>
@@ -398,5 +421,3 @@ function GerenciarAdministradores() {
 }
 
 export default GerenciarAdministradores
-
-// 
