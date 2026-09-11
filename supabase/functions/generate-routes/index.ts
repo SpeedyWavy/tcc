@@ -67,7 +67,6 @@ const UNIT_ADDRESSES: Record<string, string> = {
 }
 
 // Horario-alvo de chegada na unidade pras rotas de IDA, por periodo.
-// Nao existe periodo Integral nesta escola, entao nao entra aqui.
 const HORARIO_CHEGADA_IDA: Record<string, string> = {
   'Manhã': '07:05',
   'Tarde': '12:45',
