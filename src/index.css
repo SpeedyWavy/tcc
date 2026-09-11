@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+html{
+  background: #001355;
+}
+
 /*  */
 body{
   background: #E3E7FF;
@@ -12,8 +16,250 @@ body{
   font-family: "Inter", Arial, "Helvetica Neue", Helvetica, sans-serif;
 }
 
+/* Tema escuro compartilhado entre motorista e administração. A identidade do
+   header (azul e amarelo) é preservada; o contraste muda no conteúdo. */
+html.modo-escuro{
+  color-scheme: dark;
+  background: #1d273b;
+}
+
+html.modo-escuro body,
+html.modo-escuro #root{
+  background: #222c40;
+  color: #c7d0df;
+}
+
+html.modo-escuro .app-page-content > main,
+html.modo-escuro .app-page-content > div:not(.ui-header),
+html.modo-escuro [class*="admin-page"],
+html.modo-escuro [class*="motorista-home"],
+html.modo-escuro [class*="motorista-"][class*="page"]{
+  background: #222c40 !important;
+  color: #c7d0df;
+}
+
+html.modo-escuro .app-page-content :is(input, textarea, select){
+  background: #465574 !important;
+  color: #d5ddeb !important;
+  border-color: #7080a2 !important;
+}
+
+html.modo-escuro .app-page-content :is(input, textarea, select)::placeholder{
+  color: #bac4d6;
+}
+
+html.modo-escuro [class*="aluno-detalhes"],
+html.modo-escuro [class*="aluno-item"] > [class*="aluno"],
+html.modo-escuro [class*="motorista-item"] > [class*="motorista"],
+html.modo-escuro [class*="motorista-card"],
+html.modo-escuro [class*="contato"],
+html.modo-escuro [class*="revisoes-linha"],
+html.modo-escuro [class*="veiculo-linha"],
+html.modo-escuro [class*="card-aviso"],
+html.modo-escuro [class*="detalhe-item"],
+html.modo-escuro [class*="sheet-aluno"],
+html.modo-escuro [class*="empty-card"]{
+  background: #465574 !important;
+  color: #c7d0df !important;
+  border-color: #71809e !important;
+}
+
+html.modo-escuro .app-page-content :is(
+  [class*="aluno-item"],
+  [class*="aluno-detalhes"],
+  [class*="motorista-item"],
+  [class*="contato"],
+  [class*="revisoes"],
+  [class*="detalhe-item"],
+  [class*="sheet-aluno"]
+) :is(h1, h2, h3, p, span, strong, label){
+  color: #c7d0df !important;
+}
+
+html.modo-escuro .ui-header-extra,
+html.modo-escuro .ui-header-extra :is(span, svg){
+  color: #001355 !important;
+}
+
+html.modo-escuro [class*="config-overlay"],
+html.modo-escuro [class*="dialogo-overlay"]{
+  background: rgba(19, 29, 47, .58);
+}
+
+html.modo-escuro [class*="config-card"],
+html.modo-escuro [class*="config-item"],
+html.modo-escuro [class*="dialogo-card"]{
+  background: #465574 !important;
+  color: #c7d0df !important;
+}
+
+html.modo-escuro .app-page-content :is(
+  [class*="boadd-confirmar"],
+  [class*="boadd-cancelar"],
+  [class*="nova-rota"],
+  [class*="botao-principal"],
+  [class*="botao-secundario"],
+  [class*="botao-navegacao"]
+){
+  background: #526384 !important;
+  color: #e3e8f2 !important;
+  border-color: #8392b0 !important;
+  opacity: 1;
+}
+
+html.modo-escuro .app-page-content :is([class*="boadd-confirmar"], [class*="nova-rota"], [class*="botao-principal"]){
+  background: #304a75 !important;
+}
+
+/* Tabelas administrativas usam fundos translúcidos no tema claro. No modo
+   escuro, cada camada recebe uma cor sólida para evitar o aspecto esbranquiçado. */
+html.modo-escuro [class*="rotas-tabela"],
+html.modo-escuro [class*="revisoes-tabela"]{
+  background: #2c3852 !important;
+  color: #c7d0df !important;
+}
+
+html.modo-escuro :is([class*="rotas-cabecalho"], [class*="revisoes-cabecalho"]){
+  background: #34425f !important;
+  color: #b9c5dd !important;
+  border-color: #667797 !important;
+}
+
+html.modo-escuro :is([class*="veiculo-linha"], [class*="revisoes-celula"]){
+  background: #3a4968 !important;
+  color: #c7d0df !important;
+  border-color: #687a9b !important;
+}
+
+html.modo-escuro :is([class*="rotas-conteudo"], [class*="revisoes-detalhe"]){
+  background: #303e59 !important;
+  color: #c7d0df !important;
+}
+
+html.modo-escuro :is([class*="rota-card"], [class*="rota-linha"]){
+  background: #41506e !important;
+  color: #ced7e6 !important;
+  border-color: #7182a2 !important;
+}
+
+html.modo-escuro :is(
+  [class*="rotas-nome"],
+  [class*="rotas-subtexto"],
+  [class*="rota-linha"] span,
+  [class*="rota-associacao"] label,
+  [class*="revisoes-nome"],
+  [class*="revisoes-celula"] span,
+  [class*="revisoes-detalhe"] :is(p, span)
+){
+  color: #c7d0df !important;
+}
+
+html.modo-escuro :is([class*="rota-associacao"], [class*="rotas-alunos"]){
+  color: #c7d0df !important;
+}
+
+html.modo-escuro [class*="revisoes-menu"]{
+  background: #3a4968 !important;
+  border-color: #7182a2 !important;
+}
+
+html.modo-escuro [class*="ui-button"]{
+  background: #001355 !important;
+}
+
+html.modo-escuro [class*="ui-button"] > button{
+  background: #001355 !important;
+}
+
+/* Formulários de cadastro: os blocos claros originais recebem o mesmo
+   contraste suave do restante do tema escuro. */
+html.modo-escuro [class*="boadd-card"]{
+  background: #2b3751 !important;
+  color: #c7d0df !important;
+}
+
+html.modo-escuro :is(
+  [class*="boadd-unidade"],
+  [class*="boadd-editar-percurso"],
+  [class*="boadd-foto"],
+  [class*="boadd-endereco"]
+){
+  background: #3d4d6d !important;
+  color: #c7d0df !important;
+  border-color: #7182a2 !important;
+}
+
+html.modo-escuro :is(
+  [class*="boadd-label"],
+  [class*="boadd-titulo"],
+  [class*="boadd-unidade"] :is(p, label),
+  [class*="boadd-editar-percurso"]
+){
+  color: #c7d0df !important;
+}
+
+html.modo-escuro :is(
+  [class*="boadd-cancelar"],
+  [class*="boadd-voltar"],
+  [class*="boadd-buscar-cep"]
+){
+  background: #3a4a69 !important;
+  color: #d8dfeb !important;
+  border-color: #8090ae !important;
+}
+
+
 #root{
   min-height: 100vh;
+}
+
+.app-page-content--transitioning{
+  animation: pageEnter 180ms ease-out;
+}
+
+@keyframes pageEnter{
+  from{ opacity: 0; transform: translateY(4px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+
+/* A faixa do painel tem 12px; nas telas internas, 48px. A animação suaviza
+   essa mudança mesmo quando o header da página é trocado pela rota. */
+.app-page-content--transitioning .ui-header:not(.ui-header--compact) .ui-header-extra{
+  transform-origin: top;
+  animation: yellowBandExpand 280ms cubic-bezier(.22, .75, .28, 1) both;
+}
+
+.app-page-content--transitioning .ui-header.ui-header--compact .ui-header-extra{
+  transform-origin: top;
+  animation: yellowBandContract 240ms cubic-bezier(.55, 0, .8, .35) both;
+}
+
+@keyframes yellowBandExpand{
+  from{ height: 12px; bottom: -12px; opacity: .86; }
+  to{ height: 48px; bottom: -48px; opacity: 1; }
+}
+
+@keyframes yellowBandContract{
+  from{ height: 48px; bottom: -48px; opacity: 1; }
+  to{ height: 12px; bottom: -12px; opacity: 1; }
+}
+
+::view-transition-old(root){
+  animation: routeExit 150ms ease-in both;
+}
+
+::view-transition-new(root){
+  animation: routeEnter 220ms ease-out both;
+}
+
+@keyframes routeExit{ to{ opacity: 0; transform: translateY(-3px); } }
+@keyframes routeEnter{ from{ opacity: 0; transform: translateY(5px); } }
+
+@media (prefers-reduced-motion: reduce){
+  .app-page-content--transitioning,
+  .app-page-content--transitioning .ui-header .ui-header-extra,
+  ::view-transition-old(root),
+  ::view-transition-new(root){ animation: none; }
 }
 
 /* Header de todas as paginas do site */

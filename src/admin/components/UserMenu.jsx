@@ -5,6 +5,8 @@ import ActionNotification, { useActionNotification } from './ActionNotification.
 import { clearSession, getStoredUser } from '../../auth.js'
 import styles from './UserMenu.module.css'
 import { formatCpf } from '../formValidators.js'
+import { aplicarModoEscuro, getModoEscuro } from '../../lib/preferenciasMotorista.js'
+import ConfiguracoesModal from '../../motorista/components/ConfiguracoesModal.jsx'
 
 const cadastroInicial = {
   nome: '',
@@ -17,6 +19,7 @@ const cadastroInicial = {
 function UserMenu() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [editorAberto, setEditorAberto] = useState(false)
+  const [configuracoesAbertas, setConfiguracoesAbertas] = useState(false)
   const [cadastro, setCadastro] = useState(cadastroInicial)
   const [usuarioLogado] = useState(() => getStoredUser())
   const menuRef = useRef(null)
@@ -25,6 +28,10 @@ function UserMenu() {
     showError,
     clearNotification,
   } = useActionNotification()
+
+  useEffect(() => {
+    aplicarModoEscuro(getModoEscuro())
+  }, [])
 
   useEffect(() => {
     if (!menuAberto) {
@@ -55,6 +62,11 @@ function UserMenu() {
 
   const fecharEditor = () => {
     setEditorAberto(false)
+  }
+
+  const abrirConfiguracoes = () => {
+    setMenuAberto(false)
+    setConfiguracoesAbertas(true)
   }
 
   const confirmarEdicao = (event) => {
@@ -91,6 +103,9 @@ function UserMenu() {
 
         {menuAberto && (
           <div className={styles['usuario-popover']} role="menu">
+            <button type="button" onClick={abrirConfiguracoes}>
+              Configurações
+            </button>
             <button type="button" onClick={abrirEditor}>
               Editar Cadastro
             </button>
@@ -182,6 +197,7 @@ function UserMenu() {
           </div>
         </div>
       )}
+      {configuracoesAbertas && <ConfiguracoesModal onClose={() => setConfiguracoesAbertas(false)} showNavigation={false} />}
     </>
   )
 }

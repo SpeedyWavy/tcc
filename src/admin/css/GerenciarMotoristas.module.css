@@ -503,7 +503,7 @@
 @keyframes fallIn {
   0% {
     opacity: 0;
-    transform: translateY(-40px);
+    transform: translateY(10px) scale(0.985);
   }
   100% {
     opacity: 1;

@@ -3,6 +3,7 @@ import styles from './css/Rotas.module.css'
 import { ArrowLeft, ChevronDown, ChevronRight, Info, MapPinned, Search } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
 import { apiRequest } from '../api.js'
+import { ListSkeleton } from '../components/Skeleton.jsx'
 
 function normalizarRota(rota) {
   return {
@@ -115,7 +116,7 @@ function Rotas() {
           <div className={styles['coluna-horario']}>Horário</div>
         </div>
 
-        {carregando ? <p className={styles['estado']}>Carregando rotas...</p> : null}
+        {carregando ? <ListSkeleton rows={5} /> : null}
         {erro ? <p className={styles['estado']}>{erro}</p> : null}
 
         {!carregando && !erro ? (

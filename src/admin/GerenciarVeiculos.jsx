@@ -8,6 +8,7 @@ import FilterPanel from './components/FilterPanel.jsx'
 import MotoristaSelect from './components/MotoristaSelect.jsx'
 import { apiRequest } from '../api.js'
 import { formatPlate, isPlateComplete, onlyDigits } from './formValidators.js'
+import { ListSkeleton } from '../components/Skeleton.jsx'
 
 const veiculoInicial = {
   placa: '',
@@ -32,16 +33,20 @@ function GerenciarVeiculos() {
   const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], capacidade: [], status: [], motorista: [] })
   const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], capacidade: [], status: [], motorista: [] })
   const [formSubmitting, setFormSubmitting] = useState(false)
+  const [carregando, setCarregando] = useState(true)
   const menuRef = useRef(null)
   const popoverRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarVeiculos = async () => {
+    setCarregando(true)
     try {
       const data = await apiRequest('/api/vehicles')
       setVeiculos(Array.isArray(data) ? data : [])
     } catch (error) {
       showError(error.message || 'Erro ao carregar veiculos.')
+    } finally {
+      setCarregando(false)
     }
   }
 
@@ -453,7 +458,7 @@ function GerenciarVeiculos() {
         </div>
 
         <div className={styles['alunos-grid']}>
-          {veiculosFiltrados.map((veiculo) => (
+          {carregando ? <ListSkeleton rows={5} /> : veiculosFiltrados.map((veiculo) => (
             <div key={veiculo.id} className={styles['aluno-item']}>
               <div
                 className={`${styles.aluno} ${styles[`aluno${veiculo.id}`]} ${veiculoAberto === veiculo.id ? styles.aberto : ''}`}

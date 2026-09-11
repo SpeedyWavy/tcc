@@ -3,6 +3,7 @@ import { apiRequest } from '../api.js'
 import styles from './css/Veiculo.module.css'
 import { ArrowLeft } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
+import { FieldsSkeleton } from '../components/Skeleton.jsx'
 
 function Veiculo() {
   const [veiculo, setVeiculo] = useState(null)
@@ -57,7 +58,7 @@ function Veiculo() {
 
       <section className={styles['conteudo']}>
         {carregando ? (
-          <div className={styles['status']}>Carregando dados do veículo...</div>
+          <FieldsSkeleton fields={7} />
         ) : erro ? (
           <div className={styles['status']}>{erro}</div>
         ) : veiculo ? (

@@ -12,6 +12,7 @@ import {
 import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import { apiRequest } from '../api.js'
+import { ListSkeleton } from '../components/Skeleton.jsx'
 
 const STORAGE_KEY = 'admin.revisoes.veiculos'
 
@@ -53,14 +54,18 @@ function GerenciarRevisoes() {
   const [editorAberto, setEditorAberto] = useState(false)
   const [veiculoEmEdicao, setVeiculoEmEdicao] = useState(null)
   const [observacaoEdicao, setObservacaoEdicao] = useState('')
+  const [carregando, setCarregando] = useState(true)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarVeiculos = async () => {
+    setCarregando(true)
     try {
       const data = await apiRequest('/api/vehicles')
       setVeiculos(Array.isArray(data) ? data : [])
     } catch (error) {
       showError(error.message || 'Erro ao carregar veiculos.')
+    } finally {
+      setCarregando(false)
     }
   }
 
@@ -202,7 +207,7 @@ function GerenciarRevisoes() {
             <div className={`${styles['revisoes-coluna']} ${styles['revisoes-coluna--data']}`}>Ultima Revisao</div>
           </div>
 
-          {revisoesDaTela.length === 0 ? (
+          {carregando ? <ListSkeleton rows={5} /> : revisoesDaTela.length === 0 ? (
             <div className={styles['revisoes-vazio']}>
               Nenhum veiculo cadastrado encontrado.
             </div>

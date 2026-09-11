@@ -9,6 +9,7 @@ import { getStoredUser } from '../auth.js'
 import { apiRequest } from '../api.js'
 import { ENDERECOS_UNIDADES } from '../lib/unidadesEnderecos.js'
 import { getPreferenciaNavegacao, NAVEGACAO_WAZE } from '../lib/preferenciasMotorista.js'
+import { FieldsSkeleton } from '../components/Skeleton.jsx'
 
 const STATUS_EM_TRANSITO = 'Em Transito'
 const STATUS_CONCLUIDO = 'Concluido'
@@ -242,7 +243,7 @@ function Trajeto() {
 
       <section className={styles['conteudo']}>
         {carregando ? (
-          <p className={styles['estado-carregando']}>Carregando trajeto...</p>
+          <FieldsSkeleton fields={5} />
         ) : erro ? (
           <p className={styles['estado-carregando']}>{erro}</p>
         ) : rotaAguardando ? (

@@ -3,6 +3,7 @@ import styles from './css/Contatos.module.css'
 import { ArrowLeft, Phone, PhoneCall, Search } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
 import { apiRequest } from '../api.js'
+import { ListSkeleton } from '../components/Skeleton.jsx'
 
 function normalizarContato(contato) {
   return {
@@ -110,7 +111,7 @@ function Contatos() {
           />
         </div>
 
-        {carregando ? <p className={styles['estado']}>Carregando contatos...</p> : null}
+        {carregando ? <ListSkeleton rows={4} /> : null}
         {erro ? <p className={styles['estado']}>{erro}</p> : null}
 
         {!carregando && !erro ? (

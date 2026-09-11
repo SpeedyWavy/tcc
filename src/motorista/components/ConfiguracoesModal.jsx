@@ -9,7 +9,7 @@ import {
   NAVEGACAO_WAZE,
 } from '../../lib/preferenciasMotorista.js'
 
-function ConfiguracoesModal({ onClose }) {
+function ConfiguracoesModal({ onClose, showNavigation = true }) {
   const [modoEscuro, setModoEscuroState] = useState(() => getModoEscuro())
   const [preferenciaNavegacao, setPreferenciaNavegacaoState] = useState(() => getPreferenciaNavegacao())
 
@@ -37,6 +37,7 @@ function ConfiguracoesModal({ onClose }) {
           </label>
         </div>
 
+        {showNavigation && (
         <div className={styles['config-item-coluna']}>
           <span>Preferência de Navegação</span>
           <div className={styles['config-radios']}>
@@ -60,6 +61,7 @@ function ConfiguracoesModal({ onClose }) {
             </label>
           </div>
         </div>
+        )}
 
         <button type="button" className={styles['config-fechar']} onClick={onClose}>
           Fechar

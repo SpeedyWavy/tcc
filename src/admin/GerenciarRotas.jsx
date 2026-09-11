@@ -18,6 +18,7 @@ import RouteMap from './components/RouteMap.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import { apiRequest } from '../api.js'
 import { supabase } from '../supabase.js'
+import { ListSkeleton } from '../components/Skeleton.jsx'
 import { ENDERECOS_UNIDADES } from '../lib/unidadesEnderecos.js'
 
 function normalizarVeiculo(veiculo) {
@@ -444,7 +445,7 @@ function GerenciarRotas() {
           </div>
         </section>
 
-        {carregando ? <p className={styles['estado']}>Carregando rotas...</p> : null}
+        {carregando ? <ListSkeleton rows={5} /> : null}
 
         {!carregando ? (
           <section className={styles['rotas-tabela']}>

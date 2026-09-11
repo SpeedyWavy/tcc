@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronDown, ChevronRight, Search } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
 import MiniMap from './components/MiniMap.jsx'
 import { apiRequest } from '../api.js'
+import { ListSkeleton } from '../components/Skeleton.jsx'
 
 const normalizarAluno = (aluno) => ({
   id: aluno.id,
@@ -115,7 +116,7 @@ function Alunos() {
 
         <div className={styles['alunos-grid']}>
           {carregando ? (
-            <p className={styles['estado-lista']}>Carregando alunos...</p>
+            <ListSkeleton rows={6} />
           ) : erro ? (
             <p className={styles['estado-lista']}>{erro}</p>
           ) : alunosFiltrados.length === 0 ? (

@@ -10,6 +10,7 @@ import FilterPanel from './components/FilterPanel.jsx'
 import PhotoUpload from './components/PhotoUpload.jsx'
 import { apiRequest } from '../api.js'
 import { supabase } from '../supabase.js'
+import { ListSkeleton } from '../components/Skeleton.jsx'
 import { formatCpf, formatPhone, isCpfComplete, isPhoneComplete, onlyDigits } from './formValidators.js'
 
 const motoristaInicial = {
@@ -49,16 +50,20 @@ function GerenciarMotoristas() {
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [fotoUrlArmazenado, setFotoUrlArmazenado] = useState(null)
   const [photoUploading, setPhotoUploading] = useState(false)
+  const [carregando, setCarregando] = useState(true)
   const menuRef = useRef(null)
   const popoverRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarMotoristas = async () => {
+    setCarregando(true)
     try {
       const data = await apiRequest('/api/drivers')
       setMotoristas(Array.isArray(data) ? data : [])
     } catch (error) {
       showError(error.message || 'Erro ao carregar motoristas.')
+    } finally {
+      setCarregando(false)
     }
   }
 
@@ -612,7 +617,7 @@ function GerenciarMotoristas() {
         </div>
 
         <div className={styles['motoristas-grid']}>
-          {motoristasFiltrados.map((motorista) => (
+          {carregando ? <ListSkeleton rows={5} /> : motoristasFiltrados.map((motorista) => (
             <div key={motorista.id} className={styles['motorista-item']}>
               <div
                 className={`${styles.motorista} ${styles[`motorista${motorista.id}`]} ${motoristaAberto === motorista.id ? 'aberto' : ''}`}

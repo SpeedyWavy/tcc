@@ -6,6 +6,7 @@ import UserMenu from './components/UserMenu.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
 import { apiRequest } from '../api.js'
 import { formatCpf, isCpfComplete } from './formValidators.js'
+import { ListSkeleton } from '../components/Skeleton.jsx'
 
 const administradorInicial = {
   nome: '',
@@ -26,16 +27,20 @@ function GerenciarAdministradores() {
   const [menuAberto, setMenuAberto] = useState(null)
   const [menuPosicao, setMenuPosicao] = useState({ top: 0, left: 0 })
   const [formSubmitting, setFormSubmitting] = useState(false)
+  const [carregando, setCarregando] = useState(true)
   const menuRef = useRef(null)
   const popoverRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarAdministradores = async () => {
+    setCarregando(true)
     try {
       const data = await apiRequest('/api/admins')
       setAdministradores(Array.isArray(data) ? data : [])
     } catch (error) {
       showError(error.message || 'Erro ao carregar administradores.')
+    } finally {
+      setCarregando(false)
     }
   }
 
@@ -337,7 +342,7 @@ function GerenciarAdministradores() {
         </div>
 
         <div className={styles['alunos-grid']}>
-          {administradoresFiltrados.map((administrador) => (
+          {carregando ? <ListSkeleton rows={5} /> : administradoresFiltrados.map((administrador) => (
             <div key={administrador.id} className={styles['aluno-item']}>
               <div
                 className={`${styles.aluno} ${styles[`aluno${administrador.id}`]} ${administradorAberto === administrador.id ? 'aberto' : ''}`}

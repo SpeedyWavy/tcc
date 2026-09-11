@@ -13,6 +13,7 @@ import AddressAutocompleteInput from './components/AddressAutocompleteInput.jsx'
 import MiniMap from './components/MiniMap.jsx'
 import { apiRequest } from '../api.js'
 import { supabase } from '../supabase.js'
+import { ListSkeleton } from '../components/Skeleton.jsx'
 import { loadGoogleMaps } from '../lib/googleMapsLoader.js'
 import { formatPhone, isPhoneComplete, onlyDigits } from './formValidators.js'
 
@@ -51,8 +52,8 @@ function GerenciarAlunos() {
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [editorAberto, setEditorAberto] = useState(false)
   const [passoCadastro, setPassoCadastro] = useState(1)
-  const [rotaSugerida, setRotaSugerida] = useState(null)
-  const [atribuindoRotaAutomatica, setAtribuindoRotaAutomatica] = useState(false)
+  const [alunosAtribuindoRota, setAlunosAtribuindoRota] = useState(new Set())
+  const [rotas, setRotas] = useState([])
   const [passoEdicao, setPassoEdicao] = useState('dados')
   const [novoAluno, setNovoAluno] = useState(alunoInicial)
   const [enderecoForm, setEnderecoForm] = useState(enderecoInicial)
@@ -69,16 +70,20 @@ function GerenciarAlunos() {
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [fotoUrlArmazenado, setFotoUrlArmazenado] = useState(null)
   const [photoUploading, setPhotoUploading] = useState(false)
+  const [carregando, setCarregando] = useState(true)
   const menuRef = useRef(null)
   const popoverRef = useRef(null)
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarAlunos = async () => {
+    setCarregando(true)
     try {
       const data = await apiRequest('/api/students')
       setAlunos(Array.isArray(data) ? data : [])
     } catch (error) {
       showError(error.message || 'Erro ao carregar alunos.')
+    } finally {
+      setCarregando(false)
     }
   }
 
@@ -91,9 +96,37 @@ function GerenciarAlunos() {
     }
   }
 
+  const carregarRotas = async () => {
+    try {
+      const data = await apiRequest('/api/routes')
+      setRotas(Array.isArray(data) ? data : [])
+    } catch (error) {
+      // silencioso - a descricao da rota so e um extra visual, nao deve
+      // travar a tela de alunos se essa busca falhar
+      console.error('Erro ao carregar rotas:', error)
+    }
+  }
+
+  const atribuirRotaEmSegundoPlano = async (alunoId) => {
+    setAlunosAtribuindoRota((atual) => new Set(atual).add(alunoId))
+    try {
+      await supabase.functions.invoke('generate-routes', { method: 'POST' })
+      await Promise.all([carregarAlunos(), carregarRotas()])
+    } catch (error) {
+      console.error('Erro ao atribuir rota automaticamente:', error)
+    } finally {
+      setAlunosAtribuindoRota((atual) => {
+        const copia = new Set(atual)
+        copia.delete(alunoId)
+        return copia
+      })
+    }
+  }
+
   useEffect(() => {
     carregarAlunos()
     carregarVeiculos()
+    carregarRotas()
   }, [])
 
   useEffect(() => {
@@ -529,47 +562,17 @@ function GerenciarAlunos() {
       })
 
       await carregarAlunos()
+      showSuccess('Aluno cadastrado com sucesso.')
+      fecharAdicionar()
 
       if (transporte === 'Automático' && alunoCriado?.id) {
-        setAtribuindoRotaAutomatica(true)
-        try {
-          await supabase.functions.invoke('generate-routes', { method: 'POST' })
-
-          const alunoAtualizado = await apiRequest(`/api/students/${alunoCriado.id}`)
-          const rotaId = alunoAtualizado?.route_id_ida || alunoAtualizado?.route_id_volta
-
-          if (rotaId) {
-            const rotas = await apiRequest('/api/routes')
-            const rotaEncontrada = Array.isArray(rotas) ? rotas.find((r) => r.id === rotaId) : null
-            setRotaSugerida(
-              rotaEncontrada
-                ? `${rotaEncontrada.vehicle_name}${rotaEncontrada.direction ? ` · ${rotaEncontrada.direction}` : ''}${
-                    rotaEncontrada.horario_inicio ? ` (${rotaEncontrada.horario_inicio})` : ''
-                  }`
-                : 'Rota atribuída',
-            )
-          } else {
-            setRotaSugerida('Ainda sem rota disponível (aguardando veículo ou horário compatível).')
-          }
-        } catch (error) {
-          setRotaSugerida('Não foi possível calcular a rota automaticamente agora.')
-        } finally {
-          setAtribuindoRotaAutomatica(false)
-        }
-      } else {
-        showSuccess('Aluno cadastrado com sucesso.')
-        fecharAdicionar()
+        atribuirRotaEmSegundoPlano(alunoCriado.id)
       }
     } catch (error) {
       showError(error.message || 'Erro ao cadastrar aluno.')
     } finally {
       setFormSubmitting(false)
     }
-  }
-
-  const concluirCadastroAutomatico = () => {
-    showSuccess('Aluno cadastrado com sucesso.')
-    fecharAdicionar()
   }
 
   const salvarEdicaoAluno = async (e) => {
@@ -659,6 +662,25 @@ function GerenciarAlunos() {
     setFiltroAberto((atual) => !atual)
   }
 
+  const descreverRotaDoAluno = (aluno) => {
+    const idsRota = [aluno.route_id_ida, aluno.route_id_volta].filter(Boolean)
+    if (idsRota.length === 0) {
+      return null
+    }
+
+    const descricoes = idsRota
+      .map((id) => rotas.find((rota) => rota.id === id))
+      .filter(Boolean)
+      .map(
+        (rota) =>
+          `${rota.vehicle_name || 'Veiculo'}${rota.direction ? ` · ${rota.direction}` : ''}${
+            rota.horario_inicio ? ` (${rota.horario_inicio})` : ''
+          }`,
+      )
+
+    return descricoes.length > 0 ? descricoes.join(' / ') : null
+  }
+
   const alunosFiltrados = alunos.filter((aluno) => {
     const nome = aluno.name || aluno.nome || ''
     const rm = aluno.rm || ''
@@ -709,28 +731,7 @@ function GerenciarAlunos() {
       {formularioAberto && (
         <div className={styles['boadd-overlay']} onClick={fecharAdicionar}>
           <div className={styles['boadd-card']} onClick={(e) => e.stopPropagation()}>
-            {atribuindoRotaAutomatica || rotaSugerida !== null ? (
-              <div className={styles['auto-resultado']}>
-                <span
-                  className={`${styles['auto-label']} ${!atribuindoRotaAutomatica ? styles['auto-label--flutuando'] : ''}`}
-                >
-                  Automático
-                </span>
-                <p className={styles['auto-sugestao']}>
-                  {atribuindoRotaAutomatica ? 'Calculando a melhor rota...' : rotaSugerida}
-                </p>
-                <button
-                  type="button"
-                  className={styles['boadd-confirmar']}
-                  onClick={concluirCadastroAutomatico}
-                  disabled={atribuindoRotaAutomatica}
-                >
-                  {atribuindoRotaAutomatica ? 'Aguarde...' : 'Concluir'}
-                </button>
-              </div>
-            ) : (
-              <>
-                {passoCadastro === 1 && (
+            {passoCadastro === 1 && (
               <div className={styles['boadd-top']}>
                 <PhotoUpload
                   photoUrl={novoAluno.fotoUrl}
@@ -930,8 +931,6 @@ function GerenciarAlunos() {
                 </>
               )}
             </form>
-              </>
-            )}
           </div>
         </div>
       )}
@@ -1125,66 +1124,84 @@ function GerenciarAlunos() {
         </div>
 
         <div className={styles['alunos-grid']}>
-          {alunosFiltrados.map((aluno) => (
+          {carregando ? <ListSkeleton rows={6} /> : alunosFiltrados.map((aluno) => (
             <div key={aluno.id} className={styles['aluno-item']}>
               <div
-                className={`${styles.aluno} ${styles[`aluno${aluno.id}`]} ${alunoAberto === aluno.id ? styles.aberto : ''}`}
-                onClick={() => alternarAluno(aluno.id)}
+                className={`${styles.aluno} ${styles[`aluno${aluno.id}`]} ${alunoAberto === aluno.id ? styles.aberto : ''} ${alunosAtribuindoRota.has(aluno.id) ? styles['aluno-carregando'] : ''}`}
+                onClick={() => {
+                  if (!alunosAtribuindoRota.has(aluno.id)) {
+                    alternarAluno(aluno.id)
+                  }
+                }}
                 role="button"
-                tabIndex={0}
+                tabIndex={alunosAtribuindoRota.has(aluno.id) ? -1 : 0}
                 onKeyDown={(e) => {
+                  if (alunosAtribuindoRota.has(aluno.id)) {
+                    return
+                  }
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     alternarAluno(aluno.id)
                   }
                 }}
               >
-                {alunoAberto === aluno.id ? <ChevronDown className={styles['setinha']} /> : <ChevronRight className={styles['setinha']} />}
+                {alunosAtribuindoRota.has(aluno.id) ? (
+                  <span className={styles['aluno-carregando-spinner']} />
+                ) : alunoAberto === aluno.id ? (
+                  <ChevronDown className={styles['setinha']} />
+                ) : (
+                  <ChevronRight className={styles['setinha']} />
+                )}
                 <h1>{aluno.name || aluno.nome}</h1>
-                <div
-                  className={`${styles['item-acoes']} ${menuAberto === aluno.id ? styles['item-acoes--aberto'] : ''}`}
-                  ref={menuAberto === aluno.id ? menuRef : null}
-                >
-                  <button
-                    type="button"
-                    className={styles['item-acoes-trigger']}
-                    aria-haspopup="menu"
-                    aria-expanded={menuAberto === aluno.id}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-
-                      if (menuAberto === aluno.id) {
-                        setMenuAberto(null)
-                        return
-                      }
-
-                      const rect = e.currentTarget.getBoundingClientRect()
-                      const left = Math.min(Math.max(8, rect.right - 140), window.innerWidth - 148)
-                      setMenuPosicao({ top: rect.bottom + 8, left })
-                      setMenuAberto(aluno.id)
-                    }}
+                {alunosAtribuindoRota.has(aluno.id) && (
+                  <span className={styles['aluno-carregando-texto']}>Calculando rota...</span>
+                )}
+                {!alunosAtribuindoRota.has(aluno.id) && (
+                  <div
+                    className={`${styles['item-acoes']} ${menuAberto === aluno.id ? styles['item-acoes--aberto'] : ''}`}
+                    ref={menuAberto === aluno.id ? menuRef : null}
                   >
-                    &#8801;
-                  </button>
+                    <button
+                      type="button"
+                      className={styles['item-acoes-trigger']}
+                      aria-haspopup="menu"
+                      aria-expanded={menuAberto === aluno.id}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
 
-                  {menuAberto === aluno.id && createPortal(
-                    <div
-                      ref={popoverRef}
-                      className={styles['item-acoes-popover']}
-                      role="menu"
-                      style={{ position: 'fixed', top: menuPosicao.top, left: menuPosicao.left }}
+                        if (menuAberto === aluno.id) {
+                          setMenuAberto(null)
+                          return
+                        }
+
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        const left = Math.min(Math.max(8, rect.right - 140), window.innerWidth - 148)
+                        setMenuPosicao({ top: rect.bottom + 8, left })
+                        setMenuAberto(aluno.id)
+                      }}
                     >
-                      <button type="button" onClick={() => abrirEditor(aluno)}>
-                        Editar
-                      </button>
-                      <button type="button" onClick={() => excluirAluno(aluno)}>
-                        Excluir
-                      </button>
-                    </div>,
-                    document.body,
-                  )}
-                </div>
+                      &#8801;
+                    </button>
+
+                    {menuAberto === aluno.id && createPortal(
+                      <div
+                        ref={popoverRef}
+                        className={styles['item-acoes-popover']}
+                        role="menu"
+                        style={{ position: 'fixed', top: menuPosicao.top, left: menuPosicao.left }}
+                      >
+                        <button type="button" onClick={() => abrirEditor(aluno)}>
+                          Editar
+                        </button>
+                        <button type="button" onClick={() => excluirAluno(aluno)}>
+                          Excluir
+                        </button>
+                      </div>,
+                      document.body,
+                    )}
+                  </div>
+                )}
               </div>
 
               {alunoAberto === aluno.id && (
@@ -1200,7 +1217,18 @@ function GerenciarAlunos() {
                     <div className={styles['aluno-info']}>
                       <p><strong>RM:</strong> {aluno.rm || 'Não informado'}</p>
                       <p><strong>Unidade:</strong> {aluno.unit || aluno.unidade || 'Não informada'}</p>
-                      <p><strong>Transporte:</strong> {aluno.transport_identification || aluno.transporte || 'Não informado'}</p>
+                      {(aluno.transport_identification || aluno.transporte) === 'Automático' ? (
+                        <p className={styles['transporte-automatico']}>
+                          <strong>Transporte:</strong>{' '}
+                          <span className={styles['transporte-automatico-label']}>Automático</span>
+                          <br />
+                          <span className={styles['transporte-automatico-rota']}>
+                            {descreverRotaDoAluno(aluno) || 'Aguardando atribuição de rota...'}
+                          </span>
+                        </p>
+                      ) : (
+                        <p><strong>Transporte:</strong> {aluno.transport_identification || aluno.transporte || 'Não informado'}</p>
+                      )}
                       <p><strong>Responsável:</strong> {aluno.responsible_name || aluno.responsavel || 'Não informado'}</p>
                       <p><strong>Período:</strong> {aluno.period || aluno.periodo || 'Não informado'}</p>
                       <p><strong>Horário de saída:</strong> {aluno.departure_time || aluno.horario_saida || 'Não informado'}</p>
