@@ -67,6 +67,7 @@ const UNIT_ADDRESSES: Record<string, string> = {
 }
 
 // Horario-alvo de chegada na unidade pras rotas de IDA, por periodo.
+// Nao existe periodo Integral nesta escola, entao nao entra aqui.
 const HORARIO_CHEGADA_IDA: Record<string, string> = {
   'Manhã': '07:05',
   'Tarde': '12:45',
@@ -345,17 +346,24 @@ Deno.serve(async (req) => {
 
   const supabase = createAdminClient()
 
-  const [{ data: alunosData, error: erroAlunos }, { data: veiculosData, error: erroVeiculos }] = await Promise.all([
+  const [
+    { data: alunosData, error: erroAlunos },
+    { data: veiculosData, error: erroVeiculos },
+    { data: rotasData, error: erroRotas },
+  ] = await Promise.all([
     supabase.from('students').select('*'),
     supabase.from('vehicles').select('*'),
+    supabase.from('routes').select('*').eq('status', 'Aguardando Saida'),
   ])
 
-  if (erroAlunos || erroVeiculos) {
+  if (erroAlunos || erroVeiculos || erroRotas) {
     return new Response(
-      JSON.stringify({ error: (erroAlunos || erroVeiculos)?.message || 'Erro ao carregar dados.' }),
+      JSON.stringify({ error: (erroAlunos || erroVeiculos || erroRotas)?.message || 'Erro ao carregar dados.' }),
       { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     )
   }
+
+  const rotasExistentes = rotasData || []
 
   const todosAlunos = (alunosData || []) as Aluno[]
   const todosVeiculos = (veiculosData || []).map((v: Record<string, unknown>) => ({
@@ -394,14 +402,22 @@ Deno.serve(async (req) => {
   async function processarDirecao(direcao: 'Ida' | 'Volta', elegiveis: Aluno[]) {
     const grupos = new Map<string, Aluno[]>()
     for (const aluno of elegiveis) {
-      const chave = `${normalizarUnidade(aluno.unit)}|${aluno.period || ''}|${aluno.departure_time || ''}`
+      // Pra Ida, so unidade+periodo importam (todo mundo que chega no mesmo
+      // horario da manha pode dividir o mesmo veiculo, independente do
+      // horario de saida individual de cada um a tarde). Pra Volta, o
+      // horario de saida E o que define quem sai junto.
+      const chave =
+        direcao === 'Ida'
+          ? `${normalizarUnidade(aluno.unit)}|${aluno.period || ''}`
+          : `${normalizarUnidade(aluno.unit)}|${aluno.period || ''}|${aluno.departure_time || ''}`
       const lista = grupos.get(chave) || []
       lista.push(aluno)
       grupos.set(chave, lista)
     }
 
     for (const [chave, alunosDoGrupo] of grupos) {
-      const [unidade, periodo, horarioSaida] = chave.split('|')
+      const [unidade, periodo, horarioSaidaBruto] = chave.split('|')
+      const horarioSaida = direcao === 'Volta' ? horarioSaidaBruto : ''
       const enderecoUnidade = UNIT_ADDRESSES[unidade]
 
       if (!enderecoUnidade) {
@@ -418,16 +434,57 @@ Deno.serve(async (req) => {
         continue
       }
 
-      const { clusters, sobrando } = clusterizarAlunos(alunosDoGrupo, veiculosDaUnidade)
+      // Rotas do mesmo grupo (mesmo veiculo + direcao + periodo + horario)
+      // que ja existem e ainda nao saíram - tem prioridade sobre criar rota
+      // nova: primeiro completa a vaga que sobrou nelas.
+      const rotaExistentePorVeiculo = new Map(
+        rotasExistentes
+          .filter(
+            (r: any) =>
+              r.direction === direcao &&
+              r.period === periodo &&
+              (direcao === 'Volta' ? r.departure_time === horarioSaida : true),
+          )
+          .map((r: any) => [r.vehicle_id, r]),
+      )
+
+      const veiculosComCapacidadeRestante = veiculosDaUnidade.map((v) => {
+        const rotaExistente = rotaExistentePorVeiculo.get(v.id)
+        const jaOcupado = rotaExistente ? (rotaExistente.stops || []).length : 0
+        return { ...v, capacity: Math.max(0, v.capacity - jaOcupado) }
+      })
+
+      const veiculosDisponiveis = veiculosComCapacidadeRestante.filter((v) => v.capacity > 0)
+
+      if (veiculosDisponiveis.length === 0) {
+        resumo.alunosSemVeiculoDaUnidade.push(...alunosDoGrupo.map((a) => a.name))
+        continue
+      }
+
+      const { clusters, sobrando } = clusterizarAlunos(alunosDoGrupo, veiculosDisponiveis)
       resumo.alunosSemVeiculo.push(...sobrando.map((a) => a.name))
 
-      for (let i = 0; i < veiculosDaUnidade.length; i++) {
-        const alunosDoVeiculo = clusters[i]
-        if (alunosDoVeiculo.length === 0) {
+      for (let i = 0; i < veiculosDisponiveis.length; i++) {
+        const alunosNovosDoVeiculo = clusters[i]
+        if (alunosNovosDoVeiculo.length === 0) {
           continue
         }
 
-        const { ordenados, duracaoSegundos } = await tracarRota(enderecoUnidade, alunosDoVeiculo, googleApiKey)
+        const veiculo = veiculosDisponiveis[i]
+        const rotaExistente = rotaExistentePorVeiculo.get(veiculo.id) as any
+
+        // Se ja existe rota pra esse veiculo/grupo, junta quem ja estava
+        // nela com os alunos novos e retraca a ordem toda (nao so anexa no
+        // final - reotimiza com todo mundo junto).
+        const alunosJaNaRota: Aluno[] = rotaExistente
+          ? ((rotaExistente.stops || [])
+              .map((s: any) => todosAlunos.find((a) => a.id === s.student_id))
+              .filter(Boolean) as Aluno[])
+          : []
+
+        const todosOsAlunosDaRota = [...alunosJaNaRota, ...alunosNovosDoVeiculo]
+
+        const { ordenados, duracaoSegundos } = await tracarRota(enderecoUnidade, todosOsAlunosDaRota, googleApiKey)
 
         let horarioInicio: string | null = null
         if (direcao === 'Ida') {
@@ -440,47 +497,74 @@ Deno.serve(async (req) => {
           horarioInicio = horarioSaida || null
         }
 
-        const { data: novaRota, error: erroRota } = await supabase
-          .from('routes')
-          .insert({
-            vehicle_id: veiculosDaUnidade[i].id,
-            driver_id: veiculosDaUnidade[i].driver_id,
-            direction: direcao,
-            horario: `${periodo} - ${horarioSaida} (${direcao})`.trim(),
-            horario_inicio: horarioInicio,
-            status: 'Aguardando Saida',
-            stops: ordenados.map((aluno, index) => ({
-              student_id: aluno.id,
-              student_name: aluno.name,
-              address: aluno.address,
-              order: index + 1,
-            })),
-          })
-          .select()
-          .single()
+        const horarioLabel =
+          direcao === 'Volta'
+            ? `${periodo} - ${horarioSaida} (Volta)`.trim()
+            : `${periodo}${horarioInicio ? ` - ${horarioInicio}` : ''} (Ida)`.trim()
 
-        if (erroRota || !novaRota) {
-          console.error('Erro ao criar rota:', erroRota)
-          resumo.alunosSemVeiculo.push(...alunosDoVeiculo.map((a) => a.name))
-          continue
+        const stopsAtualizados = ordenados.map((aluno, index) => ({
+          student_id: aluno.id,
+          student_name: aluno.name,
+          address: aluno.address,
+          order: index + 1,
+        }))
+
+        let rotaId: string
+
+        if (rotaExistente) {
+          const { error: erroUpdateRota } = await supabase
+            .from('routes')
+            .update({ stops: stopsAtualizados, horario_inicio: horarioInicio, horario: horarioLabel })
+            .eq('id', rotaExistente.id)
+
+          if (erroUpdateRota) {
+            console.error('Erro ao atualizar rota existente:', erroUpdateRota)
+            resumo.alunosSemVeiculo.push(...alunosNovosDoVeiculo.map((a) => a.name))
+            continue
+          }
+
+          rotaId = rotaExistente.id
+        } else {
+          const { data: novaRota, error: erroRota } = await supabase
+            .from('routes')
+            .insert({
+              vehicle_id: veiculo.id,
+              driver_id: veiculo.driver_id,
+              direction: direcao,
+              period: periodo,
+              departure_time: direcao === 'Volta' ? horarioSaida : null,
+              horario: horarioLabel,
+              horario_inicio: horarioInicio,
+              status: 'Aguardando Saida',
+              stops: stopsAtualizados,
+            })
+            .select()
+            .single()
+
+          if (erroRota || !novaRota) {
+            console.error('Erro ao criar rota:', erroRota)
+            resumo.alunosSemVeiculo.push(...alunosNovosDoVeiculo.map((a) => a.name))
+            continue
+          }
+
+          rotaId = novaRota.id
+          resumo.rotasCriadas += 1
+          if (direcao === 'Ida') resumo.rotasIda += 1
+          else resumo.rotasVolta += 1
         }
 
-        resumo.rotasCriadas += 1
-        if (direcao === 'Ida') resumo.rotasIda += 1
-        else resumo.rotasVolta += 1
-
-        const idsAlunos = alunosDoVeiculo.map((a) => a.id)
+        const idsAlunosNovos = alunosNovosDoVeiculo.map((a) => a.id)
         const coluna = direcao === 'Ida' ? 'route_id_ida' : 'route_id_volta'
         const { error: erroUpdate } = await supabase
           .from('students')
-          .update({ [coluna]: novaRota.id })
-          .in('id', idsAlunos)
+          .update({ [coluna]: rotaId })
+          .in('id', idsAlunosNovos)
 
         if (erroUpdate) {
           console.error('Erro ao vincular alunos a rota:', erroUpdate)
-          resumo.alunosSemVeiculo.push(...alunosDoVeiculo.map((a) => a.name))
+          resumo.alunosSemVeiculo.push(...alunosNovosDoVeiculo.map((a) => a.name))
         } else {
-          resumo.alunosAlocados += alunosDoVeiculo.length
+          resumo.alunosAlocados += alunosNovosDoVeiculo.length
         }
       }
     }

@@ -164,8 +164,6 @@ function GerenciarAlunos() {
     setEnderecoForm(enderecoInicial)
     setFotoUrlArmazenado(null)
     setPhotoUploading(false)
-    setRotaSugerida(null)
-    setAtribuindoRotaAutomatica(false)
   }
 
   const abrirEditor = (aluno) => {
