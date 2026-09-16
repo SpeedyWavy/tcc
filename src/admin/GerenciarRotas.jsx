@@ -16,6 +16,7 @@ import {
 import UserMenu from './components/UserMenu.jsx'
 import RouteMap from './components/RouteMap.jsx'
 import ActionNotification, { useActionNotification } from './components/ActionNotification.jsx'
+import FilterPanel from './components/FilterPanel.jsx'
 import { apiRequest } from '../api.js'
 import { supabase } from '../supabase.js'
 import { ListSkeleton } from '../components/Skeleton.jsx'
@@ -112,6 +113,7 @@ function GerenciarRotas() {
   const [alunos, setAlunos] = useState([])
   const [busca, setBusca] = useState('')
   const [veiculoAberto, setVeiculoAberto] = useState(null)
+  const [rotaAbertaId, setRotaAbertaId] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [criandoPorVeiculoId, setCriandoPorVeiculoId] = useState(null)
   const [associandoAlunoId, setAssociandoAlunoId] = useState(null)
@@ -124,6 +126,9 @@ function GerenciarRotas() {
   const [excluindoRotaId, setExcluindoRotaId] = useState(null)
   const [gerandoRotas, setGerandoRotas] = useState(false)
   const [rotaMapaAbertoId, setRotaMapaAbertoId] = useState(null)
+  const [filtroAberto, setFiltroAberto] = useState(false)
+  const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], direcao: [], status: [] })
+  const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], direcao: [], status: [] })
   const { notification, showError, showSuccess, clearNotification } = useActionNotification()
 
   const carregarDados = async () => {
@@ -190,12 +195,80 @@ function GerenciarRotas() {
         .join(' ')
         .toLowerCase()
 
-      return !termo || textoVeiculo.includes(termo) || textoRotas.includes(termo)
+      const passouBusca = !termo || textoVeiculo.includes(termo) || textoRotas.includes(termo)
+
+      const passouUnidade =
+        filtrosAplicados.unidade.length === 0 || filtrosAplicados.unidade.includes(veiculo.unidade)
+
+      const passouDirecao =
+        filtrosAplicados.direcao.length === 0 ||
+        rotasDoVeiculo.some((rota) => filtrosAplicados.direcao.includes(rota.direction))
+
+      const passouStatus =
+        filtrosAplicados.status.length === 0 ||
+        rotasDoVeiculo.some((rota) => filtrosAplicados.status.includes(rota.status)) ||
+        filtrosAplicados.status.includes(obterStatusVeiculo(rotasDoVeiculo))
+
+      return passouBusca && passouUnidade && passouDirecao && passouStatus
     })
-  }, [busca, rotasPorVeiculo, veiculos])
+  }, [busca, rotasPorVeiculo, veiculos, filtrosAplicados])
 
   const alternarVeiculo = (id) => {
     setVeiculoAberto((atual) => (atual === id ? null : id))
+  }
+
+  const opcoesUnidadeFiltro = useMemo(
+    () => [...new Set(veiculos.map((veiculo) => veiculo.unidade).filter(Boolean))],
+    [veiculos],
+  )
+
+  const secoesFiltro = [
+    { id: 'unidade', label: 'Unidade', options: opcoesUnidadeFiltro.map((value) => ({ value, label: value })) },
+    {
+      id: 'direcao',
+      label: 'Direção',
+      options: [
+        { value: 'Ida', label: 'Ida' },
+        { value: 'Volta', label: 'Volta' },
+      ],
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      options: [
+        { value: 'Aguardando Saida', label: 'Aguardando Saída' },
+        { value: 'Em Transito', label: 'Em Trânsito' },
+        { value: 'Atrasado', label: 'Atrasado' },
+        { value: 'Concluido', label: 'Concluído' },
+      ],
+    },
+  ]
+
+  const alternarFiltro = (secao, valor) => {
+    setFiltrosRascunho((atual) => {
+      const valores = atual[secao] || []
+      const existe = valores.includes(valor)
+      return {
+        ...atual,
+        [secao]: existe ? valores.filter((item) => item !== valor) : [...valores, valor],
+      }
+    })
+  }
+
+  const aplicarFiltros = () => {
+    setFiltrosAplicados(filtrosRascunho)
+    setFiltroAberto(false)
+  }
+
+  const limparFiltros = () => {
+    const vazio = { unidade: [], direcao: [], status: [] }
+    setFiltrosRascunho(vazio)
+    setFiltrosAplicados(vazio)
+  }
+
+  const abrirFiltros = () => {
+    setFiltrosRascunho(filtrosAplicados)
+    setFiltroAberto((atual) => !atual)
   }
 
   const criarNovaRota = async (veiculo) => {
@@ -269,6 +342,7 @@ function GerenciarRotas() {
 
   const iniciarEdicaoRota = (rota) => {
     setMenuRotaAberto(null)
+    setRotaAbertaId(rota.id)
     setRotaEditandoId(rota.id)
     setAlunosEdicaoPorRota((atual) => ({
       ...atual,
@@ -437,11 +511,27 @@ function GerenciarRotas() {
                 />
               </div>
 
-              <button type="button" className={styles['filtro-botao']} aria-label={filtrarPlaceholder}>
+              <button
+                type="button"
+                className={styles['filtro-botao']}
+                aria-label={filtrarPlaceholder}
+                onClick={abrirFiltros}
+              >
                 <ArrowDownNarrowWide className={styles['filtro-botao-icone']} />
                 <span>{filtrarPlaceholder}</span>
               </button>
             </div>
+
+            <FilterPanel
+              open={filtroAberto}
+              title="Filtre por..."
+              sections={secoesFiltro}
+              draftFilters={filtrosRascunho}
+              onToggle={alternarFiltro}
+              onApply={aplicarFiltros}
+              onClear={limparFiltros}
+              onClose={() => setFiltroAberto(false)}
+            />
           </div>
         </section>
 
@@ -491,9 +581,26 @@ function GerenciarRotas() {
                         ) : (
                           rotasDoVeiculo.map((rota, indice) => (
                             <article key={rota.id} className={styles['rota-card']}>
-                              <div className={styles['rota-linha']}>
+                              <div
+                                className={styles['rota-linha']}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() =>
+                                  setRotaAbertaId((atual) => (atual === rota.id ? null : rota.id))
+                                }
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault()
+                                    setRotaAbertaId((atual) => (atual === rota.id ? null : rota.id))
+                                  }
+                                }}
+                              >
                                 <div className={styles['rotas-celula--veiculo']}>
-                                  <ChevronRight className={styles['rotas-seta']} />
+                                  {rotaAbertaId === rota.id ? (
+                                    <ChevronDown className={styles['rotas-seta']} />
+                                  ) : (
+                                    <ChevronRight className={styles['rotas-seta']} />
+                                  )}
                                   <span className={styles['rotas-nome-veiculo']}>
                                     {`Rota ${indice + 1}`}
                                     {rota.direction ? ` · ${rota.direction}` : ''}
@@ -543,16 +650,16 @@ function GerenciarRotas() {
                                   {renderizarStatus(
                                     rota.status,
                                     styles,
-                                    rota.horarioInicio
-                                      ? `Horario ${rota.horarioInicio}`
-                                      : rota.horario && rota.horario !== 'Sem horario'
-                                        ? rota.horario
+                                    rota.horario && rota.horario !== 'Sem horario'
+                                      ? rota.horario
+                                      : rota.horarioInicio
+                                        ? `Horario ${rota.horarioInicio}`
                                         : `Horario ${indice + 1}`,
                                   )}
                                 </div>
                               </div>
 
-                              {rotaEditandoId === rota.id ? (
+                              {rotaAbertaId === rota.id && (rotaEditandoId === rota.id ? (
                                 <div className={styles['rota-edicao']}>
                                   <div className={styles['rota-edicao-lista']}>
                                     {(alunosEdicaoPorRota[rota.id] || []).length === 0 ? (
@@ -699,7 +806,7 @@ function GerenciarRotas() {
                                     ) : null}
                                   </div>
                                 </>
-                              )}
+                              ))}
                             </article>
                           ))
                         )}

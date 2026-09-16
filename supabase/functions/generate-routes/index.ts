@@ -373,15 +373,25 @@ Deno.serve(async (req) => {
 
   const alunosSemCoordenada = todosAlunos.filter((a) => a.latitude == null || a.longitude == null)
   const alunosPersonalizados = todosAlunos.filter((a) => a.route_type === 'Personalizado')
-  const alunosSemConfiguracaoRota = todosAlunos.filter(
-    (a) =>
-      a.latitude != null &&
-      a.longitude != null &&
-      a.route_type !== 'Personalizado' &&
-      (!a.unit || !a.period || !a.departure_time || !a.route_type),
-  )
+  const alunosSemConfiguracaoRota = todosAlunos.filter((a) => {
+    if (a.latitude == null || a.longitude == null || a.route_type === 'Personalizado') {
+      return false
+    }
 
-  const temDadosCompletos = (a: Aluno) =>
+    if (!a.unit || !a.period || !a.route_type) {
+      return true
+    }
+
+    // departure_time so e exigido de quem realmente sai da unidade a
+    // tarde (Volta ou Ida e volta) - quem e Ida pura nao precisa desse
+    // campo, o horario dela vem de HORARIO_CHEGADA_IDA.
+    const precisaDeDepartureTime = a.route_type === 'Volta' || a.route_type === 'Ida e volta'
+    return precisaDeDepartureTime && !a.departure_time
+  })
+
+  const temDadosCompletosIda = (a: Aluno) => a.latitude != null && a.longitude != null && a.unit && a.period
+
+  const temDadosCompletosVolta = (a: Aluno) =>
     a.latitude != null && a.longitude != null && a.unit && a.period && a.departure_time
 
   const resumo = {
@@ -499,8 +509,8 @@ Deno.serve(async (req) => {
 
         const horarioLabel =
           direcao === 'Volta'
-            ? `${periodo} - ${horarioSaida} (Volta)`.trim()
-            : `${periodo}${horarioInicio ? ` - ${horarioInicio}` : ''} (Ida)`.trim()
+            ? `${periodo} - ${horarioSaida}`.trim()
+            : `${periodo}${horarioInicio ? ` - ${horarioInicio}` : ''}`.trim()
 
         const stopsAtualizados = ordenados.map((aluno, index) => ({
           student_id: aluno.id,
@@ -572,7 +582,7 @@ Deno.serve(async (req) => {
 
   const elegiveisIda = todosAlunos.filter(
     (a) =>
-      temDadosCompletos(a) &&
+      temDadosCompletosIda(a) &&
       a.route_type !== 'Personalizado' &&
       (a.route_type === 'Ida' || a.route_type === 'Ida e volta') &&
       !a.route_id_ida,
@@ -580,7 +590,7 @@ Deno.serve(async (req) => {
 
   const elegiveisVolta = todosAlunos.filter(
     (a) =>
-      temDadosCompletos(a) &&
+      temDadosCompletosVolta(a) &&
       a.route_type !== 'Personalizado' &&
       (a.route_type === 'Volta' || a.route_type === 'Ida e volta') &&
       !a.route_id_volta,

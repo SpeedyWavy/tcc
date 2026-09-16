@@ -182,11 +182,19 @@ function validateStudentPayload(payload: Record<string, unknown>) {
     'transport_identification',
     'unit',
     'period',
-    'departure_time',
     'route_type',
   ]
 
   const missingFields = requiredFields.filter((field) => !normalizeText(payload[field]))
+
+  // departure_time so e obrigatorio pra quem realmente sai da unidade a
+  // tarde (Volta ou Ida e volta) - aluno Ida pura nao precisa desse campo.
+  const routeType = normalizeText(payload.route_type)
+  const precisaDepartureTime = routeType === 'Volta' || routeType === 'Ida e volta'
+  if (precisaDepartureTime && !normalizeText(payload.departure_time)) {
+    missingFields.push('departure_time')
+  }
+
   return missingFields
 }
 

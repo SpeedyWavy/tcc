@@ -256,6 +256,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--rotas-col-right);
   padding: 0;
+  cursor: pointer;
 }
 
 .rota-menu-wrap {
