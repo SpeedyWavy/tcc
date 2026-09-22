@@ -8,11 +8,12 @@ import { loadGoogleMaps } from '../../lib/googleMapsLoader.js'
  * paradas: [{ id, nome, endereco, latitude, longitude }], ja na ordem otimizada
  * (essa ordem vem pronta do back-end - esse componente NAO reotimiza, so desenha).
  */
-function RouteMap({ enderecoOrigem, paradas, indiceAtual = 0, height = 320 }) {
+function RouteMap({ enderecoOrigem, paradas, indiceAtual = 0, height = 320, posicaoAtual = null }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const rendererRef = useRef(null)
   const marcadoresRef = useRef([])
+  const marcadorPosicaoRef = useRef(null)
 
   useEffect(() => {
     let ativo = true
@@ -116,6 +117,49 @@ function RouteMap({ enderecoOrigem, paradas, indiceAtual = 0, height = 320 }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enderecoOrigem, JSON.stringify(paradas), indiceAtual])
+
+  // Marcador da posicao ao vivo do motorista - efeito separado do desenho da
+  // rota, pra nao rechamar a Directions API a cada atualizacao de GPS.
+  useEffect(() => {
+    if (!posicaoAtual) {
+      if (marcadorPosicaoRef.current) {
+        marcadorPosicaoRef.current.setMap(null)
+        marcadorPosicaoRef.current = null
+      }
+      return
+    }
+
+    let ativo = true
+
+    loadGoogleMaps().then((maps) => {
+      if (!ativo || !mapRef.current) {
+        return
+      }
+
+      if (!marcadorPosicaoRef.current) {
+        marcadorPosicaoRef.current = new maps.Marker({
+          position: posicaoAtual,
+          map: mapRef.current,
+          icon: {
+            path: maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#1976d2',
+            fillOpacity: 1,
+            strokeColor: '#fff',
+            strokeWeight: 2,
+          },
+          zIndex: 1000,
+          title: 'Sua localização',
+        })
+      } else {
+        marcadorPosicaoRef.current.setPosition(posicaoAtual)
+      }
+    })
+
+    return () => {
+      ativo = false
+    }
+  }, [posicaoAtual?.lat, posicaoAtual?.lng])
 
   if (!enderecoOrigem || paradas.length === 0) {
     return (

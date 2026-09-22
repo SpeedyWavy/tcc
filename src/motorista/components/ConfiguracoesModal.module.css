@@ -10,6 +10,8 @@
 
 .config-card {
   width: min(360px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
   background: #ffffff;
   border-radius: 22px;
   padding: 24px 22px;
@@ -52,6 +54,13 @@
   gap: 8px;
   font-weight: 400;
   font-size: 0.95rem;
+}
+
+.config-nota {
+  margin: -4px 0 2px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #5a68a0;
 }
 
 .config-radios label {

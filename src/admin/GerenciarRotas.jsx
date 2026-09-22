@@ -21,6 +21,7 @@ import { apiRequest } from '../api.js'
 import { supabase } from '../supabase.js'
 import { ListSkeleton } from '../components/Skeleton.jsx'
 import { ENDERECOS_UNIDADES } from '../lib/unidadesEnderecos.js'
+import { resetarRotasProximas } from '../lib/rotaStatus.js'
 
 function normalizarVeiculo(veiculo) {
   return {
@@ -135,6 +136,11 @@ function GerenciarRotas() {
     setCarregando(true)
 
     try {
+      // Mantem os status em dia sempre que essa tela e aberta: rotas
+      // concluidas que estao a menos de 1h do horario de inicio voltam
+      // sozinhas pra "Aguardando Saida".
+      await resetarRotasProximas(supabase)
+
       const [veiculosData, rotasData, alunosData] = await Promise.all([
         apiRequest('/api/vehicles'),
         apiRequest('/api/routes'),
@@ -660,7 +666,7 @@ function GerenciarRotas() {
                               </div>
 
                               {rotaAbertaId === rota.id && (rotaEditandoId === rota.id ? (
-                                <div className={styles['rota-edicao']}>
+                                <div className={`${styles['rota-edicao']} ${styles['rota-expandir']}`}>
                                   <div className={styles['rota-edicao-lista']}>
                                     {(alunosEdicaoPorRota[rota.id] || []).length === 0 ? (
                                       <p className={styles['vazio']}>Nenhum aluno vinculado nesta rota.</p>
@@ -717,7 +723,7 @@ function GerenciarRotas() {
                                   </div>
                                 </div>
                               ) : (
-                                <>
+                                <div className={styles['rota-expandir']}>
                                   <div className={styles['rotas-alunos']}>
                                     {rota.alunos.length === 0 ? (
                                       <p className={styles['vazio']}>Sem alunos vinculados.</p>
@@ -805,7 +811,7 @@ function GerenciarRotas() {
                                       <p className={styles['rota-associacao-erro']}>{erroAssociacaoPorRota[rota.id]}</p>
                                     ) : null}
                                   </div>
-                                </>
+                                </div>
                               ))}
                             </article>
                           ))

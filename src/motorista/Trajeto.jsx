@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import styles from './css/Trajeto.module.css'
-import { ArrowLeft, Phone, Navigation2 } from 'lucide-react'
+import { ArrowLeft, Phone, Navigation2, MapPin } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
 import RouteMap from './components/RouteMap.jsx'
 import volante from '../assets/volante.png'
@@ -8,11 +8,24 @@ import { supabase } from '../supabase.js'
 import { getStoredUser } from '../auth.js'
 import { apiRequest } from '../api.js'
 import { ENDERECOS_UNIDADES } from '../lib/unidadesEnderecos.js'
-import { getPreferenciaNavegacao, NAVEGACAO_WAZE } from '../lib/preferenciasMotorista.js'
-import { FieldsSkeleton } from '../components/Skeleton.jsx'
+import {
+  getPreferenciaNavegacao,
+  NAVEGACAO_WAZE,
+  getModoNavegacao,
+  MODO_PASSO_A_PASSO,
+  MODO_ROTA_COMPLETA,
+  MODO_EMBUTIDO,
+} from '../lib/preferenciasMotorista.js'
+import { resetarRotasProximas, escolherRotaAtual, STATUS_EM_TRANSITO, STATUS_CONCLUIDO } from '../lib/rotaStatus.js'
 
-const STATUS_EM_TRANSITO = 'Em Transito'
-const STATUS_CONCLUIDO = 'Concluido'
+// O link de multiplos destinos do Google Maps aceita no maximo 9 destinos
+// (contando o destino final) - confirmado na documentacao oficial. Rotas
+// maiores precisam ser abertas em blocos.
+const MAX_DESTINOS_GOOGLE_MAPS = 9
+
+// Raio de proximidade (em metros) usado no modo embutido pra considerar que
+// o motorista chegou numa parada e avancar sozinho pra proxima.
+const RAIO_CHEGADA_METROS = 60
 
 function montarLinkNavegacao(parada) {
   if (parada.latitude == null || parada.longitude == null) {
@@ -26,6 +39,49 @@ function montarLinkNavegacao(parada) {
   return `https://www.google.com/maps/dir/?api=1&destination=${parada.latitude},${parada.longitude}&travelmode=driving`
 }
 
+// Quebra a rota inteira em blocos de ate 9 destinos, montando um link do
+// Google Maps por bloco. Sem origem fixa: o Maps usa a localizacao atual do
+// motorista automaticamente, o que funciona bem tanto pro primeiro bloco
+// quanto pros seguintes (o motorista abre o link de onde estiver na hora).
+function montarBlocosRotaCompleta(paradas) {
+  const paradasComCoordenadas = paradas.filter((p) => p.latitude != null && p.longitude != null)
+
+  const blocosBrutos = []
+  for (let i = 0; i < paradasComCoordenadas.length; i += MAX_DESTINOS_GOOGLE_MAPS) {
+    blocosBrutos.push(paradasComCoordenadas.slice(i, i + MAX_DESTINOS_GOOGLE_MAPS))
+  }
+
+  return blocosBrutos.map((bloco) => {
+    const destino = bloco[bloco.length - 1]
+    const waypoints = bloco.slice(0, -1)
+
+    const params = new URLSearchParams({
+      api: '1',
+      destination: `${destino.latitude},${destino.longitude}`,
+      travelmode: 'driving',
+    })
+
+    if (waypoints.length > 0) {
+      params.set('waypoints', waypoints.map((w) => `${w.latitude},${w.longitude}`).join('|'))
+    }
+
+    return {
+      url: `https://www.google.com/maps/dir/?${params.toString()}`,
+      alunos: bloco,
+    }
+  })
+}
+
+function distanciaMetros(lat1, lon1, lat2, lon2) {
+  const R = 6371000
+  const toRad = (v) => (v * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 function Trajeto() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
@@ -34,6 +90,7 @@ function Trajeto() {
   const [paradas, setParadas] = useState([])
   const [indiceAtual, setIndiceAtual] = useState(0)
   const [processando, setProcessando] = useState(false)
+  const [modoNavegacao] = useState(() => getModoNavegacao())
 
   const [detalhesAbertos, setDetalhesAbertos] = useState(false)
   const [confirmarSaida, setConfirmarSaida] = useState(false)
@@ -42,6 +99,13 @@ function Trajeto() {
   const [administradoresAbertos, setAdministradoresAbertos] = useState(false)
   const [administradores, setAdministradores] = useState([])
   const [carregandoAdministradores, setCarregandoAdministradores] = useState(false)
+
+  // Modo "Rota completa no Google Maps"
+  const [blocoAtual, setBlocoAtual] = useState(0)
+
+  // Modo "Navegação embutida no app"
+  const [posicaoAtual, setPosicaoAtual] = useState(null)
+  const [erroGeolocalizacao, setErroGeolocalizacao] = useState('')
 
   useEffect(() => {
     carregarRota()
@@ -75,16 +139,23 @@ function Trajeto() {
 
       setVeiculo(veiculoData)
 
-      const { data: rotaData, error: erroRota } = await supabase
+      // Reaproveita rotas concluidas que estao proximas do horario de
+      // inicio de novo (1h antes) - roda sempre que a tela carrega, ja que
+      // e exatamente quando o motorista costuma abrir o app.
+      await resetarRotasProximas(supabase)
+
+      const { data: rotasData, error: erroRotas } = await supabase
         .from('routes')
         .select('*')
         .eq('vehicle_id', veiculoData.id)
         .neq('status', STATUS_CONCLUIDO)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
 
-      if (erroRota) throw erroRota
+      if (erroRotas) throw erroRotas
+
+      // O veiculo pode ter uma rota de Ida e uma de Volta aguardando ao
+      // mesmo tempo - escolhe a certa pelo horario (ou a que ja estiver em
+      // andamento, se houver).
+      const rotaData = escolherRotaAtual(rotasData || [])
 
       if (!rotaData) {
         setRota(null)
@@ -129,6 +200,7 @@ function Trajeto() {
 
       setParadas(paradasMontadas)
       setIndiceAtual(0)
+      setBlocoAtual(0)
     } catch (error) {
       setErro(error.message || 'Erro ao carregar o trajeto.')
     } finally {
@@ -154,9 +226,20 @@ function Trajeto() {
     }
   }
 
+  const blocosRotaCompleta = useMemo(() => montarBlocosRotaCompleta(paradas), [paradas])
+
+  const abrirLinkExterno = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
   const iniciarRota = async () => {
     setIndiceAtual(0)
-    await atualizarStatusRota(STATUS_EM_TRANSITO)
+    setBlocoAtual(0)
+    const sucesso = await atualizarStatusRota(STATUS_EM_TRANSITO)
+
+    if (sucesso && modoNavegacao === MODO_ROTA_COMPLETA && blocosRotaCompleta[0]) {
+      abrirLinkExterno(blocosRotaCompleta[0].url)
+    }
   }
 
   const proximoAluno = async () => {
@@ -171,11 +254,27 @@ function Trajeto() {
     }
   }
 
+  const avancarBloco = async () => {
+    if (blocoAtual < blocosRotaCompleta.length - 1) {
+      const proximo = blocoAtual + 1
+      setBlocoAtual(proximo)
+      abrirLinkExterno(blocosRotaCompleta[proximo].url)
+      return
+    }
+
+    const sucesso = await atualizarStatusRota(STATUS_CONCLUIDO)
+    if (sucesso) {
+      setRotaFinalizada(true)
+    }
+  }
+
   const fecharRotaFinalizada = () => {
     setRotaFinalizada(false)
     setRota(null)
     setParadas([])
     setIndiceAtual(0)
+    setBlocoAtual(0)
+    setPosicaoAtual(null)
     carregarRota()
   }
 
@@ -207,6 +306,51 @@ function Trajeto() {
   const rotaAguardando = rota != null && rota.status !== STATUS_EM_TRANSITO && rota.status !== STATUS_CONCLUIDO
   const enderecoOrigem = veiculo ? ENDERECOS_UNIDADES[veiculo.unit] : null
   const linkNavegacao = parada ? montarLinkNavegacao(parada) : null
+
+  // Modo embutido: acompanha a posicao do motorista via GPS enquanto a rota
+  // estiver em andamento.
+  useEffect(() => {
+    if (modoNavegacao !== MODO_EMBUTIDO || !rotaEmAndamento) {
+      return undefined
+    }
+
+    if (!('geolocation' in navigator)) {
+      setErroGeolocalizacao('Geolocalização não disponível neste dispositivo.')
+      return undefined
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (posicao) => {
+        setErroGeolocalizacao('')
+        setPosicaoAtual({ lat: posicao.coords.latitude, lng: posicao.coords.longitude })
+      },
+      (erroGeo) => {
+        console.error('Erro de geolocalizacao:', erroGeo)
+        setErroGeolocalizacao('Não foi possível acessar sua localização. Verifique a permissão de GPS.')
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
+    )
+
+    return () => navigator.geolocation.clearWatch(watchId)
+  }, [modoNavegacao, rotaEmAndamento])
+
+  // Modo embutido: avanca sozinho pra proxima parada quando o motorista
+  // chega perto o suficiente da parada atual.
+  useEffect(() => {
+    if (modoNavegacao !== MODO_EMBUTIDO || !posicaoAtual || !parada || processando) {
+      return
+    }
+
+    if (parada.latitude == null || parada.longitude == null) {
+      return
+    }
+
+    const distancia = distanciaMetros(posicaoAtual.lat, posicaoAtual.lng, parada.latitude, parada.longitude)
+    if (distancia <= RAIO_CHEGADA_METROS) {
+      proximoAluno()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posicaoAtual])
 
   return (
     <main className={styles['motorista-trajeto-page']}>
@@ -243,7 +387,7 @@ function Trajeto() {
 
       <section className={styles['conteudo']}>
         {carregando ? (
-          <FieldsSkeleton fields={5} />
+          <p className={styles['estado-carregando']}>Carregando trajeto...</p>
         ) : erro ? (
           <p className={styles['estado-carregando']}>{erro}</p>
         ) : rotaAguardando ? (
@@ -292,9 +436,65 @@ function Trajeto() {
               </div>
             )}
           </>
+        ) : rotaEmAndamento && modoNavegacao === MODO_ROTA_COMPLETA ? (
+          <div className={styles['rota-ativa']}>
+            <RouteMap enderecoOrigem={enderecoOrigem} paradas={paradas} indiceAtual={-1} height={260} />
+
+            {blocosRotaCompleta[blocoAtual] && (
+              <div className={styles['sheet-aluno']}>
+                <p className={styles['sheet-nome']}>
+                  Bloco {blocoAtual + 1} de {blocosRotaCompleta.length}
+                </p>
+                <p className={styles['sheet-progresso']}>
+                  {blocosRotaCompleta.length > 1
+                    ? 'O Google Maps só aceita 9 destinos por vez — por isso a rota foi dividida em blocos.'
+                    : 'Todas as paradas cabem em uma única viagem no Google Maps.'}
+                </p>
+
+                <div className={styles['detalhe-lista']}>
+                  {blocosRotaCompleta[blocoAtual].alunos.map((aluno, index) => (
+                    <p key={aluno.id}>
+                      {index + 1}. {aluno.nome}
+                    </p>
+                  ))}
+                </div>
+
+                <div className={styles['sheet-rodape']}>
+                  <button
+                    type="button"
+                    className={styles['botao-navegacao']}
+                    onClick={() => abrirLinkExterno(blocosRotaCompleta[blocoAtual].url)}
+                  >
+                    <Navigation2 size={16} />
+                    Abrir no Google Maps
+                  </button>
+                  <button type="button" className={styles['botao-principal']} onClick={avancarBloco} disabled={processando}>
+                    {processando
+                      ? 'Aguarde...'
+                      : blocoAtual < blocosRotaCompleta.length - 1
+                        ? 'Bloco concluído, próximo'
+                        : 'Finalizar rota'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : rotaEmAndamento ? (
           <div className={styles['rota-ativa']}>
-            <RouteMap enderecoOrigem={enderecoOrigem} paradas={paradas} indiceAtual={indiceAtual} height={300} />
+            <RouteMap
+              enderecoOrigem={enderecoOrigem}
+              paradas={paradas}
+              indiceAtual={indiceAtual}
+              height={300}
+              posicaoAtual={modoNavegacao === MODO_EMBUTIDO ? posicaoAtual : null}
+            />
+
+            {modoNavegacao === MODO_EMBUTIDO && (
+              <p className={styles['sheet-progresso']}>
+                <MapPin size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />
+                {erroGeolocalizacao || (posicaoAtual ? 'Acompanhando sua localização - avança sozinho ao chegar.' : 'Obtendo sua localização...')}
+              </p>
+            )}
 
             {parada && (
               <div className={styles['sheet-aluno']}>
