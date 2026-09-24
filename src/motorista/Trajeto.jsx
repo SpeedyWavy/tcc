@@ -213,10 +213,25 @@ function Trajeto() {
 
     setProcessando(true)
     try {
-      const { error } = await supabase.from('routes').update({ status: novoStatus }).eq('id', rota.id)
+      const { data, error } = await supabase
+        .from('routes')
+        .update({ status: novoStatus })
+        .eq('id', rota.id)
+        .select('id, status')
+        .maybeSingle()
+
       if (error) throw error
 
-      setRota((atual) => (atual ? { ...atual, status: novoStatus } : atual))
+      if (!data) {
+        // Sem erro, mas nenhuma linha voltou - o Supabase faz isso quando
+        // uma politica de RLS bloqueia o update silenciosamente (afeta 0
+        // linhas sem reportar erro). Avisa em vez de fingir que funcionou.
+        throw new Error(
+          'A atualização não foi salva (nenhuma linha afetada). Provavelmente falta uma política de RLS liberando UPDATE em "routes" para o motorista.',
+        )
+      }
+
+      setRota((atual) => (atual ? { ...atual, status: data.status } : atual))
       return true
     } catch (error) {
       setErro(error.message || 'Erro ao atualizar o status da rota.')
