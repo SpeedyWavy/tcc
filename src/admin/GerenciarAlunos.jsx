@@ -1227,15 +1227,15 @@ function GerenciarAlunos() {
                       ) : (
                         <p><strong>Transporte:</strong> {aluno.transport_identification || aluno.transporte || 'Não informado'}</p>
                       )}
-                      <p><strong>Responsável:</strong> {aluno.responsible_name || aluno.responsavel || 'Não informado'}</p>
-                      <p><strong>Período:</strong> {aluno.period || aluno.periodo || 'Não informado'}</p>
-                      <p><strong>Horário de saída:</strong> {aluno.departure_time || aluno.horario_saida || 'Não informado'}</p>
                     </div>
                   </div>
                   <div className={styles['aluno-info-extra']}>
+                    <p><strong>Responsável:</strong> {aluno.responsible_name || aluno.responsavel || 'Não informado'}</p>
+                    <p><strong>Período:</strong> {aluno.period || aluno.periodo || 'Não informado'}</p>
+                    <p><strong>Horário de saída:</strong> {aluno.departure_time || aluno.horario_saida || 'Não informado'}</p>
                     <p><strong>Contato do responsável:</strong> {aluno.parent_contact || aluno.contato_responsavel || 'Não informado'}</p>
-                    <p><strong>Endereço:</strong> {aluno.address || aluno.endereco}</p>
                     <p><strong>Tipo de percurso:</strong> {aluno.route_type || aluno.tipo_percurso || 'Não informado'}</p>
+                    <p><strong>Endereço:</strong> {aluno.address || aluno.endereco}</p>
                     {(aluno.route_type || aluno.tipo_percurso) === 'Personalizado' && (
                       <>
                         <p><strong>Dias de ida:</strong> {(aluno.custom_route_days_departure || []).join(', ') || 'Nenhum'}</p>

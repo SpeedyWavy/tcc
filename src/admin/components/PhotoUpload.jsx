@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Camera, X, GraduationCap, User } from 'lucide-react'
+import { Camera, X, GraduationCap, User, ZoomIn } from 'lucide-react'
 import styles from './PhotoUpload.module.css'
 import { supabase } from '../../supabase.js'
 
@@ -16,14 +16,32 @@ function PhotoUpload({
 }) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(photoUrl || null)
+  const [cropSource, setCropSource] = useState(null)
+  const [cropMetrics, setCropMetrics] = useState(null)
+  const [cropZoom, setCropZoom] = useState(1)
+  const [cropPosition, setCropPosition] = useState({ x: 0, y: 0 })
   const fileInputRef = useRef(null)
+  const dragRef = useRef(null)
   const PlaceholderIcon = entityType === 'student' ? GraduationCap : User
 
   useEffect(() => {
     setPreview(photoUrl || null)
   }, [photoUrl])
 
-  const handleFileSelect = async (e) => {
+  const closeCropEditor = () => {
+    if (cropSource?.url) {
+      URL.revokeObjectURL(cropSource.url)
+    }
+    setCropSource(null)
+    setCropMetrics(null)
+    setCropZoom(1)
+    setCropPosition({ x: 0, y: 0 })
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleFileSelect = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -39,17 +57,59 @@ function PhotoUpload({
       return
     }
 
+    setCropSource({ file, url: URL.createObjectURL(file) })
+    setCropZoom(1)
+    setCropPosition({ x: 0, y: 0 })
+  }
+
+  const handleCropImageLoad = (event) => {
+    const image = event.currentTarget
+    const viewportSize = image.parentElement?.clientWidth || 280
+    const baseScale = Math.max(viewportSize / image.naturalWidth, viewportSize / image.naturalHeight)
+    setCropMetrics({
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      viewportSize,
+      displayWidth: image.naturalWidth * baseScale,
+      displayHeight: image.naturalHeight * baseScale,
+    })
+  }
+
+  const constrainCropPosition = (position, zoom = cropZoom) => {
+    if (!cropMetrics) return position
+
+    const viewportSize = cropMetrics.viewportSize
+    const maxX = Math.max(0, (cropMetrics.displayWidth * zoom - viewportSize) / 2)
+    const maxY = Math.max(0, (cropMetrics.displayHeight * zoom - viewportSize) / 2)
+    return {
+      x: Math.min(maxX, Math.max(-maxX, position.x)),
+      y: Math.min(maxY, Math.max(-maxY, position.y)),
+    }
+  }
+
+  const handleCropPointerDown = (event) => {
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragRef.current = { startX: event.clientX, startY: event.clientY, position: cropPosition }
+  }
+
+  const handleCropPointerMove = (event) => {
+    if (!dragRef.current) return
+    const { startX, startY, position } = dragRef.current
+    setCropPosition(constrainCropPosition({
+      x: position.x + event.clientX - startX,
+      y: position.y + event.clientY - startY,
+    }))
+  }
+
+  const handleCropPointerEnd = () => {
+    dragRef.current = null
+  }
+
+  const uploadPhoto = async (file) => {
     setUploading(true)
     onUploadingChange(true)
 
     try {
-      // Criar preview local
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setPreview(event.target?.result)
-      }
-      reader.readAsDataURL(file)
-
       // Upload para Supabase Storage
       const timestamp = Date.now()
       const randomStr = Math.random().toString(36).substring(2, 10)
@@ -92,6 +152,7 @@ function PhotoUpload({
       }
 
       // Notificar o componente pai com a URL
+      setPreview(publicUrl)
       onPhotoChange(publicUrl, filePath)
       setUploading(false)
       onUploadingChange(false)
@@ -101,6 +162,37 @@ function PhotoUpload({
       setUploading(false)
       onUploadingChange(false)
     }
+  }
+
+  const applyCrop = () => {
+    if (!cropSource || !cropMetrics) return
+
+    const image = new Image()
+    image.onload = async () => {
+      const outputSize = 512
+      const canvas = document.createElement('canvas')
+      canvas.width = outputSize
+      canvas.height = outputSize
+
+      const context = canvas.getContext('2d')
+      if (!context) return
+
+      const baseScale = Math.max(outputSize / cropMetrics.width, outputSize / cropMetrics.height)
+      const scaledWidth = cropMetrics.width * baseScale * cropZoom
+      const scaledHeight = cropMetrics.height * baseScale * cropZoom
+      const positionScale = outputSize / cropMetrics.viewportSize
+      const offsetX = (outputSize - scaledWidth) / 2 + cropPosition.x * positionScale
+      const offsetY = (outputSize - scaledHeight) / 2 + cropPosition.y * positionScale
+      context.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight)
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return
+        const croppedFile = new File([blob], `perfil-${Date.now()}.jpg`, { type: 'image/jpeg' })
+        closeCropEditor()
+        await uploadPhoto(croppedFile)
+      }, 'image/jpeg', 0.92)
+    }
+    image.src = cropSource.url
   }
 
   const handleRemovePhoto = () => {
@@ -177,6 +269,59 @@ function PhotoUpload({
       )}
 
       {uploading && <div className={styles['uploading-spinner']} />}
+
+      {cropSource && (
+        <div className={styles['crop-overlay']} role="dialog" aria-modal="true" aria-label="Centralizar foto de perfil">
+          <div className={styles['crop-card']}>
+            <div className={styles['crop-header']}>
+              <h2>Centralizar foto</h2>
+              <button type="button" onClick={closeCropEditor} aria-label="Fechar editor"><X /></button>
+            </div>
+            <p className={styles['crop-hint']}>Arraste a imagem e ajuste o zoom para definir o enquadramento.</p>
+            <div
+              className={styles['crop-viewport']}
+              onPointerDown={handleCropPointerDown}
+              onPointerMove={handleCropPointerMove}
+              onPointerUp={handleCropPointerEnd}
+              onPointerCancel={handleCropPointerEnd}
+            >
+              <img
+                src={cropSource.url}
+                alt="Prévia para recorte"
+                onLoad={handleCropImageLoad}
+                draggable="false"
+                style={cropMetrics ? {
+                  width: `${cropMetrics.displayWidth}px`,
+                  height: `${cropMetrics.displayHeight}px`,
+                  left: `calc(50% + ${cropPosition.x}px)`,
+                  top: `calc(50% + ${cropPosition.y}px)`,
+                  transform: `translate(-50%, -50%) scale(${cropZoom})`,
+                } : undefined}
+              />
+            </div>
+            <label className={styles['crop-zoom']}>
+              <ZoomIn />
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.01"
+                value={cropZoom}
+                onChange={(event) => {
+                  const zoom = Number(event.target.value)
+                  setCropZoom(zoom)
+                  setCropPosition((position) => constrainCropPosition(position, zoom))
+                }}
+                aria-label="Zoom da foto"
+              />
+            </label>
+            <div className={styles['crop-actions']}>
+              <button type="button" className={styles['crop-cancel']} onClick={closeCropEditor}>Cancelar</button>
+              <button type="button" className={styles['crop-apply']} onClick={applyCrop} disabled={!cropMetrics}>Aplicar foto</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

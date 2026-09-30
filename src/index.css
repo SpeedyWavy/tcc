@@ -171,6 +171,13 @@ html.modo-escuro [class*="ui-button"] > button{
   background: #001355 !important;
 }
 
+/* O primeiro atalho é um link direto, enquanto os demais envolvem um button. */
+html.modo-escuro [class*="ui-button1"],
+html.modo-escuro [class*="ui-button1"] > a{
+  background: #001355 !important;
+  border-radius: 25px;
+}
+
 /* Formulários de cadastro: os blocos claros originais recebem o mesmo
    contraste suave do restante do tema escuro. */
 html.modo-escuro [class*="boadd-card"]{
@@ -206,6 +213,144 @@ html.modo-escuro :is(
   background: #3a4a69 !important;
   color: #d8dfeb !important;
   border-color: #8090ae !important;
+}
+
+/* Superfícies secundárias: menus, filtros, cartões de informações e estados
+   vazios. Estas regras completam o tema em telas que têm CSS próprio. */
+html.modo-escuro :is(
+  [class*="usuario-popover"],
+  [class*="item-acoes-popover"],
+  [class*="rota-menu-dropdown"],
+  [class*="motorista-select-list"],
+  [class*="filter-panel"],
+  [class*="mais-card"],
+  [class*="revisoes-popup"]
+){
+  background: #2b3751 !important;
+  color: #c7d0df !important;
+  border-color: #667797 !important;
+}
+
+html.modo-escuro :is(
+  [class*="usuario-popover"],
+  [class*="item-acoes-popover"],
+  [class*="rota-menu-dropdown"],
+  [class*="motorista-select-list"],
+  [class*="revisoes-menu"]
+) button{
+  background: transparent !important;
+  color: #c7d0df !important;
+}
+
+html.modo-escuro :is(
+  [class*="usuario-popover"],
+  [class*="item-acoes-popover"],
+  [class*="rota-menu-dropdown"],
+  [class*="motorista-select-list"],
+  [class*="revisoes-menu"]
+) button:hover{
+  background: #3d4d6d !important;
+}
+
+html.modo-escuro :is(
+  [class*="filtro-input-wrap"],
+  [class*="barra-pesquisa"],
+  [class*="motorista-alunos-busca-wrap"]
+) :is(input, svg){
+  color: #c7d0df !important;
+}
+
+html.modo-escuro :is(
+  [class*="field"],
+  [class*="status"],
+  [class*="revisoes-vazio"],
+  [class*="vazio"],
+  [class*="estado"],
+  [class*="sem-alunos"]
+){
+  background: #3d4d6d !important;
+  color: #c7d0df !important;
+  border-color: #7182a2 !important;
+}
+
+html.modo-escuro :is(
+  [class*="mais-card"] :is(h2, label, span),
+  [class*="form-group"] label,
+  [class*="filtro"],
+  [class*="estado"],
+  [class*="vazio"],
+  [class*="status"]
+){
+  color: #c7d0df !important;
+}
+
+html.modo-escuro :is(
+  [class*="mais-textarea"],
+  [class*="mais-switch"],
+  [class*="revisoes-popup"] :is(textarea, input),
+  [class*="rota-edicao-item"],
+  [class*="rota-associacao-select"]
+){
+  background: #3d4d6d !important;
+  color: #d8dfeb !important;
+  border-color: #7182a2 !important;
+}
+
+html.modo-escuro :is(
+  [class*="mais-button"],
+  [class*="rota-edicao-salvar"],
+  [class*="rota-associacao-botao"],
+  [class*="rotas-gerar-automatico"],
+  [class*="revisoes-popup-confirmar"]
+){
+  background: #304a75 !important;
+  color: #e3e8f2 !important;
+}
+
+html.modo-escuro :is(
+  [class*="rota-edicao-botao"],
+  [class*="rota-edicao-cancelar"],
+  [class*="rota-ver-mapa"],
+  [class*="revisoes-popup-cancelar"]
+){
+  background: #3d4d6d !important;
+  color: #d8dfeb !important;
+}
+
+html.modo-escuro :is([class*="photo-frame"], [class*="photo-button-add"]){
+  background: #3d4d6d !important;
+  color: #c7d0df !important;
+}
+
+html.modo-escuro :is([class*="photo-badge"], [class*="photo-button"]){
+  background: #304a75 !important;
+}
+
+html.modo-escuro [class*="listRow"]{
+  background: #3a4968 !important;
+}
+
+html.modo-escuro [class*="skeleton"]{
+  background: linear-gradient(90deg, #33425f 25%, #526384 50%, #33425f 75%);
+}
+
+/* Login e suporte ainda podem ser abertos após uma sessão em modo escuro. */
+html.modo-escuro :is([class*="login-page"], [class*="suporte-page"]){
+  background: #222c40;
+  color: #c7d0df;
+}
+
+html.modo-escuro :is([class*="login-page"], [class*="suporte-page"]) :is(h1, p, a){
+  color: #c7d0df;
+}
+
+html.modo-escuro :is(
+  [class*="motorista-contatos-page"] [class*="conteudo"],
+  [class*="motorista-rotas-page"] [class*="conteudo"],
+  [class*="motorista-veiculo-page"] [class*="conteudo"],
+  [class*="motorista-trajeto-page"] [class*="conteudo"]
+){
+  background: #222c40 !important;
 }
 
 

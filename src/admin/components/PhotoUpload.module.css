@@ -141,4 +141,155 @@
   }
 }
 
+.crop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(10, 15, 30, 0.74);
+  backdrop-filter: blur(6px);
+}
+
+.crop-card {
+  width: min(390px, 100%);
+  border-radius: 18px;
+  padding: 18px;
+  background: #e3e6ff;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.35);
+  display: grid;
+  gap: 16px;
+  color: #1c2350;
+  font-family: 'Inter', sans-serif;
+}
+
+.crop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.crop-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.crop-header button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #30418e;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.crop-header button:hover {
+  background: rgba(48, 65, 142, 0.12);
+}
+
+.crop-header button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.crop-hint {
+  margin: -6px 0 0;
+  color: #566187;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.crop-viewport {
+  width: min(280px, 78vw);
+  aspect-ratio: 1;
+  justify-self: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #24324e;
+  box-shadow: 0 0 0 5px rgba(0, 19, 85, 0.18), 0 12px 28px rgba(0, 19, 85, 0.22);
+  cursor: grab;
+  touch-action: none;
+}
+
+.crop-viewport:active {
+  cursor: grabbing;
+}
+
+.crop-viewport img {
+  position: absolute;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+.crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #30418e;
+}
+
+.crop-zoom svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.crop-zoom input {
+  width: 100%;
+  accent-color: #001a63;
+}
+
+.crop-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.crop-actions button {
+  min-height: 44px;
+  border-radius: 12px;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.crop-cancel {
+  background: #c4cae7;
+  color: #30418e;
+}
+
+.crop-apply {
+  background: #001a63;
+  color: #ffd400;
+}
+
+.crop-apply:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+:global(html.modo-escuro) .crop-card {
+  background: #2b3751;
+  color: #c7d0df;
+}
+
+:global(html.modo-escuro) .crop-hint,
+:global(html.modo-escuro) .crop-header button,
+:global(html.modo-escuro) .crop-zoom {
+  color: #c7d0df;
+}
+
+:global(html.modo-escuro) .crop-cancel {
+  background: #3d4d6d;
+  color: #d8dfeb;
+}
+
 /*  */

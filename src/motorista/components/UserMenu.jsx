@@ -5,16 +5,39 @@ import { clearSession, getStoredUser } from '../../auth.js'
 import { getModoEscuro, aplicarModoEscuro } from '../../lib/preferenciasMotorista.js'
 import ConfiguracoesModal from './ConfiguracoesModal.jsx'
 import styles from './UserMenu.module.css'
+import { supabase } from '../../supabase.js'
 
 function UserMenu() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [configuracoesAbertas, setConfiguracoesAbertas] = useState(false)
   const [usuarioLogado] = useState(() => getStoredUser())
+  const [fotoPerfil, setFotoPerfil] = useState(() => usuarioLogado?.photo_url || null)
   const menuRef = useRef(null)
 
   useEffect(() => {
     aplicarModoEscuro(getModoEscuro())
   }, [])
+
+  useEffect(() => {
+    let ativo = true
+
+    const carregarFotoPerfil = async () => {
+      if (!usuarioLogado?.id) return
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('photo_url')
+        .eq('id', usuarioLogado.id)
+        .maybeSingle()
+
+      if (!error && ativo && data?.photo_url) {
+        setFotoPerfil(data.photo_url)
+      }
+    }
+
+    carregarFotoPerfil()
+    return () => { ativo = false }
+  }, [usuarioLogado?.id])
 
   useEffect(() => {
     if (!menuAberto) {
@@ -52,7 +75,11 @@ function UserMenu() {
         aria-haspopup="menu"
         aria-expanded={menuAberto}
       >
-        <img src={user} alt="Usuario" />
+        <img
+          src={fotoPerfil || user}
+          alt={fotoPerfil ? `Foto de ${usuarioLogado?.full_name || 'usuário'}` : 'Usuário'}
+          onError={() => setFotoPerfil(null)}
+        />
         <span className={styles['usuario-nome']}>{usuarioLogado?.full_name || 'Usuario'}</span>
         <ChevronDown className={menuAberto ? `${styles['usuario-chevron']} ${styles.aberto}` : styles['usuario-chevron']} />
       </button>
