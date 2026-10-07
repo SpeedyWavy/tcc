@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import styles from './Login.module.css'
 import { getHomePathByRole, getStoredUser, saveSession } from './auth.js'
 import { apiRequest } from './api.js'
 import { supabase } from './supabase.js'
+import { traduzirMensagemUsuario } from './lib/traduzirMensagemUsuario.js'
 
 const backendApiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
@@ -46,6 +48,12 @@ function resolveLoginEmail(identifier) {
 function getLoginErrorMessage(error) {
   const rawMessage = normalizeText(error?.message)
 
+  if (error?.code === 'PASSWORD_RECENTLY_CHANGED') {
+    const days = Math.max(0, Number(error.daysAgo) || 0)
+    const elapsed = days === 0 ? 'hoje' : `há ${days} ${days === 1 ? 'dia' : 'dias'}`
+    return `Sua senha foi alterada ${elapsed}. Você digitou a senha anterior; use a senha atual fornecida pelo administrador.`
+  }
+
   if (
     error?.status === 401 ||
     rawMessage.includes('invalid login credentials') ||
@@ -63,7 +71,7 @@ function getLoginErrorMessage(error) {
     return 'Nao foi possivel conectar ao servidor de autenticacao.'
   }
 
-  return error?.message || 'Nao foi possivel fazer login.'
+  return traduzirMensagemUsuario(error?.message, 'Não foi possível fazer login.')
 }
 
 async function loginViaBackend(identifier, password) {
@@ -83,8 +91,13 @@ async function loginViaBackend(identifier, password) {
   const payload = await response.json().catch(() => null)
 
   if (!response.ok) {
-    const error = new Error(payload?.detail || 'Nome ou senha incorretos.')
+    const detail = payload?.detail
+    const error = new Error(typeof detail === 'string' ? detail : 'Nome ou senha incorretos.')
     error.status = response.status
+    if (detail && typeof detail === 'object') {
+      error.code = detail.code
+      error.daysAgo = detail.days_ago
+    }
     throw error
   }
 
@@ -174,6 +187,7 @@ async function resolveSessionRole(sessionUser, displayName) {
 function Login() {
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
+  const [mostrarSenha, setMostrarSenha] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -280,13 +294,25 @@ function Login() {
           />
           <div className={styles['campo-senha']}>
             <p>Insira sua Senha</p>
-            <input
-              type="password"
-              placeholder="Senha"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              disabled={loading}
-            />
+            <span className={styles['senha-login-campo']}>
+              <input
+                type={mostrarSenha ? 'text' : 'password'}
+                placeholder="Senha"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={loading}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className={styles['mostrar-senha']}
+                onClick={() => setMostrarSenha((atual) => !atual)}
+                aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                aria-pressed={mostrarSenha}
+              >
+                {mostrarSenha ? <EyeOff size={19} /> : <Eye size={19} />}
+              </button>
+            </span>
             <div className={styles['esqueci']}>
               <a href="/suporte">Esqueceu a Senha?</a>
             </div>

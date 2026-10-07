@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import styles from './ActionNotification.module.css'
+import { traduzirMensagemUsuario } from '../../lib/traduzirMensagemUsuario.js'
 
 function ActionNotification({ notification, onClose }) {
   useEffect(() => {
@@ -35,14 +36,14 @@ export function useActionNotification() {
 
   const showError = (message) => {
     setNotification({
-      message,
+      message: traduzirMensagemUsuario(message),
       variant: 'error',
     })
   }
 
   const showSuccess = (message) => {
     setNotification({
-      message,
+      message: traduzirMensagemUsuario(message, 'Operação concluída com sucesso.'),
       variant: 'success',
     })
   }

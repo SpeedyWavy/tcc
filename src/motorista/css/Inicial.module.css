@@ -14,6 +14,27 @@
   padding-bottom: 56px;
 }
 
+.motorista-notificacao{
+  width:min(86%,720px);
+  margin:32px auto -26px;
+  padding:18px 20px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  border:1px solid rgba(0,19,85,.12);
+  border-left:6px solid #ffd400;
+  border-radius:16px;
+  background:#fff8cf;
+  color:#001355;
+  box-shadow:0 10px 28px rgba(11,12,17,.12);
+}
+
+.motorista-notificacao strong{display:block;font-size:1rem}
+.motorista-notificacao p{margin:7px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.motorista-notificacao button{flex:0 0 auto;display:grid;place-items:center;padding:5px;border:0;border-radius:8px;background:transparent;color:#001355;cursor:pointer}
+.motorista-notificacao button:hover{background:rgba(0,19,85,.08)}
+
 .motorista-home__actions{
   width: min(86%, 360px);
   margin: 54px auto 0;
@@ -72,6 +93,7 @@
 }
 
 @media (max-width: 640px){
+  .motorista-notificacao{width:calc(100% - 40px);margin-top:24px;padding:15px 16px}
   .motorista-home__actions{
     width: calc(100% - 40px);
     margin-top: 42px;

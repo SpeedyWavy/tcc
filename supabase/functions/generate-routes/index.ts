@@ -4,13 +4,20 @@
 // a capacidade de cada veiculo, usando a Directions API do Google
 // (optimizeWaypoints) pra definir a melhor ordem de paradas.
 //
-// - Rota de IDA: alunos com route_type "Ida" ou "Ida e volta". O horario de
-//   inicio e calculado de tras pra frente a partir de um horario-alvo de
-//   chegada por periodo (HORARIO_CHEGADA_IDA), usando a duracao real do
-//   trajeto (Directions API).
+// - Rota de IDA: alunos com route_type "Ida" ou "Ida e volta". Comeca SEMPRE
+//   pelo aluno que mora mais LONGE da unidade (e nao pelo mais proximo -
+//   e assim que esse colegio faz de verdade: o van sai do endereco mais
+//   distante e vai se aproximando da escola a cada parada). So a ordem das
+//   paradas restantes, entre o aluno mais distante e a unidade, e otimizada
+//   pela Directions API. O horario de inicio e calculado de tras pra frente
+//   a partir de um horario-alvo de chegada por periodo (HORARIO_CHEGADA_IDA),
+//   usando a duracao real desse trajeto (ponto mais distante -> unidade).
 // - Rota de VOLTA: alunos com route_type "Volta" ou "Ida e volta". O horario
 //   de inicio e o proprio departure_time do aluno (ja e o horario de saida
-//   da unidade, nao precisa de calculo).
+//   da unidade, nao precisa de calculo). A ordem das paradas continua sendo
+//   otimizada livremente pela Directions API (unidade -> paradas -> unidade),
+//   sem ponto de partida fixo - se precisar do mesmo comportamento "sempre
+//   comeca pelo mais distante" tambem na Volta, e so pedir.
 //
 // Um aluno "Ida e volta" pode ficar vinculado a DUAS rotas diferentes ao
 // mesmo tempo (students.route_id_ida e students.route_id_volta sao colunas
@@ -133,18 +140,143 @@ function normalizarUnidade(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+// Passo de refinamento rodado DEPOIS que o k-means balanceado (abaixo) ja
+// estabilizou. O problema que ele resolve: a atribuicao do k-means e gulosa
+// e processa os alunos em uma ordem global (do mais "decidido" pro mais
+// "indeciso"), entao, quando a capacidade de um veiculo aperta, um aluno de
+// uma regiao pode acabar ocupando a ultima vaga de um veiculo que era, na
+// verdade, o mais perto de um aluno de OUTRA regiao - empurrando esse
+// segundo aluno pra um veiculo mais longe, e fatiando um grupo que deveria
+// ficar inteiro no mesmo veiculo.
+//
+// A correcao e uma busca local simples (2-opt): procura, entre todo par de
+// alunos em veiculos DIFERENTES, uma troca de veiculo que diminua a soma
+// das distancias de ambos ate o centroide do veiculo onde cada um fica.
+// Troca sempre que encontra uma melhora, repete ate nao achar mais nenhuma
+// (ou bater o limite de seguranca) - a capacidade de cada veiculo nunca
+// muda, porque e sempre uma troca 1-por-1 entre dois veiculos.
+function refinarClustersComTrocas(
+  clusters: Aluno[][],
+  centroides: Array<{ lat: number; lng: number }>,
+  limiteTrocas = 2000,
+) {
+  let trocas = 0
+  let melhorou = true
+
+  while (melhorou && trocas < limiteTrocas) {
+    melhorou = false
+
+    for (let i = 0; i < clusters.length; i++) {
+      for (let j = i + 1; j < clusters.length; j++) {
+        for (let a = 0; a < clusters[i].length; a++) {
+          for (let b = 0; b < clusters[j].length; b++) {
+            const alunoA = clusters[i][a]
+            const alunoB = clusters[j][b]
+
+            const distanciaAtual =
+              haversineKm(alunoA.latitude, alunoA.longitude, centroides[i].lat, centroides[i].lng) +
+              haversineKm(alunoB.latitude, alunoB.longitude, centroides[j].lat, centroides[j].lng)
+
+            const distanciaTrocada =
+              haversineKm(alunoB.latitude, alunoB.longitude, centroides[i].lat, centroides[i].lng) +
+              haversineKm(alunoA.latitude, alunoA.longitude, centroides[j].lat, centroides[j].lng)
+
+            // Margem pequena (10 metros) pra nao ficar trocando por causa de
+            // arredondamento de ponto flutuante.
+            if (distanciaTrocada < distanciaAtual - 0.01) {
+              clusters[i][a] = alunoB
+              clusters[j][b] = alunoA
+              melhorou = true
+              trocas++
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Escolhe sementes iniciais bem espalhadas pelo mapa (tecnica tipo
+// "k-means++"/farthest-point sampling): comeca pelo aluno mais a
+// sudoeste (ponto de partida deterministico, nao aleatorio) e, a cada
+// passo, escolhe o aluno cuja MENOR distancia ate qualquer semente ja
+// escolhida e a MAIOR possivel - ou seja, sempre pula pro "buraco" mais
+// vazio do mapa que ainda nao tem semente por perto. Isso separa regioes
+// discretas bem melhor do que ordenar só por latitude (que ignora a
+// longitude e pode colocar duas sementes na mesma regiao enquanto outra
+// regiao inteira fica sem nenhuma).
+function semearPorDistanciaMaxima(alunos: Aluno[], quantos: number) {
+  if (alunos.length === 0 || quantos <= 0) {
+    return [] as Array<{ lat: number; lng: number }>
+  }
+
+  const sementes: Aluno[] = []
+  let primeira = alunos[0]
+  for (const aluno of alunos) {
+    if (aluno.latitude + aluno.longitude < primeira.latitude + primeira.longitude) {
+      primeira = aluno
+    }
+  }
+  sementes.push(primeira)
+
+  while (sementes.length < quantos && sementes.length < alunos.length) {
+    let melhorAluno: Aluno | null = null
+    let melhorDistancia = -1
+
+    for (const aluno of alunos) {
+      let distanciaMinima = Infinity
+      for (const semente of sementes) {
+        const distancia = haversineKm(aluno.latitude, aluno.longitude, semente.latitude, semente.longitude)
+        if (distancia < distanciaMinima) {
+          distanciaMinima = distancia
+        }
+      }
+      if (distanciaMinima > melhorDistancia) {
+        melhorDistancia = distanciaMinima
+        melhorAluno = aluno
+      }
+    }
+
+    if (!melhorAluno) {
+      break
+    }
+    sementes.push(melhorAluno)
+  }
+
+  return sementes.map((a) => ({ lat: a.latitude, lng: a.longitude }))
+}
+
 // Clustering geografico com capacidade (variante simplificada de k-means balanceado).
-function clusterizarAlunos(alunos: Aluno[], veiculos: Veiculo[]) {
+//
+// "centroidesIniciais" (opcional, alinhado por indice com "veiculos") e o
+// que da estabilidade entre execucoes: quando um veiculo ja tem alunos
+// alocados nessa mesma rota (de uma geracao anterior), passamos a posicao
+// media deles como centroide FIXO desse veiculo. Isso faz os alunos novos
+// serem puxados pra perto de quem ja esta la, em vez de "vazarem" pra
+// qualquer veiculo que ainda tenha vaga sobrando, mesmo que seja longe -
+// o alvo e que um aluno so va pra um veiculo diferente do que seus colegas
+// de regiao quando a capacidade realmente obrigar. Um veiculo sem ancora
+// (ainda vazio nessa rota) usa uma semente escolhida por
+// semearPorDistanciaMaxima, pra comecar ja bem separado dos outros
+// veiculos, e seu centroide continua sendo recalculado a cada iteracao.
+function clusterizarAlunos(
+  alunos: Aluno[],
+  veiculos: Veiculo[],
+  centroidesIniciais: Array<{ lat: number; lng: number } | null> = [],
+) {
   if (veiculos.length === 0) {
     return { clusters: [] as Aluno[][], sobrando: alunos }
   }
 
-  const ordenadosPorLatitude = [...alunos].sort((a, b) => a.latitude - b.latitude)
-  let centroides = veiculos.map((_, i) => {
-    const idx = Math.floor((i * ordenadosPorLatitude.length) / veiculos.length)
-    const semente = ordenadosPorLatitude[Math.min(idx, ordenadosPorLatitude.length - 1)]
-    return semente ? { lat: semente.latitude, lng: semente.longitude } : { lat: 0, lng: 0 }
-  })
+  const indicesSemAncora = veiculos.map((_, i) => i).filter((i) => !centroidesIniciais[i])
+  const sementesSemAncora = semearPorDistanciaMaxima(alunos, indicesSemAncora.length)
+
+  let centroides: Array<{ lat: number; lng: number }> = veiculos.map((_, i) => centroidesIniciais[i] || { lat: 0, lng: 0 })
+  let proximaSemente = 0
+  for (const i of indicesSemAncora) {
+    centroides[i] = sementesSemAncora[proximaSemente] ?? { lat: 0, lng: 0 }
+    proximaSemente += 1
+  }
 
   let clusters: Aluno[][] = veiculos.map(() => [])
   let sobrando: Aluno[] = []
@@ -176,12 +308,41 @@ function clusterizarAlunos(alunos: Aluno[], veiculos: Veiculo[]) {
     }
 
     centroides = clusters.map((grupo, i) => {
+      // Veiculo com ancora (ja tinha alunos nessa rota) mantem o centroide
+      // fixo na posicao deles, em vez de derivar pra longe ao longo das
+      // iteracoes por causa dos alunos novos que forem entrando no grupo.
+      const ancora = centroidesIniciais[i]
+      if (ancora) {
+        return ancora
+      }
       if (grupo.length === 0) return centroides[i]
       const lat = grupo.reduce((acc, a) => acc + a.latitude, 0) / grupo.length
       const lng = grupo.reduce((acc, a) => acc + a.longitude, 0) / grupo.length
       return { lat, lng }
     })
   }
+
+  // O k-means guloso acima as vezes fatia um grupo geografico entre dois
+  // veiculos vizinhos so por causa da ordem em que os alunos foram
+  // processados - o refinamento por troca (2-opt) corrige esses casos sem
+  // violar a capacidade de ninguem. Duas rodadas: a primeira usa os
+  // centroides de quando o k-means parou; a segunda recalcula os centroides
+  // dos veiculos sem ancora com a composicao ja corrigida pela primeira
+  // rodada, pra aproveitar a melhora e tentar refinar mais um pouco.
+  refinarClustersComTrocas(clusters, centroides)
+
+  centroides = clusters.map((grupo, i) => {
+    const ancora = centroidesIniciais[i]
+    if (ancora) {
+      return ancora
+    }
+    if (grupo.length === 0) return centroides[i]
+    const lat = grupo.reduce((acc, a) => acc + a.latitude, 0) / grupo.length
+    const lng = grupo.reduce((acc, a) => acc + a.longitude, 0) / grupo.length
+    return { lat, lng }
+  })
+
+  refinarClustersComTrocas(clusters, centroides)
 
   return { clusters, sobrando }
 }
@@ -230,17 +391,171 @@ async function requireAdmin(request: Request) {
 
 // ---------- Directions API ----------
 
+// Cache simples em memoria (dura so enquanto a instancia da Edge Function
+// estiver "quente") pra nao geocodificar o mesmo endereco de unidade em toda
+// chamada.
+const unitCoordsCache = new Map<string, { lat: number; lng: number }>()
+
+// Geocodifica um endereco (usado aqui so pro endereco da unidade, pra achar
+// o aluno mais distante por coordenada) e guarda o resultado em cache.
+// Precisa que a Geocoding API esteja ativada pra essa mesma chave de API.
+async function geocodeEndereco(endereco: string, apiKey: string): Promise<{ lat: number; lng: number } | null> {
+  const emCache = unitCoordsCache.get(endereco)
+  if (emCache) {
+    return emCache
+  }
+
+  const url =
+    'https://maps.googleapis.com/maps/api/geocode/json' +
+    `?address=${encodeURIComponent(endereco)}` +
+    `&key=${apiKey}`
+
+  try {
+    const res = await fetch(url)
+    const data = await res.json()
+
+    if (data.status === 'OK' && data.results?.[0]?.geometry?.location) {
+      const { lat, lng } = data.results[0].geometry.location
+      const coords = { lat, lng }
+      unitCoordsCache.set(endereco, coords)
+      return coords
+    }
+
+    console.error('Geocoding API retornou status', data.status, data.error_message)
+  } catch (error) {
+    console.error('Erro ao geocodificar endereco da unidade:', error)
+  }
+
+  return null
+}
+
+// Soma a duracao (em segundos) de todas as "legs" de uma resposta da
+// Directions API - pequeno helper repetido em varios pontos abaixo.
+function somarDuracaoSegundos(data: any): number {
+  return (data.routes?.[0]?.legs ?? []).reduce(
+    (acc: number, leg: { duration?: { value?: number } }) => acc + (leg.duration?.value ?? 0),
+    0,
+  )
+}
+
+// Traca a rota de IDA: comeca sempre no aluno mais distante da unidade (por
+// linha reta - haversine) e termina na unidade, otimizando pela Directions
+// API só a ordem das paradas RESTANTES nesse meio de caminho. Devolve a
+// ordem final junto com a duracao total do trajeto (ponto mais distante ->
+// ... -> unidade), usada pra calcular o horario de inicio de tras pra
+// frente a partir do horario-alvo de chegada.
+//
+// Se a unidade nao puder ser geocodificada por algum motivo (Geocoding API
+// desativada pra essa chave, por exemplo), cai de volta pra tratar o
+// primeiro aluno da lista como "mais distante" sem garantia nenhuma - um
+// log de erro avisa quando isso acontece.
+async function tracarRotaIda(enderecoUnidade: string, alunos: Aluno[], apiKey: string) {
+  if (alunos.length === 0) {
+    return { ordenados: [] as Aluno[], duracaoSegundos: 0 }
+  }
+
+  const coordsUnidade = await geocodeEndereco(enderecoUnidade, apiKey)
+
+  let maisDistante = alunos[0]
+  if (coordsUnidade) {
+    let maiorDistancia = -1
+    for (const aluno of alunos) {
+      const distancia = haversineKm(aluno.latitude, aluno.longitude, coordsUnidade.lat, coordsUnidade.lng)
+      if (distancia > maiorDistancia) {
+        maiorDistancia = distancia
+        maisDistante = aluno
+      }
+    }
+  } else {
+    console.error(
+      'Nao foi possivel geocodificar o endereco da unidade (confira se a Geocoding API esta ativada pra ' +
+        'GOOGLE_DIRECTIONS_API_KEY) - a rota de Ida nao tem garantia de comecar pelo aluno mais distante.',
+    )
+  }
+
+  if (alunos.length === 1) {
+    const url =
+      'https://maps.googleapis.com/maps/api/directions/json' +
+      `?origin=${encodeURIComponent(maisDistante.address)}` +
+      `&destination=${encodeURIComponent(enderecoUnidade)}` +
+      `&key=${apiKey}`
+
+    let duracaoSegundos = 0
+    try {
+      const res = await fetch(url)
+      const data = await res.json()
+      if (data.status === 'OK') {
+        duracaoSegundos = somarDuracaoSegundos(data)
+      } else {
+        console.error('Directions API retornou status', data.status, data.error_message)
+      }
+    } catch (error) {
+      console.error('Erro ao chamar Directions API:', error)
+    }
+
+    return { ordenados: [maisDistante], duracaoSegundos }
+  }
+
+  const restantes = alunos.filter((a) => a !== maisDistante)
+  const ordenados: Aluno[] = [maisDistante]
+  let duracaoSegundos = 0
+  let origemAtual = maisDistante.address
+
+  // Mesma logica de paginacao de MAX_WAYPOINTS de antes, mas agora cada
+  // pedido parte de onde o anterior terminou (nunca da unidade) - com ate
+  // ~23 alunos (o normal pra uma van escolar) isso e sempre uma unica
+  // requisicao e o calculo de duracao e exato; com mais alunos que isso, a
+  // duracao de cada pedido intermediario soma tambem a ida até a unidade,
+  // super-estimando um pouco o total (mesma ressalva que a versao anterior
+  // deste arquivo já tinha).
+  const grupos: Aluno[][] = []
+  for (let i = 0; i < restantes.length; i += MAX_WAYPOINTS) {
+    grupos.push(restantes.slice(i, i + MAX_WAYPOINTS))
+  }
+
+  for (const grupo of grupos) {
+    const waypoints = grupo.map((a) => encodeURIComponent(a.address)).join('|')
+    const url =
+      'https://maps.googleapis.com/maps/api/directions/json' +
+      `?origin=${encodeURIComponent(origemAtual)}` +
+      `&destination=${encodeURIComponent(enderecoUnidade)}` +
+      `&waypoints=optimize:true|${waypoints}` +
+      `&key=${apiKey}`
+
+    try {
+      const res = await fetch(url)
+      const data = await res.json()
+
+      if (data.status === 'OK' && data.routes?.[0]?.waypoint_order) {
+        const ordem: number[] = data.routes[0].waypoint_order
+        const grupoOrdenado = ordem.map((i) => grupo[i])
+        ordenados.push(...grupoOrdenado)
+        duracaoSegundos += somarDuracaoSegundos(data)
+        origemAtual = grupoOrdenado[grupoOrdenado.length - 1]?.address ?? origemAtual
+      } else {
+        console.error('Directions API retornou status', data.status, data.error_message)
+        ordenados.push(...grupo)
+      }
+    } catch (error) {
+      console.error('Erro ao chamar Directions API:', error)
+      ordenados.push(...grupo)
+    }
+  }
+
+  return { ordenados, duracaoSegundos }
+}
+
 // Traca o loop unidade -> paradas (na melhor ordem) -> unidade, e devolve a
 // ordem otimizada junto com a duracao total do trajeto (soma de todas as
-// pernas). Usado tanto pra IDA (ordem + duracao, pra calcular horario de
-// inicio) quanto pra VOLTA (so a ordem interessa).
+// pernas). Usado so pra VOLTA - sem ponto de partida fixo, a Directions API
+// e livre pra escolher a ordem que minimiza o trajeto todo.
 //
 // Nota: quando ha mais de MAX_WAYPOINTS alunos, a lista e dividida em varios
 // pedidos e a duracao de cada pedido e somada. Isso super-estima levemente a
 // duracao real (cada pedido soma sua propria volta ate a unidade), mas para
 // rotas de ate ~23 alunos (o normal pra uma van escolar) e sempre uma unica
 // requisicao, entao o calculo e exato.
-async function tracarRota(enderecoUnidade: string, alunos: Aluno[], apiKey: string) {
+async function tracarRotaVolta(enderecoUnidade: string, alunos: Aluno[], apiKey: string) {
   if (alunos.length === 0) {
     return { ordenados: [] as Aluno[], duracaoSegundos: 0 }
   }
@@ -350,20 +665,23 @@ Deno.serve(async (req) => {
     { data: alunosData, error: erroAlunos },
     { data: veiculosData, error: erroVeiculos },
     { data: rotasData, error: erroRotas },
+    { data: feriasData, error: erroFerias },
   ] = await Promise.all([
     supabase.from('students').select('*'),
     supabase.from('vehicles').select('*'),
     supabase.from('routes').select('*').eq('status', 'Aguardando Saida'),
+    supabase.from('unit_vacations').select('unit').eq('enabled', true),
   ])
 
-  if (erroAlunos || erroVeiculos || erroRotas) {
+  if (erroAlunos || erroVeiculos || erroRotas || erroFerias) {
     return new Response(
-      JSON.stringify({ error: (erroAlunos || erroVeiculos || erroRotas)?.message || 'Erro ao carregar dados.' }),
+      JSON.stringify({ error: (erroAlunos || erroVeiculos || erroRotas || erroFerias)?.message || 'Erro ao carregar dados.' }),
       { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     )
   }
 
   const rotasExistentes = rotasData || []
+  const unidadesEmFerias = new Set((feriasData || []).map((ferias) => normalizarUnidade(ferias.unit)))
 
   const todosAlunos = (alunosData || []) as Aluno[]
   const todosVeiculos = (veiculosData || []).map((v: Record<string, unknown>) => ({
@@ -458,10 +776,20 @@ Deno.serve(async (req) => {
           .map((r: any) => [r.vehicle_id, r]),
       )
 
+      // Pra cada veiculo, resolve quem ja esta na rota dele (de uma geracao
+      // anterior) junto com a capacidade que ainda sobra - essa lista de
+      // "quem ja esta la" e reaproveitada tanto pra ancorar o clustering
+      // (logo abaixo) quanto, mais adiante, pra juntar com os alunos novos
+      // na hora de retracar a rota inteira.
       const veiculosComCapacidadeRestante = veiculosDaUnidade.map((v) => {
-        const rotaExistente = rotaExistentePorVeiculo.get(v.id)
-        const jaOcupado = rotaExistente ? (rotaExistente.stops || []).length : 0
-        return { ...v, capacity: Math.max(0, v.capacity - jaOcupado) }
+        const rotaExistente = rotaExistentePorVeiculo.get(v.id) as any
+        const alunosJaNaRota: Aluno[] = rotaExistente
+          ? ((rotaExistente.stops || [])
+              .map((s: any) => todosAlunos.find((a) => a.id === s.student_id))
+              .filter(Boolean) as Aluno[])
+          : []
+
+        return { ...v, capacity: Math.max(0, v.capacity - alunosJaNaRota.length), alunosJaNaRota }
       })
 
       const veiculosDisponiveis = veiculosComCapacidadeRestante.filter((v) => v.capacity > 0)
@@ -471,7 +799,22 @@ Deno.serve(async (req) => {
         continue
       }
 
-      const { clusters, sobrando } = clusterizarAlunos(alunosDoGrupo, veiculosDisponiveis)
+      // Ancora o clustering na posicao media de quem ja esta em cada
+      // veiculo nessa rota - e o que faz um aluno novo tender a cair no
+      // MESMO veiculo que os colegas de regiao que ja estavam la, em vez de
+      // ser distribuido so pela vaga que sobrou em cada veiculo. Um veiculo
+      // sem ninguem ainda (null) continua usando a semente padrao dentro de
+      // clusterizarAlunos.
+      const centroidesIniciais = veiculosDisponiveis.map((v) => {
+        if (v.alunosJaNaRota.length === 0) {
+          return null
+        }
+        const lat = v.alunosJaNaRota.reduce((acc, a) => acc + a.latitude, 0) / v.alunosJaNaRota.length
+        const lng = v.alunosJaNaRota.reduce((acc, a) => acc + a.longitude, 0) / v.alunosJaNaRota.length
+        return { lat, lng }
+      })
+
+      const { clusters, sobrando } = clusterizarAlunos(alunosDoGrupo, veiculosDisponiveis, centroidesIniciais)
       resumo.alunosSemVeiculo.push(...sobrando.map((a) => a.name))
 
       for (let i = 0; i < veiculosDisponiveis.length; i++) {
@@ -483,18 +826,15 @@ Deno.serve(async (req) => {
         const veiculo = veiculosDisponiveis[i]
         const rotaExistente = rotaExistentePorVeiculo.get(veiculo.id) as any
 
-        // Se ja existe rota pra esse veiculo/grupo, junta quem ja estava
-        // nela com os alunos novos e retraca a ordem toda (nao so anexa no
-        // final - reotimiza com todo mundo junto).
-        const alunosJaNaRota: Aluno[] = rotaExistente
-          ? ((rotaExistente.stops || [])
-              .map((s: any) => todosAlunos.find((a) => a.id === s.student_id))
-              .filter(Boolean) as Aluno[])
-          : []
+        // Junta quem ja estava na rota (calculado acima) com os alunos
+        // novos e retraca a ordem toda (nao so anexa no final - reotimiza
+        // com todo mundo junto).
+        const todosOsAlunosDaRota = [...veiculo.alunosJaNaRota, ...alunosNovosDoVeiculo]
 
-        const todosOsAlunosDaRota = [...alunosJaNaRota, ...alunosNovosDoVeiculo]
-
-        const { ordenados, duracaoSegundos } = await tracarRota(enderecoUnidade, todosOsAlunosDaRota, googleApiKey)
+        const { ordenados, duracaoSegundos } =
+          direcao === 'Ida'
+            ? await tracarRotaIda(enderecoUnidade, todosOsAlunosDaRota, googleApiKey)
+            : await tracarRotaVolta(enderecoUnidade, todosOsAlunosDaRota, googleApiKey)
 
         let horarioInicio: string | null = null
         if (direcao === 'Ida') {
@@ -583,6 +923,7 @@ Deno.serve(async (req) => {
   const elegiveisIda = todosAlunos.filter(
     (a) =>
       temDadosCompletosIda(a) &&
+      !unidadesEmFerias.has(normalizarUnidade(a.unit)) &&
       a.route_type !== 'Personalizado' &&
       (a.route_type === 'Ida' || a.route_type === 'Ida e volta') &&
       !a.route_id_ida,
@@ -591,6 +932,7 @@ Deno.serve(async (req) => {
   const elegiveisVolta = todosAlunos.filter(
     (a) =>
       temDadosCompletosVolta(a) &&
+      !unidadesEmFerias.has(normalizarUnidade(a.unit)) &&
       a.route_type !== 'Personalizado' &&
       (a.route_type === 'Volta' || a.route_type === 'Ida e volta') &&
       !a.route_id_volta,

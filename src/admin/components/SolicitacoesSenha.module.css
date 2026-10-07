@@ -1,0 +1,24 @@
+.card{display:grid;gap:18px;background:#f4f7ff;border-radius:24px;padding:28px 26px;box-shadow:0 18px 50px rgba(0,19,85,.08);border:1px solid rgba(2,14,49,.08)}
+.header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.header h2{margin:0 0 8px;color:#001355;font-size:1.26rem}
+.header p{margin:0;color:#5a6689;line-height:1.45}
+.refresh,.acao,.confirmar{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:11px 15px;background:#001355;color:#fff;font-weight:700;cursor:pointer}
+.refresh:disabled,.acao:disabled,.confirmar:disabled{opacity:.6;cursor:wait}
+.feedback{margin:0;padding:12px 14px;border-radius:10px;background:#eef2ff;color:#001355;line-height:1.45}
+.vazio{margin:0;color:#5a6689}
+.lista{display:grid;gap:12px}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;padding:16px;border:1px solid rgba(0,19,85,.1);border-radius:16px;background:#fff}
+.detalhes{display:grid;gap:5px;min-width:0;color:#5a6689;font-size:.92rem;overflow-wrap:anywhere}
+.detalhes strong{color:#001355;font-size:1rem}
+.detalhes time{font-size:.8rem}
+.formulario{grid-column:1/-1;display:grid;gap:12px;padding-top:14px;border-top:1px solid rgba(0,19,85,.1)}
+.formulario label{display:grid;gap:6px;color:#243463;font-weight:600;font-size:.9rem}
+.formulario input{width:100%;min-height:44px;padding:10px 12px;border:1px solid #cbd3ee;border-radius:10px;background:#fff;color:#1d2a52;font:inherit}
+.senhaCampo{position:relative;display:block}
+.senhaCampo input{padding-right:48px}
+.mostrarSenha{position:absolute;top:50%;right:7px;transform:translateY(-50%);width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:#44527e;cursor:pointer}
+.mostrarSenha:hover{background:#eef2ff;color:#001355}
+.confirmar{justify-self:end}
+@media(max-width:600px){.header{flex-direction:column}.item{grid-template-columns:1fr}.acao{justify-self:start}.confirmar{justify-self:stretch}}
+@media(max-width:680px){.card{padding:22px 18px;border-radius:18px}}
+@media(max-width:380px){.card{padding-inline:14px}}

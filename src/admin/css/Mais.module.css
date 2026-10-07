@@ -23,6 +23,8 @@
   border: 1px solid rgba(2, 14, 49, 0.08);
 }
 
+.mais-card--mensagem{display:flex;flex-direction:column}
+
 .mais-card-header{
   margin-bottom: 18px;
 }
@@ -59,7 +61,8 @@
 .mais-card-footer{
   margin-top: 18px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .mais-button{
@@ -73,11 +76,18 @@
   font-size: 1rem;
   cursor: pointer;
   transition: filter 160ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .mais-button:hover{
   filter: brightness(1.05);
 }
+
+.mais-button:disabled{opacity:.58;cursor:wait}
+.mais-button--secondary{background:#e7ecff;color:#001355}
 
 .mais-card--ferias{
   display: flex;
@@ -182,7 +192,8 @@
   }
 
   .mais-button{
-    width: 100%;
+    flex: 1;
+    padding-inline: 12px;
   }
 }
 

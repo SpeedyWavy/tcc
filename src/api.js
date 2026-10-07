@@ -1,5 +1,6 @@
 import { supabase, sessionReady } from './supabase.js'
 import { clearSession, getStoredUser } from './auth.js'
+import { traduzirMensagemUsuario } from './lib/traduzirMensagemUsuario.js'
 
 function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : ''
@@ -44,10 +45,10 @@ function getPathSegments(path) {
 
 function handleSupabaseError(error, fallbackMessage) {
   if (error?.message) {
-    throw new Error(error.message)
+    throw new Error(traduzirMensagemUsuario(error.message, fallbackMessage))
   }
 
-  throw new Error(fallbackMessage)
+  throw new Error(traduzirMensagemUsuario(fallbackMessage))
 }
 
 async function resolveDriverId(currentUser) {
@@ -131,7 +132,17 @@ async function invokeManageUsers(action, payload) {
   })
 
   if (error) {
-    handleSupabaseError(error, 'Não foi possível concluir a operação.')
+    let detail = ''
+    const response = error.context
+    if (response && typeof response.clone === 'function') {
+      try {
+        const body = await response.clone().json()
+        detail = body?.detail || body?.message || ''
+      } catch {
+        // Usa a mensagem do SDK se a Edge Function não retornar JSON.
+      }
+    }
+    throw new Error(traduzirMensagemUsuario(detail || error.message, 'Não foi possível concluir a operação.'))
   }
 
   return data
@@ -511,6 +522,28 @@ function formatRouteTime(value) {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
+async function unidadeEstaEmFerias(vehicleId) {
+  if (!vehicleId) return false
+
+  const { data: veiculo, error: erroVeiculo } = await supabase
+    .from('vehicles')
+    .select('unit')
+    .eq('id', vehicleId)
+    .maybeSingle()
+
+  if (erroVeiculo) handleSupabaseError(erroVeiculo, 'Nao foi possivel verificar as ferias da unidade.')
+  if (!veiculo?.unit) return false
+
+  const { data: ferias, error: erroFerias } = await supabase
+    .from('unit_vacations')
+    .select('enabled')
+    .eq('unit', veiculo.unit)
+    .maybeSingle()
+
+  if (erroFerias) handleSupabaseError(erroFerias, 'Nao foi possivel verificar as ferias da unidade.')
+  return ferias?.enabled === true
+}
+
 async function handleRoutes(method, body, routeId = null) {
   const currentUser = getStoredUser()
 
@@ -522,6 +555,9 @@ async function handleRoutes(method, body, routeId = null) {
       throw new Error('Informe o veículo para criar a rota.')
     }
 
+    const feriasAtivas = await unidadeEstaEmFerias(vehicleId)
+    const statusSolicitado = normalizeText(payload.status) || 'Aguardando Saída'
+
     const { data, error } = await supabase
       .from('routes')
       .insert({
@@ -529,7 +565,8 @@ async function handleRoutes(method, body, routeId = null) {
         driver_id: payload.driver_id || null,
         direction: normalizeText(payload.direction) || null,
         horario_inicio: normalizeText(payload.horario_inicio) || null,
-        status: normalizeText(payload.status) || 'Aguardando Saída',
+        status: feriasAtivas ? 'Cancelado' : statusSolicitado,
+        status_before_vacation: feriasAtivas ? statusSolicitado : null,
         stops: Array.isArray(payload.stops) ? payload.stops : [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -564,9 +601,15 @@ async function handleRoutes(method, body, routeId = null) {
       handleSupabaseError(existingRouteError, 'Não foi possível localizar a rota.')
     }
 
+    const vehicleId = payload.vehicle_id ?? existingRoute?.vehicle_id ?? null
+    const feriasAtivas = await unidadeEstaEmFerias(vehicleId)
+    const statusAnteriorFerias = existingRoute?.status_before_vacation
+      || (existingRoute?.status !== 'Cancelado' ? existingRoute?.status : null)
+
     const routeUpdate = {
-      status: normalizeText(payload.status) || existingRoute?.status || 'Aguardando Saída',
-      vehicle_id: payload.vehicle_id ?? existingRoute?.vehicle_id ?? null,
+      status: feriasAtivas ? 'Cancelado' : normalizeText(payload.status) || existingRoute?.status || 'Aguardando Saída',
+      status_before_vacation: feriasAtivas ? statusAnteriorFerias || 'Aguardando Saída' : existingRoute?.status_before_vacation || null,
+      vehicle_id: vehicleId,
       driver_id: payload.driver_id ?? existingRoute?.driver_id ?? null,
       direction: payload.direction ?? existingRoute?.direction ?? null,
       horario_inicio: payload.horario_inicio ?? existingRoute?.horario_inicio ?? null,
@@ -977,6 +1020,6 @@ throw new Error(`Endpoint não suportado: ${path}`)
       clearSession()
     }
 
-    throw error instanceof Error ? error : new Error(message)
+    throw new Error(traduzirMensagemUsuario(message))
   }
 }

@@ -1,7 +1,6 @@
 /// <reference path="../types.d.ts" />
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { hashSync as bcryptHashSync } from 'npm:bcryptjs@2.4.3'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -15,13 +14,12 @@ const allowedOrigins = new Set(
 
 function getCorsHeaders(request: Request) {
   const origin = request.headers.get('origin') ?? ''
-  const allowOrigin = allowedOrigins.has(origin) ? origin : 'http://localhost:5173'
 
   return {
-    'Access-Control-Allow-Origin': allowOrigin,
+    ...(allowedOrigins.has(origin) ? { 'Access-Control-Allow-Origin': origin } : {}),
     'Vary': 'Origin',
-    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
   }
 }
 
@@ -70,6 +68,17 @@ function createAdminClient() {
       detectSessionInUrl: false,
     },
   })
+}
+
+async function hashPassword(password: string) {
+  // Carrega bcrypt sob demanda para que uma falha ao resolver o pacote não
+  // impeça a função de iniciar e responder ao preflight CORS.
+  const bcryptModule = await import('npm:bcryptjs@2.4.3')
+  const hashSync = bcryptModule.hashSync || bcryptModule.default?.hashSync
+  if (typeof hashSync !== 'function') {
+    throw new Error('O módulo bcryptjs não disponibilizou hashSync.')
+  }
+  return hashSync(password, 12)
 }
 
 async function requireAdmin(request: Request) {
@@ -128,6 +137,17 @@ async function createManagedUser(request: Request, targetRole: 'admin' | 'driver
   if (!fullName || !email || !password) {
     return jsonResponse(request, { detail: 'Nome, email e senha sao obrigatorios.' }, 400)
   }
+  if (password.length < 3 || new TextEncoder().encode(password).length > 72) {
+    return jsonResponse(request, { detail: 'A senha deve ter de 3 a 72 bytes.' }, 400)
+  }
+
+  let passwordHash: string
+  try {
+    passwordHash = await hashPassword(password)
+  } catch (error) {
+    console.error('Falha ao carregar bcryptjs para criar usuário:', error)
+    return jsonResponse(request, { detail: 'Não foi possível preparar a senha do usuário.' }, 500)
+  }
 
   const adminClient = createAdminClient()
 
@@ -148,7 +168,7 @@ async function createManagedUser(request: Request, targetRole: 'admin' | 'driver
     id: authUser.id,
     auth_user_id: authUser.id,
     full_name: fullName,
-    password: bcryptHashSync(password, 12),
+    password: passwordHash,
     role: targetRole,
     cpf: normalizeText(payload.cpf),
     email,
@@ -207,6 +227,19 @@ async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver
   if (!fullName || !email) {
     return jsonResponse(request, { detail: 'Nome e email sao obrigatorios.' }, 400)
   }
+  if (password && (password.length < 3 || new TextEncoder().encode(password).length > 72)) {
+    return jsonResponse(request, { detail: 'A senha deve ter de 3 a 72 bytes.' }, 400)
+  }
+
+  let passwordHash: string | null = null
+  if (password) {
+    try {
+      passwordHash = await hashPassword(password)
+    } catch (error) {
+      console.error('Falha ao carregar bcryptjs para atualizar usuário:', error)
+      return jsonResponse(request, { detail: 'Não foi possível preparar a senha do usuário.' }, 500)
+    }
+  }
 
   const adminClient = createAdminClient()
   const { data: currentRecord, error: currentError } = await adminClient
@@ -245,7 +278,7 @@ async function updateManagedUser(request: Request, targetRole: 'admin' | 'driver
   }
 
   if (password) {
-    updateRecord.password = bcryptHashSync(password, 12)
+    updateRecord.password = passwordHash
   }
 
   // Resolve photo_url from photo_path if needed
@@ -355,7 +388,7 @@ async function deleteManagedUser(request: Request, currentAuthUserId: string | u
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(request) })
   }
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {

@@ -201,6 +201,24 @@ function GerenciarMotoristas() {
   const enviarNovoMotorista = async (e) => {
     e.preventDefault()
 
+    const email = acessoMotorista.email.trim()
+    if (!email) {
+      showError('Informe o e-mail do motorista.')
+      return
+    }
+    if (!acessoMotorista.senha) {
+      showError('Crie uma senha para o motorista.')
+      return
+    }
+    if (acessoMotorista.senha.length < 3) {
+      showError('A senha deve ter pelo menos 3 caracteres.')
+      return
+    }
+    if (new TextEncoder().encode(acessoMotorista.senha).length > 72) {
+      showError('A senha não pode ultrapassar 72 bytes.')
+      return
+    }
+
     if (!isCpfComplete(novoMotorista.cpf)) {
       showError('Informe um CPF com 11 numeros.')
       return
@@ -224,7 +242,7 @@ function GerenciarMotoristas() {
           full_name: novoMotorista.nome.trim(),
           password: acessoMotorista.senha,
           cpf: novoMotorista.cpf.trim(),
-          email: acessoMotorista.email.trim(),
+          email,
           rg: novoMotorista.rg.trim(),
           cnh_category: novoMotorista.categoriaCnh,
           transport_identification: novoMotorista.identificacaoTransporte.trim(),
@@ -472,15 +490,15 @@ function GerenciarMotoristas() {
                   <h2 className={styles['boadd-titulo']}>Acesso do Motorista</h2>
                   <label className={styles['boadd-label']}>
                     Informe o e-mail do motorista:
-                    <input type="email" placeholder="Email" value={acessoMotorista.email} onChange={atualizarAcesso('email')} />
+                    <input type="email" placeholder="Email" value={acessoMotorista.email} onChange={atualizarAcesso('email')} required autoComplete="email" />
                   </label>
                   <label className={styles['boadd-label']}>
                     Crie uma senha:
-                    <input type="password" placeholder="Senha" value={acessoMotorista.senha} onChange={atualizarAcesso('senha')} />
+                    <input type="password" placeholder="Senha" value={acessoMotorista.senha} onChange={atualizarAcesso('senha')} required minLength={3} autoComplete="new-password" />
                   </label>
                   <label className={styles['boadd-label']}>
                     Confirme a senha:
-                    <input type="password" placeholder="Senha" value={acessoMotorista.confirmarSenha} onChange={atualizarAcesso('confirmarSenha')} />
+                    <input type="password" placeholder="Senha" value={acessoMotorista.confirmarSenha} onChange={atualizarAcesso('confirmarSenha')} required minLength={3} autoComplete="new-password" />
                   </label>
 
                   <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>

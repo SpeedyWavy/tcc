@@ -16,6 +16,7 @@ const normalizarAluno = (aluno) => ({
   responsavel: aluno.responsible_name || aluno.responsavel || 'Nao informado',
   contatoResponsavel: aluno.parent_contact || aluno.contato_responsavel || 'Nao informado',
   endereco: aluno.address || aluno.endereco || 'Nao informado',
+  fotoUrl: aluno.photo_url || aluno.foto_url || null,
   latitude: aluno.latitude ?? null,
   longitude: aluno.longitude ?? null,
   periodo: aluno.period || aluno.periodo || 'Nao informado',
@@ -148,7 +149,13 @@ function Alunos() {
                 {alunoAberto === aluno.id && (
                   <div className={styles['aluno-detalhes']}>
                     <div className={styles['aluno-card-top']}>
-                      <div className={styles['aluno-foto']} />
+                      <div className={styles['aluno-foto']}>
+                        {aluno.fotoUrl ? (
+                          <img src={aluno.fotoUrl} alt={`Foto de ${aluno.nome || 'aluno'}`} />
+                        ) : (
+                          <span aria-hidden="true">📷</span>
+                        )}
+                      </div>
                       <div className={styles['aluno-info']}>
                         <p><strong>RM:</strong> {aluno.rm}</p>
                         <p><strong>Unidade:</strong> {aluno.unidade}</p>

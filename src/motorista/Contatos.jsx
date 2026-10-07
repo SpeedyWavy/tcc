@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import styles from './css/Contatos.module.css'
-import { ArrowLeft, Phone, PhoneCall, Search } from 'lucide-react'
+import { ArrowLeft, Phone, Search } from 'lucide-react'
 import UserMenu from './components/UserMenu.jsx'
 import { apiRequest } from '../api.js'
 import { ListSkeleton } from '../components/Skeleton.jsx'
@@ -133,9 +133,6 @@ function Contatos() {
                       <div className={styles['acoes']}>
                         <button type="button" className={styles['acao']} disabled={!contato.telefone} title="Ligar">
                           <Phone />
-                        </button>
-                        <button type="button" className={styles['acao']} disabled={!contato.telefone} title="Ligar">
-                          <PhoneCall />
                         </button>
                       </div>
                     </article>

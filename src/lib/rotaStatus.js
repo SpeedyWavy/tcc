@@ -1,25 +1,29 @@
 // Regras de ciclo de status das rotas, compartilhadas entre a tela do
-// motorista (Trajeto.jsx) e a do admin (GerenciarRotas.jsx) - pra nao
-// duplicar a mesma regra em dois lugares.
+// motorista (Trajeto.jsx) e a do admin (GerenciarRotas.jsx).
 
 export const STATUS_AGUARDANDO = 'Aguardando Saida'
 export const STATUS_EM_TRANSITO = 'Em Transito'
 export const STATUS_ATRASADO = 'Atrasado'
 export const STATUS_CONCLUIDO = 'Concluido'
 
-// Quanto tempo antes do horario programado uma rota concluida volta
-// sozinha pra "Aguardando Saida" (pra poder ser rodada de novo no proximo
-// dia letivo).
 const MINUTOS_ANTES_RESET = 60
 
+function normalizarStatus(status) {
+  return String(status || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+}
+
 function horarioParaMinutos(horario) {
-  if (!horario || typeof horario !== 'string') {
-    return null
-  }
-  const [h, m] = horario.split(':').map(Number)
-  if (Number.isNaN(h) || Number.isNaN(m)) {
-    return null
-  }
+  if (!horario || typeof horario !== 'string') return null
+  const partes = horario.match(/\b(\d{1,2}):(\d{2})\b/)
+  if (!partes) return null
+  const h = Number(partes[1])
+  const m = Number(partes[2])
+  if (h > 23 || m > 59) return null
   return h * 60 + m
 }
 
@@ -28,19 +32,18 @@ function minutosAgora() {
   return agora.getHours() * 60 + agora.getMinutes()
 }
 
-// Rotas sao reaproveitadas dia apos dia (nao sao recriadas toda vez): 1h
-// antes do horario de inicio programado, uma rota "Concluida" volta sozinha
-// pra "Aguardando Saida". Nao depende de nenhum job agendado no servidor -
-// roda "sob demanda", toda vez que a tela do motorista ou a do admin
-// carrega os dados, o que cobre bem o caso real (motorista abre o app perto
-// do horario que precisa sair).
+function diferencaHorario(rota, agora) {
+  const minutos = horarioParaMinutos(rota.horario_inicio) ?? horarioParaMinutos(rota.horario)
+  return minutos == null ? null : minutos - agora
+}
+
+// Reaproveita rotas concluídas diariamente, voltando para aguardando uma
+// hora antes do horário programado. A comparação tolera acentos e espaços.
 export async function resetarRotasProximas(supabase) {
   const agora = minutosAgora()
-
-  const { data: concluidas, error } = await supabase
+  const { data: rotas, error } = await supabase
     .from('routes')
-    .select('id, horario_inicio')
-    .eq('status', STATUS_CONCLUIDO)
+    .select('id, status, horario_inicio')
     .not('horario_inicio', 'is', null)
 
   if (error) {
@@ -48,69 +51,64 @@ export async function resetarRotasProximas(supabase) {
     return
   }
 
-  const idsParaResetar = (concluidas || [])
+  const idsParaResetar = (rotas || [])
     .filter((rota) => {
-      const minutos = horarioParaMinutos(rota.horario_inicio)
-      if (minutos == null) {
-        return false
-      }
-      const diferenca = minutos - agora
-      return diferenca >= 0 && diferenca <= MINUTOS_ANTES_RESET
+      if (normalizarStatus(rota.status) !== normalizarStatus(STATUS_CONCLUIDO)) return false
+      const diferenca = diferencaHorario(rota, agora)
+      return diferenca != null && diferenca >= 0 && diferenca <= MINUTOS_ANTES_RESET
     })
     .map((rota) => rota.id)
 
-  if (idsParaResetar.length === 0) {
-    return
-  }
+  if (idsParaResetar.length === 0) return
 
   const { error: erroUpdate } = await supabase
     .from('routes')
     .update({ status: STATUS_AGUARDANDO })
     .in('id', idsParaResetar)
 
-  if (erroUpdate) {
-    console.error('Erro ao resetar rotas proximas do horario:', erroUpdate)
-  }
+  if (erroUpdate) console.error('Erro ao resetar rotas próximas do horário:', erroUpdate)
 }
 
-// Entre as rotas ainda nao concluidas de um veiculo (pode haver uma de Ida e
-// uma de Volta ao mesmo tempo), escolhe qual e "a rota agora":
-// 1. Se alguma ja esta em andamento (Em Transito/Atrasado), essa vence -
-//    o motorista esta no meio de um trajeto, nao faz sentido trocar.
-// 2. Senao, entre as que estao "Aguardando Saida", escolhe a que tem o
-//    horario_inicio mais proximo do horario atual (de manha cedo cai na
-//    rota de Ida, de tarde cai na de Volta).
+// Prioriza uma rota em andamento. Uma rota aguardando só fica disponível
+// até uma hora antes do horário; assim as próximas não aparecem cedo demais.
 export function escolherRotaAtual(rotas) {
-  if (!rotas || rotas.length === 0) {
-    return null
-  }
+  if (!rotas || rotas.length === 0) return null
 
-  const emAndamento = rotas.find((r) => r.status === STATUS_EM_TRANSITO || r.status === STATUS_ATRASADO)
-  if (emAndamento) {
-    return emAndamento
-  }
-
-  const aguardando = rotas.filter((r) => r.status === STATUS_AGUARDANDO)
-  if (aguardando.length === 0) {
-    return rotas[0]
-  }
+  const emAndamento = rotas.find((rota) => {
+    const status = normalizarStatus(rota.status)
+    return status === normalizarStatus(STATUS_EM_TRANSITO) || status === normalizarStatus(STATUS_ATRASADO)
+  })
+  if (emAndamento) return emAndamento
 
   const agora = minutosAgora()
-
-  return aguardando.reduce((melhor, atual) => {
-    const minutosAtual = horarioParaMinutos(atual.horario_inicio)
-    const minutosMelhor = horarioParaMinutos(melhor.horario_inicio)
-
-    if (minutosAtual == null) {
-      return melhor
-    }
-    if (minutosMelhor == null) {
-      return atual
-    }
-
-    const diferencaAtual = Math.abs(minutosAtual - agora)
-    const diferencaMelhor = Math.abs(minutosMelhor - agora)
-
-    return diferencaAtual < diferencaMelhor ? atual : melhor
+  const disponiveis = rotas.filter((rota) => {
+    if (normalizarStatus(rota.status) !== normalizarStatus(STATUS_AGUARDANDO)) return false
+    const diferenca = diferencaHorario(rota, agora)
+    return diferenca == null || diferenca <= MINUTOS_ANTES_RESET
   })
+
+  if (disponiveis.length === 0) return null
+
+  return disponiveis.reduce((melhor, atual) => {
+    const diferencaAtual = diferencaHorario(atual, agora)
+    const diferencaMelhor = diferencaHorario(melhor, agora)
+    if (diferencaAtual == null) return melhor
+    if (diferencaMelhor == null) return atual
+    return Math.abs(diferencaAtual) < Math.abs(diferencaMelhor) ? atual : melhor
+  }, disponiveis[0])
+}
+
+export function obterProximaRota(rotas) {
+  const agora = minutosAgora()
+  return (rotas || [])
+    .map((rota) => {
+      const diferenca = diferencaHorario(rota, agora)
+      if (diferenca == null) return null
+      // Os horários das rotas se repetem diariamente. Se todos os horários
+      // de hoje já passaram, a próxima rota é a primeira do próximo dia.
+      const minutosAteRota = ((diferenca % 1440) + 1440) % 1440 || 1440
+      return { rota, minutosAteRota }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.minutosAteRota - b.minutosAteRota)[0]?.rota || null
 }

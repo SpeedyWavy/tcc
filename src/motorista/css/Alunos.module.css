@@ -162,6 +162,19 @@
     display: grid;
     place-items: center;
     box-shadow: inset 0 0 0 1px #d6d6d6;
+    overflow: hidden;
+}
+
+.aluno-foto img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.aluno-foto span{
+    color: #777;
+    font-size: 24px;
 }
 
 .aluno-info{

@@ -1,0 +1,11 @@
+.overlay{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:20px;background:rgba(0,19,85,.42)}
+.modal{width:min(560px,100%);max-height:min(82vh,760px);overflow:auto;display:grid;gap:16px;padding:24px;background:#fff;border-radius:22px;color:#001355;box-shadow:0 24px 60px rgba(0,0,0,.22);font-family:Arial,"Helvetica Neue",Helvetica,sans-serif}
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.header h2{margin:0;font-size:1.25rem}
+.header button{display:grid;place-items:center;border:0;background:transparent;color:inherit;cursor:pointer}
+.lista{display:grid;gap:12px}
+.item{padding:14px 16px;border-radius:14px;background:#f1f4ff;border:1px solid rgba(0,19,85,.08)}
+.itemHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#677294;font-size:.82rem}
+.itemHeader span{padding:4px 8px;border-radius:999px;background:#dfe8ff;color:#001355;font-weight:700}
+.item p{margin:10px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.fechar{justify-self:end;padding:10px 18px;border:0;border-radius:12px;background:#001355;color:#fff;font-weight:700;cursor:pointer}

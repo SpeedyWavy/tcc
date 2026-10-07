@@ -260,7 +260,7 @@ function GerenciarAdministradores() {
                 maxLength={14}
               />
 
-              <p className={styles['boadd-label']}>Email</p>
+              <p className={styles['boadd-label']}>E-mail</p>
               <input
                 type="email"
                 placeholder="Informe o email do administrador"
@@ -307,7 +307,7 @@ function GerenciarAdministradores() {
               <p className={styles['boadd-label']}>Cpf</p>
               <input type="text" placeholder="Insira o CPF do administrador" value={novoAdministrador.cpf} onChange={atualizarCampo('cpf')} inputMode="numeric" maxLength={14} />
 
-              <p className={styles['boadd-label']}>Email</p>
+              <p className={styles['boadd-label']}>E-mail</p>
               <input type="email" placeholder="Informe o email do administrador" value={novoAdministrador.email} onChange={atualizarCampo('email')} />
 
               <p className={styles['boadd-label']}>Nova senha</p>

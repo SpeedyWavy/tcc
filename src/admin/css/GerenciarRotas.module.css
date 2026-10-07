@@ -229,6 +229,10 @@
   color: #4b5da6;
 }
 
+.rotas-status--cancelado {
+  color: #8a3d3d;
+}
+
 .rotas-status--horario {
   color: #676767;
 }

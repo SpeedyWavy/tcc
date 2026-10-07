@@ -90,6 +90,34 @@ h1{
     margin-bottom: 0;
 }
 
+.senha-login-campo{
+    display: block;
+    position: relative;
+}
+
+.senha-login-campo input{
+    padding-right: 52px;
+    box-sizing: border-box;
+}
+
+.mostrar-senha{
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #001355;
+    cursor: pointer;
+}
+
+.mostrar-senha:hover{background: rgba(0, 19, 85, .08)}
+
 .esqueci{
     width: 100%;
     display: flex;

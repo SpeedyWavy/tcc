@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { Bell, ChevronDown } from 'lucide-react'
 import user from '../../assets/place-user.png'
 import { clearSession, getStoredUser } from '../../auth.js'
 import { getModoEscuro, aplicarModoEscuro } from '../../lib/preferenciasMotorista.js'
 import ConfiguracoesModal from './ConfiguracoesModal.jsx'
 import styles from './UserMenu.module.css'
 import { supabase } from '../../supabase.js'
+import HistoricoNotificacoes from '../../components/HistoricoNotificacoes.jsx'
 
 function UserMenu() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [configuracoesAbertas, setConfiguracoesAbertas] = useState(false)
+  const [historicoAberto, setHistoricoAberto] = useState(false)
   const [usuarioLogado] = useState(() => getStoredUser())
   const [fotoPerfil, setFotoPerfil] = useState(() => usuarioLogado?.photo_url || null)
   const menuRef = useRef(null)
@@ -66,6 +68,11 @@ function UserMenu() {
     setConfiguracoesAbertas(true)
   }
 
+  const abrirHistorico = () => {
+    setMenuAberto(false)
+    setHistoricoAberto(true)
+  }
+
   return (
     <div className={styles.usuario} ref={menuRef}>
       <button
@@ -86,6 +93,9 @@ function UserMenu() {
 
       {menuAberto && (
         <div className={styles['usuario-popover']} role="menu">
+          <button type="button" role="menuitem" onClick={abrirHistorico}>
+            <Bell size={17} /> Notificações anteriores
+          </button>
           <button type="button" onClick={abrirConfiguracoes}>
             Configurações
           </button>
@@ -96,6 +106,7 @@ function UserMenu() {
       )}
 
       {configuracoesAbertas && <ConfiguracoesModal onClose={() => setConfiguracoesAbertas(false)} />}
+      {historicoAberto && <HistoricoNotificacoes onClose={() => setHistoricoAberto(false)} />}
     </div>
   )
 }
