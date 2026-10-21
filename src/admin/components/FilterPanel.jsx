@@ -1,6 +1,6 @@
 import styles from './FilterPanel.module.css'
 
-// Função do filtro para todas as paginas com listas.
+// Funcao do filtro para todas as paginas com listas.
 function FilterPanel({ open, title = 'Filtre por...', sections, draftFilters, onToggle, onApply, onClear, onClose }) {
   if (!open) {
     return null

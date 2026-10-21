@@ -43,14 +43,14 @@ async function atualizarEstadoFerias(unit, enabled) {
 
   if (enabled) {
     // Bloqueia novos trajetos primeiro. Mesmo que o cancelamento de uma rota
-    // falhe, o modo férias já impede o motorista de iniciá-la.
+    // falhe, o modo ferias ja impede o motorista de inicia-la.
     const { error } = await supabase
       .from('unit_vacations')
       .upsert({ unit, enabled: true, updated_at: new Date().toISOString() }, { onConflict: 'unit' })
     if (error) throw error
 
     const rotas = await carregarRotasDaUnidade(unit)
-    const pendentes = rotas.filter((rota) => normalizarStatus(rota.status) === 'aguardando saida')
+    const pendentes = rotas.filter((rota) => normalizarStatus(rota.status) === 'aguardando saída')
     for (const rota of pendentes) {
       const { error: erroCancelamento } = await supabase
         .from('routes')
@@ -61,7 +61,7 @@ async function atualizarEstadoFerias(unit, enabled) {
     return
   }
 
-  // Restaura o status anterior das rotas que foram canceladas por férias.
+  // Restaura o status anterior das rotas que foram canceladas por ferias.
   const rotas = await carregarRotasDaUnidade(unit)
   const canceladasPorFerias = rotas.filter((rota) => rota.status === 'Cancelado' && rota.status_before_vacation)
   for (const rota of canceladasPorFerias) {
@@ -128,7 +128,7 @@ export default function Mais() {
         ? `Modo férias ativado para ${unidade.label}. As rotas pendentes foram canceladas.`
         : `Modo férias desativado para ${unidade.label}. As rotas foram restauradas.`)
     } catch (error) {
-      // A ativação pode já estar gravada mesmo que algum cancelamento de rota
+      // A ativacao pode ja estar gravada mesmo que algum cancelamento de rota
       // falhe. Recarrega o estado persistido para manter o switch coerente.
       const { data } = await supabase.from('unit_vacations').select('unit, enabled').eq('unit', unidade.unit).maybeSingle()
       if (data) {
@@ -190,7 +190,7 @@ export default function Mais() {
           {feedbackMensagem && <p role="status">{feedbackMensagem}</p>}
           <div className={styles['mais-card-footer']}>
             <button type="button" className={`${styles['mais-button']} ${styles['mais-button--secondary']}`} onClick={() => setHistoricoAberto(true)}>
-              <Bell size={18} /> Histórico
+              <Bell size={18} /> Historico
             </button>
             <button type="submit" className={styles['mais-button']} disabled={enviandoMensagem || !mensagemTexto.trim()}>
               <Send size={18} /> {enviandoMensagem ? 'Enviando...' : 'Enviar'}
@@ -201,7 +201,7 @@ export default function Mais() {
         <section className={`${styles['mais-card']} ${styles['mais-card--ferias']}`}>
           <div className={styles['mais-card-header']}>
             <h2>Férias</h2>
-            <p>Ao ativar, as rotas pendentes da unidade são canceladas e não aparecem para iniciar até as férias serem desativadas.</p>
+            <p>Ao ativar, as rotas pendentes da unidade scanceladas e não aparecem para iniciar atas férias serem desativadas.</p>
           </div>
           {feedbackFerias && <p role="status">{feedbackFerias}</p>}
           <div className={styles['mais-switch-list']}>

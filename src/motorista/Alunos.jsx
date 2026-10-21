@@ -11,17 +11,17 @@ const normalizarAluno = (aluno) => ({
   id: aluno.id,
   nome: aluno.name || aluno.nome || '',
   rm: aluno.rm || '',
-  unidade: aluno.unit || aluno.unidade || 'Nao informada',
-  identificacaoTransporte: aluno.transport_identification || aluno.identificacaoTransporte || aluno.transporte || 'Nao informado',
-  responsavel: aluno.responsible_name || aluno.responsavel || 'Nao informado',
-  contatoResponsavel: aluno.parent_contact || aluno.contato_responsavel || 'Nao informado',
-  endereco: aluno.address || aluno.endereco || 'Nao informado',
+  unidade: aluno.unit || aluno.unidade || 'Não informada',
+  identificacaoTransporte: aluno.transport_identification || aluno.identificacaoTransporte || aluno.transporte || 'Não informado',
+  responsavel: aluno.responsible_name || aluno.responsavel || 'Não informado',
+  contatoResponsavel: aluno.parent_contact || aluno.contato_responsavel || 'Não informado',
+  endereco: aluno.address || aluno.endereco || 'Não informado',
   fotoUrl: aluno.photo_url || aluno.foto_url || null,
   latitude: aluno.latitude ?? null,
   longitude: aluno.longitude ?? null,
-  periodo: aluno.period || aluno.periodo || 'Nao informado',
-  horarioSaida: aluno.departure_time || aluno.horario_saida || 'Nao informado',
-  tipoPercurso: aluno.route_type || aluno.tipo_percurso || 'Nao informado',
+  periodo: aluno.period || aluno.periodo || 'Não informado',
+  horarioSaida: aluno.departure_time || aluno.horario_saida || 'Não informado',
+  tipoPercurso: aluno.route_type || aluno.tipo_percurso || 'Não informado',
   diasIda: aluno.custom_route_days_departure || [],
   diasVolta: aluno.custom_route_days_return || [],
 })
@@ -160,14 +160,14 @@ function Alunos() {
                         <p><strong>RM:</strong> {aluno.rm}</p>
                         <p><strong>Unidade:</strong> {aluno.unidade}</p>
                         <p><strong>Transporte:</strong> {aluno.identificacaoTransporte}</p>
-                        <p><strong>Responsavel:</strong> {aluno.responsavel}</p>
-                        <p><strong>Periodo:</strong> {aluno.periodo}</p>
-                        <p><strong>Horario de saida:</strong> {aluno.horarioSaida}</p>
+                        <p><strong>Responsável:</strong> {aluno.responsavel}</p>
+                        <p><strong>Período:</strong> {aluno.periodo}</p>
+                        <p><strong>Horário de saída:</strong> {aluno.horarioSaida}</p>
                       </div>
                     </div>
                     <div className={styles['aluno-info-extra']}>
-                      <p><strong>Contato do responsavel:</strong> {aluno.contatoResponsavel}</p>
-                      <p><strong>Endereco:</strong> {aluno.endereco}</p>
+                      <p><strong>Contato do responsável:</strong> {aluno.contatoResponsavel}</p>
+                      <p><strong>Endereço:</strong> {aluno.endereco}</p>
                       <p><strong>Tipo de percurso:</strong> {aluno.tipoPercurso}</p>
                       {aluno.tipoPercurso === 'Personalizado' && (
                         <>

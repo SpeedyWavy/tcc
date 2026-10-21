@@ -109,7 +109,7 @@ function UserMenu() {
         setFotoEdicao(perfil.photo_url || null)
       }
     } catch (error) {
-      showError(error.message || 'Não foi possível carregar seu cadastro.')
+      showError(error.message || 'Não foi possivel carregar seu cadastro.')
     }
   }
 
@@ -127,7 +127,7 @@ function UserMenu() {
     event.preventDefault()
 
     if (!usuarioLogado?.id) {
-      showError('Não foi possível identificar seu cadastro.')
+      showError('Não foi possivel identificar seu cadastro.')
       return
     }
 
@@ -166,7 +166,7 @@ function UserMenu() {
       clearNotification()
       fecharEditor()
     } catch (error) {
-      showError(error.message || 'Não foi possível atualizar seu cadastro.')
+      showError(error.message || 'Não foi possivel atualizar seu cadastro.')
     } finally {
       setFormSubmitting(false)
     }
@@ -193,14 +193,14 @@ function UserMenu() {
             alt={fotoPerfil ? `Foto de ${usuarioLogado?.full_name || 'usuário'}` : 'Usuário'}
             onError={() => setFotoPerfil(null)}
           />
-          <span className={styles['usuario-nome']}>{usuarioLogado?.full_name || 'Usuario'}</span>
+          <span className={styles['usuario-nome']}>{usuarioLogado?.full_name || 'Usuário'}</span>
           <ChevronDown className={menuAberto ? `${styles['usuario-chevron']} ${styles.aberto}` : styles['usuario-chevron']} />
         </button>
 
         {menuAberto && (
           <div className={styles['usuario-popover']} role="menu">
             <button type="button" onClick={abrirConfiguracoes}>
-              Configurações
+              Configuracoes
             </button>
             <button type="button" onClick={abrirEditor}>
               Editar Cadastro

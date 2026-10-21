@@ -119,7 +119,7 @@ function RouteMap({ enderecoOrigem, paradas, indiceAtual = 0, height = 320, posi
   }, [enderecoOrigem, JSON.stringify(paradas), indiceAtual])
 
   // Marcador da posicao ao vivo do motorista - efeito separado do desenho da
-  // rota, pra nao rechamar a Directions API a cada atualizacao de GPS.
+  // rota, pra nao chamar novamente a Directions API a cada atualizacao de GPS.
   useEffect(() => {
     if (!posicaoAtual) {
       if (marcadorPosicaoRef.current) {

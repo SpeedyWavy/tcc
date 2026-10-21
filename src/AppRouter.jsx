@@ -24,7 +24,7 @@ const routes = {
   '/gerenciar-alunos': { component: GerenciarAlunos, area: 'admin', title: 'Alunos', icon: Users },
   '/gerenciar-motoristas': { component: GerenciarMotoristas, area: 'admin', title: 'Motoristas', icon: Users },
   '/gerenciar-veiculos': { component: GerenciarVeiculos, area: 'admin', title: 'Veículos', icon: Bus },
-  '/gerenciar-revisoes': { component: GerenciarRevisoes, area: 'admin', title: 'Revisões', icon: Bus },
+  '/gerenciar-revisoes': { component: GerenciarRevisoes, area: 'admin', title: 'Revisoes', icon: Bus },
   '/gerenciar-rotas': { component: GerenciarRotas, area: 'admin', title: 'Rotas', icon: MapPinned },
   '/gerenciar-administradores': { component: GerenciarAdministradores, area: 'admin', title: 'Administradores', icon: Users },
   '/mais': { component: Mais, area: 'admin', title: 'Mais' },

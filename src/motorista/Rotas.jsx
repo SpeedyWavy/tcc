@@ -53,7 +53,7 @@ function normalizarRota(rota, alunosPorId) {
 }
 
 function classeStatus(status) {
-  return `rotas-status--${(status || 'Aguardando Saída').toLowerCase().replace(/\s+/g, '-')}`
+  return `rotas-status--${(status || 'Aguardando Saida').toLowerCase().replace(/\s+/g, '-')}`
 }
 
 function Rotas() {
@@ -175,14 +175,14 @@ function Rotas() {
                     <div className={styles['rotas-celula--status']}>
                       <span className={`${styles['rotas-status']} ${styles[classeStatus(statusVeiculo)] || ''}`}>
                         {statusVeiculo === 'Atrasado' ? <TriangleAlert className={styles['rotas-status-icone']} /> : null}
-                        {statusVeiculo === 'Concluído' || statusVeiculo === 'Concluido' ? <CircleCheckBig className={styles['rotas-status-icone']} /> : null}
+                        {statusVeiculo === 'Concluido' || statusVeiculo === 'Concluido' ? <CircleCheckBig className={styles['rotas-status-icone']} /> : null}
                         <span>{statusVeiculo}</span>
                       </span>
                     </div>
                   </button>
                   {aberto ? <div className={styles['rotas-conteudo']}>
                     {rotasDoVeiculo.length === 0 ? <p className={styles.vazio}>Nenhuma rota para este veículo.</p> : rotasDoVeiculo.map((rota, indice) => {
-                      const horario = rota.horario && rota.horario !== 'Sem horário' && rota.horario !== 'Sem horario'
+                      const horario = rota.horario && rota.horario !== 'Sem horário' && rota.horario !== 'Sem horário'
                         ? rota.horario : rota.horarioInicio ? `Horário ${rota.horarioInicio}` : `Horário ${indice + 1}`
                       const mapaAberto = rotaMapaAberto === rota.id
                       return <article key={rota.id} className={styles['rota-card']}>

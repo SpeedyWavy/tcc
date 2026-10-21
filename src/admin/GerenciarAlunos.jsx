@@ -30,7 +30,7 @@ const alunoInicial = {
   endereco: '',
   latitude: null,
   longitude: null,
-  transporte: 'Automático',
+  transporte: 'Automatico',
   unidade: 'Garcia',
   fotoUrl: null,
 }
@@ -45,7 +45,7 @@ const enderecoInicial = {
   estado: '',
 }
 
-const diasSemana = ['Segunda-Feira', 'Terça-Feira', 'Quarta-Feira', 'Quinta-Feira', 'Sexta-Feira']
+const diasSemana = ['Segunda-Feira', 'Terca-Feira', 'Quarta-Feira', 'Quinta-Feira', 'Sexta-Feira']
 
 function GerenciarAlunos() {
   const [alunoAberto, setAlunoAberto] = useState(null)
@@ -65,8 +65,8 @@ function GerenciarAlunos() {
   const [menuAberto, setMenuAberto] = useState(null)
   const [menuPosicao, setMenuPosicao] = useState({ top: 0, left: 0 })
   const [filtroAberto, setFiltroAberto] = useState(false)
-  const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], responsavel: [], transporte: [] })
-  const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], responsavel: [], transporte: [] })
+  const [filtrosAplicados, setFiltrosAplicados] = useState({ unidade: [], motorista: [], transporte: [] })
+  const [filtrosRascunho, setFiltrosRascunho] = useState({ unidade: [], motorista: [], transporte: [] })
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [fotoUrlArmazenado, setFotoUrlArmazenado] = useState(null)
   const [photoUploading, setPhotoUploading] = useState(false)
@@ -210,8 +210,8 @@ function GerenciarAlunos() {
   }
 
   const alterarEnderecoDigitado = (e) => {
-    // Digitação livre invalida a coordenada anterior: só volta a ser confiável
-    // quando o usuário selecionar uma sugestão do autocomplete novamente.
+    // Digitacao livre invalida a coordenada anterior: so volta a ser confiavel
+    // quando o usuario selecionar uma sugestao do autocomplete novamente.
     setNovoAluno((atual) => ({ ...atual, endereco: e.target.value, latitude: null, longitude: null }))
   }
 
@@ -253,7 +253,7 @@ function GerenciarAlunos() {
             if (status === 'OK' && results?.[0]) {
               resolve(results[0])
             } else {
-              reject(new Error('CEP nao encontrado.'))
+              reject(new Error('CEP não encontrado.'))
             }
           },
         )
@@ -278,7 +278,7 @@ function GerenciarAlunos() {
         longitude: resultado.geometry.location.lng(),
       }))
     } catch (error) {
-      showError(error.message || 'Nao foi possivel localizar esse CEP.')
+      showError(error.message || 'Não foi possivel localizar esse CEP.')
     } finally {
       setBuscandoCep(false)
     }
@@ -352,7 +352,7 @@ function GerenciarAlunos() {
     }
 
     if (!isPhoneComplete(contatoResponsavel)) {
-      showError('Informe o contato do responsavel com DDD e 8 ou 9 digitos.')
+      showError('Informe o contato do responsável com DDD e 8 ou 9 dígitos.')
       return
     }
 
@@ -466,12 +466,12 @@ function GerenciarAlunos() {
     }
 
     if (!isPhoneComplete(contatoResponsavel)) {
-      showError('Informe o contato do responsavel com DDD e 8 ou 9 digitos.')
+      showError('Informe o contato do responsável com DDD e 8 ou 9 dígitos.')
       return null
     }
 
     if (novoAluno.latitude == null || novoAluno.longitude == null) {
-      showError('Selecione o endereco a partir das sugestoes do mapa para capturar a localizacao.')
+      showError('Selecione o endereço a partir das sugestões do mapa para capturar a localização.')
       return null
     }
 
@@ -514,12 +514,12 @@ function GerenciarAlunos() {
     const estado = enderecoForm.estado.trim()
 
     if (!cep || !rua || !numero || !bairro || !cidade || !estado) {
-      showError('Preencha o CEP e complete o endereco (numero, bairro, cidade e estado).')
+      showError('Preencha o CEP e complete o endereço (número, bairro, cidade e estado).')
       return
     }
 
     if (novoAluno.latitude == null || novoAluno.longitude == null) {
-      showError('Busque o CEP para localizar o endereco no mapa antes de finalizar.')
+      showError('Busque o CEP para localizar o endereço no mapa antes de finalizar.')
       return
     }
 
@@ -563,7 +563,7 @@ function GerenciarAlunos() {
       showSuccess('Aluno cadastrado com sucesso.')
       fecharAdicionar()
 
-      if (transporte === 'Automático' && alunoCriado?.id) {
+      if (transporte === 'Automatico' && alunoCriado?.id) {
         atribuirRotaEmSegundoPlano(alunoCriado.id)
       }
     } catch (error) {
@@ -612,7 +612,7 @@ function GerenciarAlunos() {
     try {
       await apiRequest(`/api/students/${aluno.id}`, { method: 'DELETE' })
       await carregarAlunos()
-      showSuccess('Aluno excluido com sucesso.')
+      showSuccess('Aluno excluído com sucesso.')
       if (alunoEmEdicao?.id === aluno.id) {
         fecharEditor()
       }
@@ -622,15 +622,21 @@ function GerenciarAlunos() {
   }
 
   const opcoesUnidade = [...new Set(alunos.map((aluno) => aluno.unit || aluno.unidade).filter(Boolean))]
-  const opcoesMotorista = [...new Set(alunos.map((aluno) => aluno.responsible_name || aluno.responsavel).filter(Boolean))]
+  const idsRotasAtribuidas = new Set(alunos.flatMap((aluno) =>
+    [aluno.route_id_ida, aluno.route_id_volta, aluno.route_id].filter(Boolean),
+  ))
+  const opcoesMotorista = [...new Set(rotas
+    .filter((rota) => idsRotasAtribuidas.has(rota.id))
+    .map((rota) => rota.driver_name || rota.driver)
+    .filter(Boolean))]
   const opcoesVeiculo = [...new Set(veiculos
     .map((veiculo) => veiculo.identification || veiculo.model || veiculo.license_plate)
     .filter(Boolean))]
 
   const secoesFiltro = [
     { id: 'unidade', label: 'Unidade', options: opcoesUnidade.map((value) => ({ value, label: value })) },
-    { id: 'responsavel', label: 'Motorista', options: opcoesMotorista.map((value) => ({ value, label: value })) },
-    { id: 'transporte', label: 'Veiculo', options: opcoesVeiculo.map((value) => ({ value, label: value })) },
+    { id: 'motorista', label: 'Motorista', options: opcoesMotorista.map((value) => ({ value, label: value })) },
+    { id: 'transporte', label: 'Veículo', options: opcoesVeiculo.map((value) => ({ value, label: value })) },
   ]
 
   const alternarFiltro = (secao, valor) => {
@@ -650,7 +656,7 @@ function GerenciarAlunos() {
   }
 
   const limparFiltros = () => {
-    const vazio = { unidade: [], responsavel: [], transporte: [] }
+    const vazio = { unidade: [], motorista: [], transporte: [] }
     setFiltrosRascunho(vazio)
     setFiltrosAplicados(vazio)
   }
@@ -671,7 +677,7 @@ function GerenciarAlunos() {
       .filter(Boolean)
       .map(
         (rota) =>
-          `${rota.vehicle_name || 'Veiculo'}${rota.direction ? ` · ${rota.direction}` : ''}${
+          `${rota.vehicle_name || 'Veículo'}${rota.direction ? ` · ${rota.direction}` : ''}${
             rota.horario_inicio ? ` (${rota.horario_inicio})` : ''
           }`,
       )
@@ -695,10 +701,15 @@ function GerenciarAlunos() {
         .some((valor) => valor.toLowerCase().includes(termo))
 
     const passouUnidade = filtrosAplicados.unidade.length === 0 || filtrosAplicados.unidade.includes(unidade)
-    const passouResponsavel = filtrosAplicados.responsavel.length === 0 || filtrosAplicados.responsavel.includes(responsavel)
+    const idsRotasAluno = [aluno.route_id_ida, aluno.route_id_volta, aluno.route_id].filter(Boolean)
+    const motoristasAluno = idsRotasAluno
+      .map((id) => rotas.find((rota) => rota.id === id))
+      .map((rota) => rota?.driver_name || rota?.driver)
+      .filter(Boolean)
+    const passouMotorista = filtrosAplicados.motorista.length === 0 || motoristasAluno.some((motorista) => filtrosAplicados.motorista.includes(motorista))
     const passouTransporte = filtrosAplicados.transporte.length === 0 || filtrosAplicados.transporte.includes(transporte)
 
-    return passouBusca && passouUnidade && passouResponsavel && passouTransporte
+    return passouBusca && passouUnidade && passouMotorista && passouTransporte
   })
 
   return (
@@ -755,8 +766,8 @@ function GerenciarAlunos() {
                     <div className={styles['boadd-unidade']}>
                       <p>Período:</p>
                       <label>
-                        <input type="radio" name="periodo" value="Manhã" checked={novoAluno.periodo === 'Manhã'} onChange={atualizarCampo('periodo')} required />
-                        Manhã
+                        <input type="radio" name="periodo" value="Manha" checked={novoAluno.periodo === 'Manha'} onChange={atualizarCampo('periodo')} required />
+                        Manha
                       </label>
                       <label>
                         <input type="radio" name="periodo" value="Tarde" checked={novoAluno.periodo === 'Tarde'} onChange={atualizarCampo('periodo')} required />
@@ -798,16 +809,16 @@ function GerenciarAlunos() {
                     </button>
                   )}
 
-                  <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
-                  <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
+                  <input type="text" placeholder="Nome do responsável" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
+                  <input type="text" placeholder="Contato do responsável" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
 
                   <select
                     value={novoAluno.transporte}
                     onChange={atualizarCampo('transporte')}
                     required
-                    className={novoAluno.transporte === 'Automático' ? styles['select-automatico'] : ''}
+                    className={novoAluno.transporte === 'Automatico' ? styles['select-automatico'] : ''}
                   >
-                    <option value="Automático" style={{ fontStyle: 'italic', color: '#6b7398' }}>Automático</option>
+                    <option value="Automatico" style={{ fontStyle: 'italic', color: '#6b7398' }}>Automático</option>
                     {opcoesVeiculo.map((value) => (
                       <option key={value} value={value}>{value}</option>
                     ))}
@@ -879,7 +890,7 @@ function GerenciarAlunos() {
                 </>
               ) : (
                 <>
-                  <h2 className={styles['boadd-titulo']}>Endereco do Aluno</h2>
+                  <h2 className={styles['boadd-titulo']}>Endereço do Aluno</h2>
 
                   <label className={styles['boadd-label']}>
                     CEP:
@@ -904,7 +915,7 @@ function GerenciarAlunos() {
                   <input type="text" placeholder="Rua / Logradouro" value={enderecoForm.rua} onChange={atualizarEndereco('rua')} required />
 
                   <div className={styles['boadd-linha-dupla']}>
-                    <input type="text" placeholder="Numero" value={enderecoForm.numero} onChange={atualizarEndereco('numero')} required />
+                    <input type="text" placeholder="Número" value={enderecoForm.numero} onChange={atualizarEndereco('n')} required />
                     <input type="text" placeholder="Complemento (opcional)" value={enderecoForm.complemento} onChange={atualizarEndereco('complemento')} />
                   </div>
 
@@ -962,8 +973,8 @@ function GerenciarAlunos() {
                     <div className={styles['boadd-unidade']}>
                       <p>Período:</p>
                       <label>
-                        <input type="radio" name="periodo-edicao" value="Manhã" checked={novoAluno.periodo === 'Manhã'} onChange={atualizarCampo('periodo')} required />
-                        Manhã
+                        <input type="radio" name="periodo-edicao" value="Manha" checked={novoAluno.periodo === 'Manha'} onChange={atualizarCampo('periodo')} required />
+                        Manha
                       </label>
                       <label>
                         <input type="radio" name="periodo-edicao" value="Tarde" checked={novoAluno.periodo === 'Tarde'} onChange={atualizarCampo('periodo')} required />
@@ -1005,18 +1016,18 @@ function GerenciarAlunos() {
                     </button>
                   )}
 
-                  <input type="text" placeholder="Nome do responsavel" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
-                  <input type="text" placeholder="Contato do responsavel" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
+                  <input type="text" placeholder="Nome do responsável" value={novoAluno.responsavel} onChange={atualizarCampo('responsavel')} required />
+                  <input type="text" placeholder="Contato do responsável" value={novoAluno.contatoResponsavel} onChange={atualizarCampo('contatoResponsavel')} inputMode="tel" maxLength={15} required />
                   <AddressAutocompleteInput
                     value={novoAluno.endereco}
                     onChange={alterarEnderecoDigitado}
                     onSelectPlace={selecionarEnderecoAutocomplete}
-                    placeholder="Endereco do aluno"
+                    placeholder="Endereço do aluno"
                     required
                   />
 
                   <select value={novoAluno.transporte} onChange={atualizarCampo('transporte')} required>
-                    <option value="Automático">Automático</option>
+                    <option value="Automatico">Automático</option>
                     {opcoesVeiculo.map((value) => (
                       <option key={value} value={value}>{value}</option>
                     ))}
@@ -1043,7 +1054,7 @@ function GerenciarAlunos() {
                   </div>
 
                   <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
-                    {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
+                    {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Salvando...' : 'Salvar Altera'}
                   </button>
                   <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
                 </>
@@ -1215,13 +1226,13 @@ function GerenciarAlunos() {
                     <div className={styles['aluno-info']}>
                       <p><strong>RM:</strong> {aluno.rm || 'Não informado'}</p>
                       <p><strong>Unidade:</strong> {aluno.unit || aluno.unidade || 'Não informada'}</p>
-                      {(aluno.transport_identification || aluno.transporte) === 'Automático' ? (
+                      {(aluno.transport_identification || aluno.transporte) === 'Automatico' ? (
                         <p className={styles['transporte-automatico']}>
                           <strong>Transporte:</strong>{' '}
                           <span className={styles['transporte-automatico-label']}>Automático</span>
                           <br />
                           <span className={styles['transporte-automatico-rota']}>
-                            {descreverRotaDoAluno(aluno) || 'Aguardando atribuição de rota...'}
+                            {descreverRotaDoAluno(aluno) || 'Aguardando atribuicao de rota...'}
                           </span>
                         </p>
                       ) : (

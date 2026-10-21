@@ -87,17 +87,17 @@ function UserMenu() {
           alt={fotoPerfil ? `Foto de ${usuarioLogado?.full_name || 'usuário'}` : 'Usuário'}
           onError={() => setFotoPerfil(null)}
         />
-        <span className={styles['usuario-nome']}>{usuarioLogado?.full_name || 'Usuario'}</span>
+        <span className={styles['usuario-nome']}>{usuarioLogado?.full_name || 'Usuário'}</span>
         <ChevronDown className={menuAberto ? `${styles['usuario-chevron']} ${styles.aberto}` : styles['usuario-chevron']} />
       </button>
 
       {menuAberto && (
         <div className={styles['usuario-popover']} role="menu">
           <button type="button" role="menuitem" onClick={abrirHistorico}>
-            <Bell size={17} /> Notificações anteriores
+            <Bell size={17} /> Notificacoes anteriores
           </button>
           <button type="button" onClick={abrirConfiguracoes}>
-            Configurações
+            Configuracoes
           </button>
           <button type="button" onClick={sairDaConta}>
             Sair da Conta

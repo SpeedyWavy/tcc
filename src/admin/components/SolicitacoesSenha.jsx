@@ -30,7 +30,7 @@ export default function SolicitacoesSenha() {
       const resultado = await chamarSuporteSenha({ action: 'list' })
       setSolicitacoes(resultado.requests || [])
     } catch (error) {
-      setFeedback(traduzirMensagemUsuario(error.message, 'Não foi possível carregar as solicitações.'))
+      setFeedback(traduzirMensagemUsuario(error.message, 'Não foi possivel carregar as solicitações.'))
     } finally {
       setCarregando(false)
     }
@@ -67,7 +67,7 @@ export default function SolicitacoesSenha() {
       await carregar()
       showSuccess('Senha alterada com sucesso.')
     } catch (error) {
-      const mensagem = traduzirMensagemUsuario(error.message, 'Não foi possível redefinir a senha.')
+      const mensagem = traduzirMensagemUsuario(error.message, 'Não foi possivel redefinir a senha.')
       setFeedback(mensagem)
       showError(mensagem)
     } finally {
@@ -80,7 +80,7 @@ export default function SolicitacoesSenha() {
       <header className={styles.header}>
         <div>
           <h2>Solicitações de senha</h2>
-          <p>Redefina a senha de Motoristas que pediram uma Redefinição pela Pagina de Suporte.</p>
+          <p>Redefina a senha dos motoristas que pediram uma redefinição pela página de suporte.</p>
         </div>
         <button type="button" className={styles.refresh} onClick={carregar} disabled={carregando} aria-label="Atualizar solicitações">
           <RefreshCw size={18} /> Atualizar

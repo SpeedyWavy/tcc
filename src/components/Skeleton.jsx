@@ -6,7 +6,7 @@ export function Skeleton({ className = '', style }) {
 
 export function ListSkeleton({ rows = 4, className = '' }) {
   return (
-    <div className={`${styles.list} ${className}`} role="status" aria-label="Carregando conteúdo">
+    <div className={`${styles.list} ${className}`} role="status" aria-label="Carregando conteudo">
       {Array.from({ length: rows }, (_, index) => (
         <div className={styles.listRow} key={index}>
           <Skeleton className={styles.icon} />

@@ -51,7 +51,7 @@ function PhotoUpload({
       return
     }
 
-    // Validar tamanho (máximo 5MB)
+    // Validar tamanho (maximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('A imagem deve ter menos de 5MB.')
       return
@@ -141,7 +141,7 @@ function PhotoUpload({
           .createSignedUrl(filePath, 60)
 
         if (signedError || !signedData?.signedUrl) {
-          console.error('Nao foi possivel obter a URL publica ou assinada da imagem.', publicData, signedError)
+          console.error('Não foi possivel obter a URL pública ou assinada da imagem.', publicData, signedError)
           alert('Erro ao obter a URL da foto. Tente novamente.')
           setUploading(false)
           onUploadingChange(false)
@@ -287,7 +287,7 @@ function PhotoUpload({
             >
               <img
                 src={cropSource.url}
-                alt="Prévia para recorte"
+                alt="Previa para recorte"
                 onLoad={handleCropImageLoad}
                 draggable="false"
                 style={cropMetrics ? {

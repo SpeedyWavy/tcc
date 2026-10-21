@@ -27,7 +27,7 @@ function Inicial() {
         .maybeSingle()
       if (!ativo) return
       if (error) {
-        console.error('Não foi possível carregar a notificação:', error)
+        console.error('Não foi possível carregar a notificacao:', error)
         return
       }
       setNotificacao(data || null)
@@ -41,7 +41,7 @@ function Inicial() {
   const fecharNotificacao = () => {
     if (!notificacao) return
     const usuario = getStoredUser()
-    try { window.localStorage.setItem(chaveNotificacaoDispensada(usuario?.id), notificacao.id) } catch { /* Mantém o aviso fechado durante a sessão. */ }
+    try { window.localStorage.setItem(chaveNotificacaoDispensada(usuario?.id), notificacao.id) } catch { /* Mantem o aviso fechado durante a sessao. */ }
     setDispensadaId(notificacao.id)
   }
 
@@ -56,10 +56,10 @@ function Inicial() {
       {notificacao && notificacao.id !== dispensadaId && (
         <aside className={styles['motorista-notificacao']} role="status" aria-live="polite">
           <div>
-            <strong>Aviso da administração</strong>
+            <strong>Aviso da administracao</strong>
             <p>{notificacao.message}</p>
           </div>
-          <button type="button" onClick={fecharNotificacao} aria-label="Fechar notificação"><X /></button>
+          <button type="button" onClick={fecharNotificacao} aria-label="Fechar notificacao"><X /></button>
         </aside>
       )}
 
@@ -71,7 +71,7 @@ function Inicial() {
 
         <a href="/motorista-veiculo" className={styles['motorista-card']}>
           <Bus />
-          <span>Veiculo</span>
+          <span>Veículo</span>
         </a>
 
         <a href="/motorista-rotas" className={styles['motorista-card']}>

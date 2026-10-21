@@ -38,7 +38,7 @@ function ConfiguracoesModal({ onClose }) {
   return (
     <div className={styles['config-overlay']} onClick={onClose}>
       <div className={styles['config-card']} onClick={(e) => e.stopPropagation()}>
-        <h2 className={styles['config-titulo']}>Configurações</h2>
+        <h2 className={styles['config-titulo']}>Configuracoes</h2>
 
         <div className={styles['config-item']}>
           <span>Modo Escuro</span>
@@ -76,13 +76,13 @@ function ConfiguracoesModal({ onClose }) {
                 checked={modoNavegacao === MODO_EMBUTIDO}
                 onChange={() => escolherModoNavegacao(MODO_EMBUTIDO)}
               />
-              Navegação embutida no app
+              Navegacao embutida no app
             </label>
           </div>
         </div>
 
         <div className={styles['config-item-coluna']}>
-          <span>Preferência de Navegação</span>
+          <span>Preferência de Navegacao</span>
           <p className={styles['config-nota']}>Usado no modo "Passo a passo" (a "Rota completa" sempre abre no Google Maps)</p>
           <div className={styles['config-radios']}>
             <label>

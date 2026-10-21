@@ -108,7 +108,7 @@ function GerenciarAdministradores() {
     e.preventDefault()
 
     if (!isCpfComplete(novoAdministrador.cpf)) {
-      showError('Informe um CPF com 11 numeros.')
+      showError('Informe um CPF com 11 números.')
       return
     }
 
@@ -147,7 +147,7 @@ function GerenciarAdministradores() {
     }
 
     if (!isCpfComplete(novoAdministrador.cpf)) {
-      showError('Informe um CPF com 11 numeros.')
+      showError('Informe um CPF com 11 números.')
       return
     }
 
@@ -188,7 +188,7 @@ function GerenciarAdministradores() {
     try {
       await apiRequest(`/api/admins/${administrador.id}`, { method: 'DELETE' })
       await carregarAdministradores()
-      showSuccess('Administrador excluido com sucesso.')
+      showSuccess('Administrador excluído com sucesso.')
       if (administradorEmEdicao?.id === administrador.id) {
         fecharEditor()
       }
@@ -317,7 +317,7 @@ function GerenciarAdministradores() {
               <input type="password" placeholder="Repita a nova senha" value={novoAdministrador.confirmarSenha} onChange={atualizarCampo('confirmarSenha')} />
 
               <button type="submit" className={styles['boadd-confirmar']} disabled={formSubmitting}>
-                {formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
+                {formSubmitting ? 'Salvando...' : 'Salvar Altera'}
               </button>
               <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
             </form>

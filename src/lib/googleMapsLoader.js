@@ -1,9 +1,9 @@
 let loadPromise = null
 
 /**
- * Carrega o script da Google Maps JavaScript API (com a lib "places") uma única vez
+ * Carrega o script da Google Maps JavaScript API (com a lib "places") uma unica vez
  * e reutiliza a mesma Promise em chamadas subsequentes.
- * Requer a variável de ambiente VITE_GOOGLE_MAPS_API_KEY definida no .env.
+ * Requer a variavel de ambiente VITE_GOOGLE_MAPS_API_KEY definida no .env.
  */
 export function loadGoogleMaps() {
   if (loadPromise) {
@@ -18,7 +18,7 @@ export function loadGoogleMaps() {
 
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
     if (!apiKey) {
-      reject(new Error('VITE_GOOGLE_MAPS_API_KEY não definida no arquivo .env'))
+      reject(new Error('VITE_GOOGLE_MAPS_API_KEY n definida no arquivo .env'))
       return
     }
 

@@ -2,17 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import { loadGoogleMaps } from '../../lib/googleMapsLoader.js'
 
 /**
- * Input de texto com autocomplete de endereços via Places Autocomplete Data API
+ * Input de texto com autocomplete de enderecos via Places Autocomplete Data API
  * (google.maps.places.AutocompleteSuggestion), a API nova do Google — a antiga
- * google.maps.places.Autocomplete não é mais disponibilizada para chaves criadas
- * a partir de março/2025.
+ * google.maps.places.Autocomplete nao e mais disponibilizada para chaves criadas
+ * a partir de marco/2025.
  *
- * Usa um <input> comum + uma lista de sugestões própria (em vez do widget novo
- * <gmp-place-autocomplete>, que roda em Shadow DOM fechado e não pode ser
+ * Usa um <input> comum + uma lista de sugestoes propria (em vez do widget novo
+ * <gmp-place-autocomplete>, que roda em Shadow DOM fechado e nao pode ser
  * estilizado com o CSS do projeto).
  *
- * Ao selecionar uma sugestão, chama onSelectPlace({ endereco, latitude, longitude }).
- * Digitação livre (sem selecionar sugestão) só atualiza o texto via onChange —
+ * Ao selecionar uma sugestao, chama onSelectPlace({ endereco, latitude, longitude }).
+ * Digitacao livre (sem selecionar sugestao) so atualiza o texto via onChange —
  * o componente pai deve zerar lat/lng nesse caso.
  */
 function AddressAutocompleteInput({ value, onChange, onSelectPlace, placeholder, required }) {
@@ -83,7 +83,7 @@ function AddressAutocompleteInput({ value, onChange, onSelectPlace, placeholder,
         setSugestoes(suggestions || [])
         setMostrarSugestoes(true)
       } catch (error) {
-        console.error('Erro ao buscar sugestoes de endereco:', error)
+        console.error('Erro ao buscar sugestões de endereço:', error)
         setSugestoes([])
       }
     }, 300)
@@ -105,11 +105,11 @@ function AddressAutocompleteInput({ value, onChange, onSelectPlace, placeholder,
         longitude: place.location ? place.location.lng() : null,
       })
     } catch (error) {
-      console.error('Erro ao obter detalhes do endereco:', error)
+      console.error('Erro ao obter detalhes do endereço:', error)
     } finally {
       setSugestoes([])
       setMostrarSugestoes(false)
-      // sessão de billing encerrada após a seleção; a próxima busca cria uma nova
+      // sessao de billing encerrada apos a selecao; a proxima busca cria uma nova
       sessionTokenRef.current = null
     }
   }

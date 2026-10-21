@@ -17,7 +17,7 @@ export default function HistoricoNotificacoes({ onClose }) {
     let ativo = true
     carregarNotificacoes()
       .then((data) => { if (ativo) setNotificacoes(data) })
-      .catch((error) => { if (ativo) setErro(traduzirMensagemUsuario(error.message, 'Não foi possível carregar as notificações.')) })
+      .catch((error) => { if (ativo) setErro(traduzirMensagemUsuario(error.message, 'Não foi possivel carregar as notificacoes.')) })
       .finally(() => { if (ativo) setCarregando(false) })
     return () => { ativo = false }
   }, [])
@@ -26,12 +26,12 @@ export default function HistoricoNotificacoes({ onClose }) {
     <div className={styles.overlay} onClick={onClose}>
       <section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="historico-notificacoes-titulo" onClick={(event) => event.stopPropagation()}>
         <header className={styles.header}>
-          <h2 id="historico-notificacoes-titulo">Notificações anteriores</h2>
-          <button type="button" onClick={onClose} aria-label="Fechar histórico"><X /></button>
+          <h2 id="historico-notificacoes-titulo">Notificacoes anteriores</h2>
+          <button type="button" onClick={onClose} aria-label="Fechar historico"><X /></button>
         </header>
-        {carregando ? <p>Carregando notificações...</p> : null}
+        {carregando ? <p>Carregando notificacoes...</p> : null}
         {erro ? <p role="alert">{erro}</p> : null}
-        {!carregando && !erro && notificacoes.length === 0 ? <p>Nenhuma notificação enviada ainda.</p> : null}
+        {!carregando && !erro && notificacoes.length === 0 ? <p>Nenhuma notificacao enviada ainda.</p> : null}
         <div className={styles.lista}>
           {notificacoes.map((notificacao) => (
             <article key={notificacao.id} className={styles.item}>

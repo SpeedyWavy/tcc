@@ -50,7 +50,7 @@ function getLoginErrorMessage(error) {
 
   if (error?.code === 'PASSWORD_RECENTLY_CHANGED') {
     const days = Math.max(0, Number(error.daysAgo) || 0)
-    const elapsed = days === 0 ? 'hoje' : `há ${days} ${days === 1 ? 'dia' : 'dias'}`
+    const elapsed = days === 0 ? 'hoje' : `ha ${days} ${days === 1 ? 'dia' : 'dias'}`
     return `Sua senha foi alterada ${elapsed}. Você digitou a senha anterior; use a senha atual fornecida pelo administrador.`
   }
 
@@ -68,10 +68,10 @@ function getLoginErrorMessage(error) {
     rawMessage.includes('network error') ||
     rawMessage.includes('fetch failed')
   ) {
-    return 'Nao foi possivel conectar ao servidor de autenticacao.'
+    return 'Não foi possivel conectar ao servidor de autenticacao.'
   }
 
-  return traduzirMensagemUsuario(error?.message, 'Não foi possível fazer login.')
+  return traduzirMensagemUsuario(error?.message, 'Não foi possivel fazer login.')
 }
 
 async function loginViaBackend(identifier, password) {
@@ -235,12 +235,12 @@ function Login() {
       const sessionToken = session?.access_token
 
       if (!sessionToken || !sessionUser) {
-        throw new Error('A autenticacao do Supabase nao retornou uma sessao valida.')
+        throw new Error('A autenticacao do Supabase não retornou uma sessão válida.')
       }
 
       const role = backendUser?.role || await resolveSessionRole(sessionUser, loginIdentifier)
       if (role !== 'admin' && role !== 'driver') {
-        throw new Error('Nao foi possivel identificar seu perfil com seguranca.')
+        throw new Error('Não foi possivel identificar seu perfil com segurança.')
       }
       const displayName =
         backendUser?.full_name ||

@@ -1,5 +1,5 @@
 // Mantenha isso em sincronia com UNIT_ADDRESSES em
-// supabase/functions/generate-routes/index.ts (são runtimes diferentes -
+// supabase/functions/generate-routes/index.ts (sao runtimes diferentes -
 // um roda no navegador, o outro no Deno do Supabase - por isso duplicado).
 export const ENDERECOS_UNIDADES = {
   'Garcia': 'R. Antônio Ferreira Laranja, 57 - Jardim Garcia, Campinas - SP, 13061-090',

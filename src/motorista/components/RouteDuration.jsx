@@ -22,7 +22,7 @@ function RouteDuration({ enderecoOrigem, paradas }) {
       && Number.isFinite(Number(parada.latitude)) && Number.isFinite(Number(parada.longitude)))
 
     if (!enderecoOrigem || paradasComCoordenadas.length === 0) {
-      setEstado({ carregando: false, segundos: null, erro: 'Indisponível: confira o endereço da unidade e as coordenadas das paradas.' })
+      setEstado({ carregando: false, segundos: null, erro: 'Indisponivel: confira o endereço da unidade e as coordenadas das paradas.' })
       return () => { ativo = false }
     }
 
@@ -47,7 +47,7 @@ function RouteDuration({ enderecoOrigem, paradas }) {
           (resultado, status) => {
             if (!ativo) return
             if (status !== 'OK' || !resultado) {
-              setEstado({ carregando: false, segundos: null, erro: 'Não foi possível calcular o tempo desta rota.' })
+              setEstado({ carregando: false, segundos: null, erro: 'Não foi possivel calcular o tempo desta rota.' })
               return
             }
 
@@ -57,8 +57,8 @@ function RouteDuration({ enderecoOrigem, paradas }) {
         )
       })
       .catch((error) => {
-        console.error('Erro ao calcular duração da rota:', error)
-        if (ativo) setEstado({ carregando: false, segundos: null, erro: 'Não foi possível calcular o tempo desta rota.' })
+        console.error('Erro ao calcular duracao da rota:', error)
+        if (ativo) setEstado({ carregando: false, segundos: null, erro: 'Não foi possivel calcular o tempo desta rota.' })
       })
 
     return () => { ativo = false }

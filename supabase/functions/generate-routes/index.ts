@@ -278,6 +278,32 @@ function clusterizarAlunos(
     proximaSemente += 1
   }
 
+  // FASE 1 - usa uma capacidade "alvo" em vez da capacidade real de cada
+  // veiculo. Sem isso, um veiculo com capacidade bem maior que os outros
+  // (um onibus entre varias vans, ou um veiculo central com muita vaga)
+  // vira um "aspirador": quando os vizinhos menores enchem, ele e sempre o
+  // veiculo com vaga mais proximo e acaba pegando alunos de varias regioes
+  // diferentes, virando uma rota gigante enquanto os outros ficam com
+  // poucos alunos. O alvo divide a demanda dessa rodada igualmente entre os
+  // veiculos disponiveis (arredondando pra cima), respeitando o limite real.
+  const capacidadeAlvo = Math.max(1, Math.ceil(alunos.length / veiculos.length))
+  const capacidadesFase1 = veiculos.map((v) => Math.min(v.capacity, capacidadeAlvo))
+
+  const recalcularCentroides = (grupos: Aluno[][], atuais: Array<{ lat: number; lng: number }>) =>
+    grupos.map((grupo, i) => {
+      // Veiculo com ancora (ja tinha alunos nessa rota) mantem o centroide
+      // fixo na posicao deles, em vez de derivar pra longe ao longo das
+      // iteracoes por causa dos alunos novos que forem entrando no grupo.
+      const ancora = centroidesIniciais[i]
+      if (ancora) {
+        return ancora
+      }
+      if (grupo.length === 0) return atuais[i]
+      const lat = grupo.reduce((acc, a) => acc + a.latitude, 0) / grupo.length
+      const lng = grupo.reduce((acc, a) => acc + a.longitude, 0) / grupo.length
+      return { lat, lng }
+    })
+
   let clusters: Aluno[][] = veiculos.map(() => [])
   let sobrando: Aluno[] = []
 
@@ -296,7 +322,7 @@ function clusterizarAlunos(
 
       let alocado = false
       for (const { i } of ordemVeiculos) {
-        if (clusters[i].length < veiculos[i].capacity) {
+        if (clusters[i].length < capacidadesFase1[i]) {
           clusters[i].push(aluno)
           alocado = true
           break
@@ -307,41 +333,52 @@ function clusterizarAlunos(
       }
     }
 
-    centroides = clusters.map((grupo, i) => {
-      // Veiculo com ancora (ja tinha alunos nessa rota) mantem o centroide
-      // fixo na posicao deles, em vez de derivar pra longe ao longo das
-      // iteracoes por causa dos alunos novos que forem entrando no grupo.
-      const ancora = centroidesIniciais[i]
-      if (ancora) {
-        return ancora
+    centroides = recalcularCentroides(clusters, centroides)
+  }
+
+  // FASE 2 - quem nao coube na capacidade-alvo usa agora a capacidade REAL
+  // de cada veiculo (a folga que sobrou), sempre indo pro veiculo mais
+  // proximo que ainda tiver vaga de verdade. Um aluno de uma regiao grande
+  // tende a voltar pro mesmo veiculo da regiao (que e o mais proximo) se
+  // ele ainda tiver vaga; so vai pra outro veiculo quando a capacidade real
+  // daquele acabou. Os mais proximos de algum veiculo sao colocados antes.
+  if (sobrando.length > 0) {
+    const pendentes = sobrando
+      .map((aluno) => {
+        const distancias = centroides.map((c) => haversineKm(aluno.latitude, aluno.longitude, c.lat, c.lng))
+        return { aluno, distancias, menorDistancia: Math.min(...distancias) }
+      })
+      .sort((a, b) => a.menorDistancia - b.menorDistancia)
+
+    const aindaSemVeiculo: Aluno[] = []
+
+    for (const { aluno, distancias } of pendentes) {
+      const ordemVeiculos = distancias.map((d, i) => ({ i, d })).sort((a, b) => a.d - b.d)
+
+      let alocado = false
+      for (const { i } of ordemVeiculos) {
+        if (clusters[i].length < veiculos[i].capacity) {
+          clusters[i].push(aluno)
+          alocado = true
+          break
+        }
       }
-      if (grupo.length === 0) return centroides[i]
-      const lat = grupo.reduce((acc, a) => acc + a.latitude, 0) / grupo.length
-      const lng = grupo.reduce((acc, a) => acc + a.longitude, 0) / grupo.length
-      return { lat, lng }
-    })
+      if (!alocado) {
+        aindaSemVeiculo.push(aluno)
+      }
+    }
+
+    sobrando = aindaSemVeiculo
+    centroides = recalcularCentroides(clusters, centroides)
   }
 
   // O k-means guloso acima as vezes fatia um grupo geografico entre dois
   // veiculos vizinhos so por causa da ordem em que os alunos foram
   // processados - o refinamento por troca (2-opt) corrige esses casos sem
-  // violar a capacidade de ninguem. Duas rodadas: a primeira usa os
-  // centroides de quando o k-means parou; a segunda recalcula os centroides
-  // dos veiculos sem ancora com a composicao ja corrigida pela primeira
-  // rodada, pra aproveitar a melhora e tentar refinar mais um pouco.
+  // violar a capacidade de ninguem. Duas rodadas: a segunda recalcula os
+  // centroides com a composicao ja corrigida pela primeira.
   refinarClustersComTrocas(clusters, centroides)
-
-  centroides = clusters.map((grupo, i) => {
-    const ancora = centroidesIniciais[i]
-    if (ancora) {
-      return ancora
-    }
-    if (grupo.length === 0) return centroides[i]
-    const lat = grupo.reduce((acc, a) => acc + a.latitude, 0) / grupo.length
-    const lng = grupo.reduce((acc, a) => acc + a.longitude, 0) / grupo.length
-    return { lat, lng }
-  })
-
+  centroides = recalcularCentroides(clusters, centroides)
   refinarClustersComTrocas(clusters, centroides)
 
   return { clusters, sobrando }
@@ -665,23 +702,20 @@ Deno.serve(async (req) => {
     { data: alunosData, error: erroAlunos },
     { data: veiculosData, error: erroVeiculos },
     { data: rotasData, error: erroRotas },
-    { data: feriasData, error: erroFerias },
   ] = await Promise.all([
     supabase.from('students').select('*'),
     supabase.from('vehicles').select('*'),
     supabase.from('routes').select('*').eq('status', 'Aguardando Saida'),
-    supabase.from('unit_vacations').select('unit').eq('enabled', true),
   ])
 
-  if (erroAlunos || erroVeiculos || erroRotas || erroFerias) {
+  if (erroAlunos || erroVeiculos || erroRotas) {
     return new Response(
-      JSON.stringify({ error: (erroAlunos || erroVeiculos || erroRotas || erroFerias)?.message || 'Erro ao carregar dados.' }),
+      JSON.stringify({ error: (erroAlunos || erroVeiculos || erroRotas)?.message || 'Erro ao carregar dados.' }),
       { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     )
   }
 
   const rotasExistentes = rotasData || []
-  const unidadesEmFerias = new Set((feriasData || []).map((ferias) => normalizarUnidade(ferias.unit)))
 
   const todosAlunos = (alunosData || []) as Aluno[]
   const todosVeiculos = (veiculosData || []).map((v: Record<string, unknown>) => ({
@@ -923,7 +957,6 @@ Deno.serve(async (req) => {
   const elegiveisIda = todosAlunos.filter(
     (a) =>
       temDadosCompletosIda(a) &&
-      !unidadesEmFerias.has(normalizarUnidade(a.unit)) &&
       a.route_type !== 'Personalizado' &&
       (a.route_type === 'Ida' || a.route_type === 'Ida e volta') &&
       !a.route_id_ida,
@@ -932,7 +965,6 @@ Deno.serve(async (req) => {
   const elegiveisVolta = todosAlunos.filter(
     (a) =>
       temDadosCompletosVolta(a) &&
-      !unidadesEmFerias.has(normalizarUnidade(a.unit)) &&
       a.route_type !== 'Personalizado' &&
       (a.route_type === 'Volta' || a.route_type === 'Ida e volta') &&
       !a.route_id_volta,

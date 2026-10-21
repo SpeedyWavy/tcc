@@ -18,12 +18,12 @@ const STORAGE_KEY = 'admin.revisoes.veiculos'
 
 const formatarData = (value) => {
   if (!value) {
-    return 'Sem revisao'
+    return 'Sem revisão'
   }
 
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
-    return 'Sem revisao'
+    return 'Sem revisão'
   }
 
   return date.toLocaleDateString('pt-BR')
@@ -33,7 +33,7 @@ const nomeDoVeiculo = (veiculo) => (
   veiculo.identification ||
   veiculo.model ||
   veiculo.license_plate ||
-  'Veiculo sem identificacao'
+  'Veículo sem identificação'
 )
 
 const carregarRevisoesSalvas = () => {
@@ -63,7 +63,7 @@ function GerenciarRevisoes() {
       const data = await apiRequest('/api/vehicles')
       setVeiculos(Array.isArray(data) ? data : [])
     } catch (error) {
-      showError(error.message || 'Erro ao carregar veiculos.')
+      showError(error.message || 'Erro ao carregar veículos.')
     } finally {
       setCarregando(false)
     }
@@ -145,13 +145,13 @@ function GerenciarRevisoes() {
         ultimaRevisao: new Date().toISOString(),
       },
     }))
-    showSuccess('Observacao da revisao atualizada.')
+    showSuccess('Observa da revisão atualizada.')
     fecharEditor()
   }
 
   const limparObservacao = (veiculo) => {
     setMenuAberto(null)
-    const confirmou = window.confirm(`Deseja limpar a observacao de "${veiculo.nome}"?`)
+    const confirmou = window.confirm(`Deseja limpar a observação de "${veiculo.nome}"?`)
     if (!confirmou) {
       return
     }
@@ -161,7 +161,7 @@ function GerenciarRevisoes() {
       delete proximasRevisoes[veiculo.id]
       return proximasRevisoes
     })
-    showSuccess('Observacao removida.')
+    showSuccess('Observa removida.')
   }
 
   return (
@@ -176,7 +176,7 @@ function GerenciarRevisoes() {
           </a>
           <div className="ui-header-extra-title">
             <Wrench />
-            <span>Revisao</span>
+            <span>Revisão</span>
           </div>
         </div>
       </div>
@@ -184,13 +184,13 @@ function GerenciarRevisoes() {
       <ActionNotification notification={notification} onClose={clearNotification} />
 
       <main className={styles['revisoes-pagina']} onClick={() => setMenuAberto(null)}>
-        <section className={`${styles['cadastros']} ${styles['revisoes-cadastros']}`}>
-          <div className={`${styles['filtro']} ${styles['revisoes-filtro']}`}>
+        <section className={`${styles['cadastros']} ${styles['revis-cadastros']}`}>
+          <div className={`${styles['filtro']} ${styles['revis-filtro']}`}>
             <div className={styles['filtro-input-wrap']}>
               <Search className={styles['filtro-icon']} />
               <input
                 type="text"
-                placeholder="Buscar veiculo..."
+                placeholder="Buscar veículo..."
                 className={styles['filtro-input']}
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
@@ -203,8 +203,8 @@ function GerenciarRevisoes() {
 
         <section className={styles['revisoes-tabela']}>
           <div className={styles['revisoes-cabecalho']}>
-            <div className={`${styles['revisoes-coluna']} ${styles['revisoes-coluna--veiculo']}`}>Veiculo</div>
-            <div className={`${styles['revisoes-coluna']} ${styles['revisoes-coluna--data']}`}>Ultima Revisao</div>
+            <div className={`${styles['revisoes-coluna']} ${styles['revisoes-coluna--veiculo']}`}>Veículo</div>
+            <div className={`${styles['revisoes-coluna']} ${styles['revisoes-coluna--data']}`}>Ultima Revisão</div>
           </div>
 
           {carregando ? <ListSkeleton rows={5} /> : revisoesDaTela.length === 0 ? (
@@ -257,10 +257,10 @@ function GerenciarRevisoes() {
 
                   {aberto && (
                     <div className={styles['revisoes-detalhe']}>
-                      <p>Observacao:</p>
-                      <span>{veiculo.observacao || 'Sem observacoes adicionais.'}</span>
-                      <p>Placa: {veiculo.license_plate || 'Nao informada'}</p>
-                      <p>Motorista: {veiculo.driver_name || 'Nao informado'}</p>
+                      <p>Observa:</p>
+                      <span>{veiculo.observacao || 'Sem observações adicionais.'}</span>
+                      <p>Placa: {veiculo.license_plate || 'Não informada'}</p>
+                      <p>Motorista: {veiculo.driver_name || 'Não informado'}</p>
                     </div>
                   )}
                 </div>
@@ -275,10 +275,10 @@ function GerenciarRevisoes() {
           <div className={styles['revisoes-popup']} onClick={(event) => event.stopPropagation()}>
             <form className={styles['revisoes-popup-form']} onSubmit={salvarObservacao}>
               <label className={styles['revisoes-popup-label']}>
-                Observacao da revisao de {veiculoEmEdicao?.nome}:
+                Observação da revisão de {veiculoEmEdicao?.nome}:
                 <textarea
                   className={styles['revisoes-popup-textarea']}
-                  placeholder="Digite a observacao da revisao"
+                  placeholder="Digite a observa da revisão"
                   value={observacaoEdicao}
                   onChange={(event) => setObservacaoEdicao(event.target.value)}
                 />

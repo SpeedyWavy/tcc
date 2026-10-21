@@ -182,12 +182,12 @@ function GerenciarMotoristas() {
 
   const irParaAcesso = () => {
     if (!isCpfComplete(novoMotorista.cpf)) {
-      showError('Informe um CPF com 11 numeros.')
+      showError('Informe um CPF com 11 números.')
       return
     }
 
     if (novoMotorista.contato.trim() && !isPhoneComplete(novoMotorista.contato)) {
-      showError('Informe um contato com DDD e 8 ou 9 digitos.')
+      showError('Informe um contato com DDD e 8 ou 9 dígitos.')
       return
     }
 
@@ -220,12 +220,12 @@ function GerenciarMotoristas() {
     }
 
     if (!isCpfComplete(novoMotorista.cpf)) {
-      showError('Informe um CPF com 11 numeros.')
+      showError('Informe um CPF com 11 números.')
       return
     }
 
     if (novoMotorista.contato.trim() && !isPhoneComplete(novoMotorista.contato)) {
-      showError('Informe um contato com DDD e 8 ou 9 digitos.')
+      showError('Informe um contato com DDD e 8 ou 9 dígitos.')
       return
     }
 
@@ -272,12 +272,12 @@ function GerenciarMotoristas() {
     }
 
     if (!isCpfComplete(novoMotorista.cpf)) {
-      showError('Informe um CPF com 11 numeros.')
+      showError('Informe um CPF com 11 números.')
       return
     }
 
     if (novoMotorista.contato.trim() && !isPhoneComplete(novoMotorista.contato)) {
-      showError('Informe um contato com DDD e 8 ou 9 digitos.')
+      showError('Informe um contato com DDD e 8 ou 9 dígitos.')
       return
     }
 
@@ -326,7 +326,7 @@ function GerenciarMotoristas() {
     try {
       await apiRequest(`/api/drivers/${motorista.id}`, { method: 'DELETE' })
       await carregarMotoristas()
-      showSuccess('Motorista excluido com sucesso.')
+      showSuccess('Motorista excluído com sucesso.')
       if (motoristaEmEdicao?.id === motorista.id) {
         fecharEditor()
       }
@@ -455,12 +455,12 @@ function GerenciarMotoristas() {
 
                   <input
                     type="text"
-                    placeholder="Veiculo / identificacao do transporte"
+                    placeholder="Veículo / identificação do transporte"
                     value={novoMotorista.identificacaoTransporte}
                     onChange={atualizarCampo('identificacaoTransporte')}
                   />
                   <input type="text" placeholder="Contato" value={novoMotorista.contato} onChange={atualizarCampo('contato')} inputMode="tel" maxLength={15} />
-                  <input type="text" placeholder="Horarios" value={novoMotorista.horarios} onChange={atualizarCampo('horarios')} />
+                  <input type="text" placeholder="Horários" value={novoMotorista.horarios} onChange={atualizarCampo('horarios')} />
 
                   <div className={styles['boadd-unidade']}>
                     <p>Unidade:</p>
@@ -552,9 +552,9 @@ function GerenciarMotoristas() {
                     <option value="E">E</option>
                   </select>
 
-                  <input type="text" placeholder="Veiculo / identificacao do transporte" value={novoMotorista.identificacaoTransporte} onChange={atualizarCampo('identificacaoTransporte')} />
+                  <input type="text" placeholder="Veículo / identificação do transporte" value={novoMotorista.identificacaoTransporte} onChange={atualizarCampo('identificacaoTransporte')} />
                   <input type="text" placeholder="Contato" value={novoMotorista.contato} onChange={atualizarCampo('contato')} inputMode="tel" maxLength={15} />
-                  <input type="text" placeholder="Horarios" value={novoMotorista.horarios} onChange={atualizarCampo('horarios')} />
+                  <input type="text" placeholder="Horários" value={novoMotorista.horarios} onChange={atualizarCampo('horarios')} />
 
                   <div className={styles['boadd-unidade']}>
                     <p>Unidade:</p>
@@ -592,7 +592,7 @@ function GerenciarMotoristas() {
                   </label>
 
                   <button type="submit" className={styles['boadd-confirmar']} disabled={photoUploading || formSubmitting}>
-                    {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
+                    {photoUploading ? 'Aguardando upload...' : formSubmitting ? 'Salvando...' : 'Salvar Altera'}
                   </button>
                   <button type="button" className={styles['boadd-voltar']} onClick={() => setPassoEdicao(1)}>Voltar</button>
                   <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
@@ -708,16 +708,16 @@ function GerenciarMotoristas() {
                       )}
                     </div>
                     <div className={styles['motorista-info']}>
-                      <p><strong>CPF:</strong> {motorista.cpf || 'Nao informado'}</p>
-                      <p><strong>RG:</strong> {motorista.rg || 'Nao informado'}</p>
-                      <p><strong>CNH:</strong> {motorista.cnh_category || 'Nao informada'}</p>
-                      <p><strong>Veiculo:</strong> {motorista.transport_identification || 'Nao informado'}</p>
+                      <p><strong>CPF:</strong> {motorista.cpf || 'Não informado'}</p>
+                      <p><strong>RG:</strong> {motorista.rg || 'Não informado'}</p>
+                      <p><strong>CNH:</strong> {motorista.cnh_category || 'Não informada'}</p>
+                      <p><strong>Veículo:</strong> {motorista.transport_identification || 'Não informado'}</p>
                     </div>
                   </div>
                   <div className={styles['motorista-info-extra']}>
-                    <p><strong>Contato:</strong> {motorista.contact || 'Nao informado'}</p>
-                    <p><strong>Horarios:</strong> {motorista.schedules || 'Nao informado'}</p>
-                    <p><strong>Unidade:</strong> {motorista.unit || 'Nao informada'}</p>
+                    <p><strong>Contato:</strong> {motorista.contact || 'Não informado'}</p>
+                    <p><strong>Horários:</strong> {motorista.schedules || 'Não informado'}</p>
+                    <p><strong>Unidade:</strong> {motorista.unit || 'Não informada'}</p>
                   </div>
                 </div>
               )}

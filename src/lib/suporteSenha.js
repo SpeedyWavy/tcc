@@ -9,7 +9,7 @@ export async function chamarSuporteSenha(payload) {
       const causa = error.context instanceof Error ? error.context.message : String(error.context || '')
       console.error('Falha de rede ao chamar password-support:', error.context)
       throw new Error(
-        `Falha de rede ou CORS ao chamar password-support${causa ? `: ${causa}` : '.'} Confira a URL do projeto Supabase e se a versão atual da função foi implantada.`,
+        `Falha de rede ou CORS ao chamar password-support${causa ? `: ${causa}` : '.'} Confira a URL do projeto Supabase e se a versao atual da funcao foi implantada.`,
       )
     }
     let detail = ''
@@ -20,7 +20,7 @@ export async function chamarSuporteSenha(payload) {
         detail = body?.detail || body?.message || ''
       }
     } catch {
-      // Usa a mensagem genérica do cliente quando a resposta não tem JSON.
+      // Usa a mensagem generica do cliente quando a resposta nao tem JSON.
     }
     throw new Error(traduzirMensagemUsuario(detail || error.message))
   }

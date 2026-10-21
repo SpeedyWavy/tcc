@@ -64,7 +64,7 @@ async function requireAdmin(request: Request) {
   const { data, error } = await userClient.auth.getUser()
 
   if (error || !data.user) {
-    return { error: 'Autenticacao invalida.', status: 401 as const }
+    return { error: 'Autentica inv.', status: 401 as const }
   }
 
   const jwtRole = data.user.app_metadata?.role
@@ -92,7 +92,7 @@ Deno.serve(async (request) => {
   }
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
-    return jsonResponse(request, { detail: 'Variaveis de ambiente do Supabase nao configuradas.' }, 500)
+    return jsonResponse(request, { detail: 'Vari de ambiente do Supabase n configuradas.' }, 500)
   }
 
   const adminCheck = await requireAdmin(request)
@@ -109,7 +109,7 @@ Deno.serve(async (request) => {
     .order('full_name', { ascending: true })
 
   if (error) {
-    return jsonResponse(request, { detail: error.message || 'Nao foi possivel carregar os contatos.' }, 400)
+    return jsonResponse(request, { detail: error.message || 'N foi possivel carregar os contatos.' }, 400)
   }
 
   return jsonResponse(request, data ?? [])

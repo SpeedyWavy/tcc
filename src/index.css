@@ -38,7 +38,7 @@ html.modo-escuro [class*="motorista-"][class*="page"]{
   color: #c7d0df;
 }
 
-html.modo-escuro .app-page-content :is(input, textarea, select){
+html.modo-escuro .app-page-content :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select){
   background: #465574 !important;
   color: #d5ddeb !important;
   border-color: #7080a2 !important;
@@ -203,6 +203,12 @@ html.modo-escuro :is(
   [class*="boadd-editar-percurso"]
 ){
   color: #c7d0df !important;
+}
+
+html.modo-escuro [class*="boadd-unidade"] label:has(input:checked){
+  background: #304a75 !important;
+  border-color: #8398be !important;
+  color: #f0f3f9 !important;
 }
 
 html.modo-escuro :is(

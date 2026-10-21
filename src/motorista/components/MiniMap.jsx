@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react'
 import { loadGoogleMaps } from '../../lib/googleMapsLoader.js'
 
 /**
- * Exibe um mapa pequeno com um marcador na posição (latitude, longitude).
- * Mostra uma mensagem de aviso se as coordenadas ainda não foram cadastradas.
+ * Exibe um mapa pequeno com um marcador na posicao (latitude, longitude).
+ * Mostra uma mensagem de aviso se as coordenadas ainda nao foram cadastradas.
  */
 function MiniMap({ latitude, longitude, height = 180 }) {
   const containerRef = useRef(null)
@@ -67,7 +67,7 @@ function MiniMap({ latitude, longitude, height = 180 }) {
           padding: '0 12px',
         }}
       >
-        Endereço sem coordenadas cadastradas
+        Endereco sem coordenadas cadastradas
       </div>
     )
   }

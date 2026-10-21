@@ -78,15 +78,50 @@
 .filter-panel-option{
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  color: #7280c5;
+  gap: 0.7rem;
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(0, 19, 85, 0.08);
+  border-radius: 12px;
+  background: #fff;
+  color: #26345f;
   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   font-size: 0.95rem;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
 }
 
 .filter-panel-option input{
-  width: 15px;
-  height: 15px;
+  appearance: none;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1.5px solid #9aa6c5;
+  border-radius: 6px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.filter-panel-option:hover{
+  border-color: rgba(0, 19, 85, 0.25);
+  background: #f8faff;
+  transform: translateY(-1px);
+}
+
+.filter-panel-option input:checked{
+  border-color: #001355;
+  background-color: #001355;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3 8 3.2 3.2L13 4.5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 14px;
+}
+
+.filter-panel-option input:focus-visible{
+  outline: 3px solid rgba(69, 103, 207, 0.35);
+  outline-offset: 2px;
 }
 
 .filter-panel-empty{

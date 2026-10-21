@@ -37,5 +37,5 @@ export async function publicarNotificacao(message) {
 }
 
 export function chaveNotificacaoDispensada(usuarioId) {
-  return `notificacao-motorista-dispensada:${usuarioId || 'sessao'}`
+  return `notificacao-motorista-dispensada:${usuarioId || 'sessão'}`
 }

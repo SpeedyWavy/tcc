@@ -44,7 +44,7 @@ function GerenciarVeiculos() {
       const data = await apiRequest('/api/vehicles')
       setVeiculos(Array.isArray(data) ? data : [])
     } catch (error) {
-      showError(error.message || 'Erro ao carregar veiculos.')
+      showError(error.message || 'Erro ao carregar veículos.')
     } finally {
       setCarregando(false)
     }
@@ -129,12 +129,12 @@ function GerenciarVeiculos() {
     e.preventDefault()
 
     if (novoVeiculo.placa.trim() && !isPlateComplete(novoVeiculo.placa)) {
-      showError('Informe uma placa com 7 caracteres, contendo letras e numeros.')
+      showError('Informe uma placa com 7 caracteres, contendo letras e números.')
       return
     }
 
     if (!Number(novoVeiculo.capacidadeTotal)) {
-      showError('Informe a capacidade total do veiculo.')
+      showError('Informe a capacidade total do veículo.')
       return
     }
 
@@ -175,17 +175,17 @@ function GerenciarVeiculos() {
     }
 
     if (novoVeiculo.placa.trim() && !isPlateComplete(novoVeiculo.placa)) {
-      showError('Informe uma placa com 7 caracteres, contendo letras e numeros.')
+      showError('Informe uma placa com 7 caracteres, contendo letras e números.')
       return
     }
 
     if (!Number(novoVeiculo.capacidadeTotal)) {
-      showError('Informe a capacidade total do veiculo.')
+      showError('Informe a capacidade total do veículo.')
       return
     }
 
     if (!novoVeiculo.identificacao.trim()) {
-      showError('A identificação do veículo é obrigatória.')
+      showError('A identificação do veículo e obrigatória.')
       return
     }
 
@@ -304,7 +304,7 @@ function GerenciarVeiculos() {
           </a>
           <div className="ui-header-extra-title">
             <Bus />
-            <span>Veiculos</span>
+            <span>Veículos</span>
           </div>
         </div>
       </div>
@@ -325,10 +325,10 @@ function GerenciarVeiculos() {
 
             <form className={styles['boadd-form']} onSubmit={enviarNovoVeiculo}>
               <p className={styles['boadd-label']}>Placa</p>
-              <input type="text" placeholder="Digite a placa do veiculo" value={novoVeiculo.placa} onChange={atualizarCampo('placa')} maxLength={8} />
+              <input type="text" placeholder="Digite a placa do veículo" value={novoVeiculo.placa} onChange={atualizarCampo('placa')} maxLength={8} />
 
-              <p className={styles['boadd-label']}>Identificacao</p>
-              <input type="text" placeholder="Numero de identificacao do veiculo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} inputMode="numeric" maxLength={12} required />
+              <p className={styles['boadd-label']}>Identificação</p>
+              <input type="text" placeholder="Número de identificação do veículo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} inputMode="numeric" maxLength={12} required />
 
               <p className={styles['boadd-label']}>Motorista</p>
               <MotoristaSelect
@@ -341,7 +341,7 @@ function GerenciarVeiculos() {
               <p className={styles['boadd-label']}>Capacidade</p>
               <input type="text" placeholder="Capacidade total" value={novoVeiculo.capacidadeTotal} onChange={atualizarCampo('capacidadeTotal')} inputMode="numeric" maxLength={3} />
 
-              <p className={styles['boadd-label']}>Unidade de atução</p>
+              <p className={styles['boadd-label']}>Unidade de atuacao</p>
               <div className={styles['boadd-unidade']}>
                 <p className={styles['boadd-unidade-titulo']}>Unidade:</p>
                 <label>
@@ -380,10 +380,10 @@ function GerenciarVeiculos() {
 
             <form className={styles['boadd-form']} onSubmit={salvarEdicaoVeiculo}>
               <p className={styles['boadd-label']}>Placa</p>
-              <input type="text" placeholder="Digite a placa do veiculo" value={novoVeiculo.placa} onChange={atualizarCampo('placa')} maxLength={8} />
+              <input type="text" placeholder="Digite a placa do veículo" value={novoVeiculo.placa} onChange={atualizarCampo('placa')} maxLength={8} />
 
-              <p className={styles['boadd-label']}>Identificacao</p>
-              <input type="text" placeholder="Numero de identificacao do veiculo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} inputMode="numeric" maxLength={12} required />
+              <p className={styles['boadd-label']}>Identificação</p>
+              <input type="text" placeholder="Número de identificação do veículo" value={novoVeiculo.identificacao} onChange={atualizarCampo('identificacao')} inputMode="numeric" maxLength={12} required />
 
               <p className={styles['boadd-label']}>Motorista</p>
               <MotoristaSelect
@@ -418,7 +418,7 @@ function GerenciarVeiculos() {
               </div>
 
               <button type="submit" className={styles['boadd-confirmar']} disabled={formSubmitting}>
-                {formSubmitting ? 'Salvando...' : 'Salvar Alteracoes'}
+                {formSubmitting ? 'Salvando...' : 'Salvar Altera'}
               </button>
               <button type="button" className={styles['boadd-cancelar']} onClick={fecharEditor}>Cancelar</button>
             </form>
@@ -433,7 +433,7 @@ function GerenciarVeiculos() {
               <Search className={styles['filtro-icon']} />
               <input
                 type="text"
-                placeholder="Buscar veiculo"
+                placeholder="Buscar veículo"
                 className={styles['filtro-input']}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
@@ -524,11 +524,11 @@ function GerenciarVeiculos() {
                 <div className={styles['aluno-detalhes']}>
                   <div className={styles['aluno-info']}>
                     <p><strong>Placa:</strong> {veiculo.license_plate}</p>
-                    <p><strong>Identificacao do Veiculo:</strong> {veiculo.identification || veiculo.model}</p>
-                    <p><strong>Capacidade Total:</strong> {veiculo.capacity}</p>
-                    <p><strong>Motorista:</strong> {veiculo.driver_name || 'Nao informado'}</p>
-                    <p><strong>Status:</strong> {veiculo.status || 'Nao informado'}</p>
-                    <p><strong>Unidade:</strong> {veiculo.unit || 'Nao informada'}</p>
+                    <p><strong>Identificação do veículo:</strong> {veiculo.identification || veiculo.model}</p>
+                    <p><strong>Capacidade total:</strong> {veiculo.capacity}</p>
+                    <p><strong>Motorista:</strong> {veiculo.driver_name || 'Não informado'}</p>
+                    <p><strong>Status:</strong> {veiculo.status || 'Não informado'}</p>
+                    <p><strong>Unidade:</strong> {veiculo.unit || 'Não informada'}</p>
                   </div>
                 </div>
               )}

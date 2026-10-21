@@ -27,8 +27,8 @@ function normalizarVeiculo(veiculo) {
   return {
     id: veiculo.id,
     placa: veiculo.license_plate || '',
-    identificacao: veiculo.identification || veiculo.model || veiculo.license_plate || 'Veiculo',
-    motorista: veiculo.driver_name || 'Motorista nao informado',
+    identificacao: veiculo.identification || veiculo.model || veiculo.license_plate || 'Veículo',
+    motorista: veiculo.driver_name || 'Motorista não informado',
     motoristaId: veiculo.driver_id || null,
     unidade: veiculo.unit || '',
   }
@@ -54,10 +54,10 @@ function normalizarRota(rota) {
     id: rota.id,
     vehicleId: rota.vehicle_id,
     driverId: rota.driver_id,
-    horario: rota.horario_label || rota.horario || 'Sem horario',
+    horario: rota.horario_label || rota.horario || 'Sem horário',
     horarioInicio: rota.horario_inicio || null,
     direction: rota.direction || null,
-    status: rota.status || 'Aguardando Saida',
+    status: rota.status || 'Aguardando Saída',
     createdAt: rota.created_at || rota.updated_at || null,
     alunos: Array.isArray(rota.students) ? rota.students : [],
   }
@@ -65,10 +65,10 @@ function normalizarRota(rota) {
 
 function obterStatusVeiculo(rotasDoVeiculo) {
   if (!rotasDoVeiculo.length) {
-    return 'Aguardando Saida'
+    return 'Aguardando Saída'
   }
 
-  return rotasDoVeiculo[rotasDoVeiculo.length - 1].status || 'Aguardando Saida'
+  return rotasDoVeiculo[rotasDoVeiculo.length - 1].status || 'Aguardando Saída'
 }
 
 function formatarData(valor) {
@@ -94,10 +94,10 @@ function obterClasseStatus(status) {
 }
 
 function renderizarStatus(status, styles, textoOverride = null) {
-  const classeStatus = textoOverride && textoOverride.toLowerCase().startsWith('horario')
+  const classeStatus = textoOverride && textoOverride.toLowerCase().startsWith('horário')
     ? 'rotas-status--horario'
     : obterClasseStatus(status)
-  const statusTexto = textoOverride || status || 'Aguardando Saida'
+  const statusTexto = textoOverride || status || 'Aguardando Saída'
 
   return (
     <span className={`${styles['rotas-status']} ${styles[classeStatus] || ''}`}>
@@ -138,7 +138,7 @@ function GerenciarRotas() {
     try {
       // Mantem os status em dia sempre que essa tela e aberta: rotas
       // concluidas que estao a menos de 1h do horario de inicio voltam
-      // sozinhas pra "Aguardando Saida".
+      // sozinhas pra "Aguardando Saída".
       await resetarRotasProximas(supabase)
 
       const [veiculosData, rotasData, alunosData] = await Promise.all([
@@ -232,7 +232,7 @@ function GerenciarRotas() {
     { id: 'unidade', label: 'Unidade', options: opcoesUnidadeFiltro.map((value) => ({ value, label: value })) },
     {
       id: 'direcao',
-      label: 'Direção',
+      label: 'Direcao',
       options: [
         { value: 'Ida', label: 'Ida' },
         { value: 'Volta', label: 'Volta' },
@@ -242,10 +242,10 @@ function GerenciarRotas() {
       id: 'status',
       label: 'Status',
       options: [
-        { value: 'Aguardando Saida', label: 'Aguardando Saída' },
+        { value: 'Aguardando Saída', label: 'Aguardando Saída' },
         { value: 'Em Transito', label: 'Em Trânsito' },
         { value: 'Atrasado', label: 'Atrasado' },
-        { value: 'Concluido', label: 'Concluído' },
+        { value: 'Concluido', label: 'Concluido' },
       ],
     },
   ]
@@ -294,7 +294,7 @@ function GerenciarRotas() {
       setVeiculoAberto(veiculo.id)
       showSuccess('Nova rota criada com sucesso.')
     } catch (error) {
-      showError(error.message || 'Nao foi possivel criar a rota.')
+      showError(error.message || 'Não foi possivel criar a rota.')
     } finally {
       setCriandoPorVeiculoId(null)
     }
@@ -316,7 +316,7 @@ function GerenciarRotas() {
     const vinculoAtual = aluno[campo]
 
     if (vinculoAtual && vinculoAtual !== rota.id) {
-      showError('Este aluno já está vinculado a outra rota.')
+      showError('Este aluno jest a outra rota.')
       return
     }
 
@@ -336,7 +336,7 @@ function GerenciarRotas() {
       setErroAssociacaoPorRota((atual) => ({ ...atual, [rota.id]: '' }))
       showSuccess('Aluno vinculado à rota com sucesso.')
     } catch (error) {
-      showError(error.message || 'Não foi possível vincular o aluno.')
+      showError(error.message || 'Não foi possivel vincular o aluno.')
     } finally {
       setAssociandoAlunoId(null)
     }
@@ -404,7 +404,7 @@ function GerenciarRotas() {
       setMenuRotaAberto(null)
       showSuccess('Rota atualizada com sucesso.')
     } catch (error) {
-      showError(error.message || 'Não foi possível editar a rota.')
+      showError(error.message || 'Não foi possivel editar a rota.')
     } finally {
       setSalvandoEdicaoRotaId(null)
     }
@@ -420,9 +420,9 @@ function GerenciarRotas() {
 
       await carregarDados()
       setMenuRotaAberto(null)
-      showSuccess('Rota excluída com sucesso.')
+      showSuccess('Rota excluida com sucesso.')
     } catch (error) {
-      showError(error.message || 'Não foi possível excluir a rota.')
+      showError(error.message || 'Não foi possivel excluir a rota.')
     } finally {
       setExcluindoRotaId(null)
     }
@@ -449,16 +449,16 @@ function GerenciarRotas() {
         partes.push(`${data.alunosSemVeiculo.length} sem vaga (capacidade cheia)`)
       }
       if (data.alunosSemVeiculoDaUnidade?.length) {
-        partes.push(`${data.alunosSemVeiculoDaUnidade.length} sem nenhum veiculo cadastrado na unidade`)
+        partes.push(`${data.alunosSemVeiculoDaUnidade.length} sem nenhum veículo cadastrado na unidade`)
       }
       if (data.alunosSemEnderecoDaUnidade?.length) {
-        partes.push(`${data.alunosSemEnderecoDaUnidade.length} com unidade nao reconhecida`)
+        partes.push(`${data.alunosSemEnderecoDaUnidade.length} com unidade não reconhecida`)
       }
       if (data.alunosPersonalizados?.length) {
         partes.push(`${data.alunosPersonalizados.length} com percurso personalizado (atribuicao manual)`)
       }
       if (data.alunosSemConfiguracaoRota?.length) {
-        partes.push(`${data.alunosSemConfiguracaoRota.length} sem periodo/horario/tipo de percurso definido`)
+        partes.push(`${data.alunosSemConfiguracaoRota.length} sem per/horário/tipo de percurso definido`)
       }
       if (data.alunosSemCoordenada?.length) {
         partes.push(`${data.alunosSemCoordenada.length} sem coordenadas cadastradas`)
@@ -466,7 +466,7 @@ function GerenciarRotas() {
 
       showSuccess(partes.join(' - '))
     } catch (error) {
-      showError(error.message || 'Nao foi possivel gerar as rotas automaticamente.')
+      showError(error.message || 'Não foi possivel gerar as rotas automaticamente.')
     } finally {
       setGerandoRotas(false)
     }
@@ -546,12 +546,12 @@ function GerenciarRotas() {
         {!carregando ? (
           <section className={styles['rotas-tabela']}>
             <div className={styles['rotas-cabecalho']}>
-              <div className={styles['rotas-coluna']}>Veiculo</div>
+              <div className={styles['rotas-coluna']}>Veículo</div>
               <div className={`${styles['rotas-coluna']} ${styles['rotas-coluna--status']}`}>Status</div>
             </div>
 
             {veiculosFiltrados.length === 0 ? (
-              <p className={styles['estado']}>Nenhum veiculo encontrado.</p>
+              <p className={styles['estado']}>Nenhum veículo encontrado.</p>
             ) : (
               veiculosFiltrados.map((veiculo) => {
                 const aberto = veiculoAberto === veiculo.id
@@ -583,7 +583,7 @@ function GerenciarRotas() {
                     {aberto ? (
                       <div className={styles['rotas-conteudo']}>
                         {rotasDoVeiculo.length === 0 ? (
-                          <p className={styles['vazio']}>Nenhuma rota anterior para este veiculo.</p>
+                          <p className={styles['vazio']}>Nenhuma rota anterior para este veículo.</p>
                         ) : (
                           rotasDoVeiculo.map((rota, indice) => (
                             <article key={rota.id} className={styles['rota-card']}>
@@ -656,11 +656,11 @@ function GerenciarRotas() {
                                   {renderizarStatus(
                                     rota.status,
                                     styles,
-                                    rota.horario && rota.horario !== 'Sem horario'
+                                    rota.horario && rota.horario !== 'Sem horário'
                                       ? rota.horario
                                       : rota.horarioInicio
-                                        ? `Horario ${rota.horarioInicio}`
-                                        : `Horario ${indice + 1}`,
+                                        ? `Horário ${rota.horarioInicio}`
+                                        : `Horário ${indice + 1}`,
                                   )}
                                 </div>
                               </div>

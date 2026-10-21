@@ -563,15 +563,69 @@
 .boadd-unidade label{
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-self: start;
+    width: fit-content;
+    max-width: 100%;
+    gap: 0.4rem;
+    min-height: 20px;
+    padding: 2px 4px;
+    border: 1px solid transparent;
+    border-radius: 9px;
     font-size: 15px;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease;
 }
+
+.boadd-unidade label:hover{
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.boadd-unidade label:has(input:checked){
+    background: #e8edff;
+    border-color: rgba(0, 26, 99, 0.22);
+    color: #001a63;
+}
+
 .boadd-unidade label input{
     width: 20px;
     height: 20px;
     flex-shrink: 0;
     accent-color: #001a63;
     cursor: pointer;
+}
+
+.boadd-unidade label input:is([type="checkbox"], [type="radio"]){
+    appearance: none;
+    flex-basis: 20px;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid #7784ad;
+    border-radius: 6px;
+    background-color: #fff;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.boadd-unidade label input:is([type="checkbox"], [type="radio"]):checked{
+    border-color: #001a63;
+    background-color: #001a63;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3 8 3.2 3.2L13 4.5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 14px;
+}
+
+.boadd-unidade label input[type="radio"]{
+    border-radius: 50%;
+}
+
+.boadd-unidade label input[type="radio"]:checked{
+    background-image: radial-gradient(circle, #fff 0 3px, transparent 3.5px);
+    background-size: auto;
+}
+
+.boadd-unidade label input:is([type="checkbox"], [type="radio"]):focus-visible{
+    outline: 3px solid rgba(0, 26, 99, 0.25);
+    outline-offset: 2px;
 }
 
 .boadd-linha-unidades{

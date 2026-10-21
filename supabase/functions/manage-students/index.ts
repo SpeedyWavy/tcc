@@ -98,7 +98,7 @@ async function requireAdmin(request: Request) {
   const { data, error } = await userClient.auth.getUser()
 
   if (error || !data.user) {
-    return { error: 'Autenticacao invalida.', status: 401 as const }
+    return { error: 'Autentica inv.', status: 401 as const }
   }
 
   const jwtRole = data.user.app_metadata?.role
@@ -237,7 +237,7 @@ async function createStudent(request: Request, payload: Record<string, unknown>)
     .single()
 
   if (error) {
-    return jsonResponse(request, { detail: error.message || 'Nao foi possivel cadastrar o aluno.' }, 400)
+    return jsonResponse(request, { detail: error.message || 'N foi possivel cadastrar o aluno.' }, 400)
   }
 
   return jsonResponse(request, data, 201)
@@ -252,7 +252,7 @@ async function updateStudent(request: Request, studentId: string, payload: Recor
     .maybeSingle()
 
   if (existingError) {
-    return jsonResponse(request, { detail: existingError.message || 'Nao foi possivel localizar o aluno.' }, 400)
+    return jsonResponse(request, { detail: existingError.message || 'N foi possivel localizar o aluno.' }, 400)
   }
 
   const mergedPayload = { ...(existingStudent || {}), ...payload }
@@ -309,11 +309,11 @@ async function updateStudent(request: Request, studentId: string, payload: Recor
     .maybeSingle()
 
   if (error) {
-    return jsonResponse(request, { detail: error.message || 'Nao foi possivel atualizar o aluno.' }, 400)
+    return jsonResponse(request, { detail: error.message || 'N foi possivel atualizar o aluno.' }, 400)
   }
 
   if (!data) {
-    return jsonResponse(request, { detail: 'Aluno nao encontrado.' }, 404)
+    return jsonResponse(request, { detail: 'Aluno n encontrado.' }, 404)
   }
 
   return jsonResponse(request, data)
@@ -324,10 +324,10 @@ async function deleteStudent(request: Request, studentId: string) {
   const { error } = await adminClient.from('students').delete().eq('id', studentId)
 
   if (error) {
-    return jsonResponse(request, { detail: error.message || 'Nao foi possivel excluir o aluno.' }, 400)
+    return jsonResponse(request, { detail: error.message || 'N foi possivel excluir o aluno.' }, 400)
   }
 
-  return jsonResponse(request, { message: 'Aluno excluido com sucesso.' })
+  return jsonResponse(request, { message: 'Aluno exclu com sucesso.' })
 }
 
 Deno.serve(async (request) => {
@@ -336,7 +336,7 @@ Deno.serve(async (request) => {
   }
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
-    return jsonResponse(request, { detail: 'Variaveis de ambiente do Supabase nao configuradas.' }, 500)
+    return jsonResponse(request, { detail: 'Vari de ambiente do Supabase n configuradas.' }, 500)
   }
 
   const adminCheck = await requireAdmin(request)
@@ -375,5 +375,5 @@ Deno.serve(async (request) => {
     return await deleteStudent(request, studentId)
   }
 
-  return jsonResponse(request, { detail: 'Acao nao suportada.' }, 400)
+  return jsonResponse(request, { detail: 'Acao n suportada.' }, 400)
 })
